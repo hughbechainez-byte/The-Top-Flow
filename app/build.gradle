@@ -1,0 +1,49 @@
+plugins {
+    id "com.android.application"
+}
+
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "3").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "3.0").toString()
+
+android {
+    namespace "com.davehq.thetopflow"
+    compileSdk 35
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    defaultConfig {
+        applicationId "com.davehq.thetopflow"
+        minSdk 26
+        targetSdk 35
+        versionCode = topFlowVersionCode
+        versionName = topFlowVersionName
+        buildConfigField "String", "UPDATE_MANIFEST_URL", "\"https://jsonblob.com/api/jsonBlob/019ee1cd-9c9c-7c8b-977c-f890d6953d10\""
+    }
+
+    signingConfigs {
+        release {
+            def props = new Properties()
+            def propsFile = rootProject.file("keystore.properties")
+            if (propsFile.exists()) {
+                props.load(new FileInputStream(propsFile))
+                storeFile rootProject.file(props["storeFile"])
+                storePassword props["storePassword"]
+                keyAlias props["keyAlias"]
+                keyPassword props["keyPassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.15.0"
+}
