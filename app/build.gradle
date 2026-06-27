@@ -2,8 +2,8 @@ plugins {
     id "com.android.application"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "3").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "3.0").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "29").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "20.0").toString()
 
 android {
     namespace "com.davehq.thetopflow"
@@ -19,7 +19,7 @@ android {
         targetSdk 35
         versionCode = topFlowVersionCode
         versionName = topFlowVersionName
-        buildConfigField "String", "UPDATE_MANIFEST_URL", "\"https://jsonblob.com/api/jsonBlob/019ee1cd-9c9c-7c8b-977c-f890d6953d10\""
+        buildConfigField "String", "UPDATE_MANIFEST_URL", "\"https://jsonblob.com/api/jsonBlob/019f086a-01bf-77d9-8da2-a2892669c9d5\""
     }
 
     signingConfigs {

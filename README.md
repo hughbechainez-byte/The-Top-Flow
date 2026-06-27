@@ -2,7 +2,16 @@
 
 Native Android note app for songwriting on GrapheneOS/Android.
 
-Current local build: `3.0`.
+Current local build: `20.0`.
+
+## Project Record
+
+Future Codex sessions should start with:
+
+- `PROJECT_STATUS.md`
+- `CODING_RULES.md`
+- `HANDOFF.md`
+- `CHANGELOG.md`
 
 ## Build
 
@@ -17,7 +26,7 @@ tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 
 The app checks this temporary manifest:
 
-`https://jsonblob.com/api/jsonBlob/019ee1cd-9c9c-7c8b-977c-f890d6953d10`
+`https://jsonblob.com/api/jsonBlob/019f086a-01bf-77d9-8da2-a2892669c9d5`
 
 Publish a newer signed APK and update that JSON with a higher `versionCode`. The original intended GitLab raw manifest remains suitable once GitLab credentials are available:
 

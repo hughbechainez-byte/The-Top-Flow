@@ -1,6 +1,1 @@
-{
-  "versionCode": 3,
-  "versionName": "3.0",
-  "apkUrl": "https://temp.sh/fQnrl/the-top-flow-3.0.apk",
-  "notes": "Version 3.0 adds attached song playback and voice note recording with countdown."
-}
+{"versionName":"20.0","notes":"Version 20.0 makes rhyme suggestions pronunciation-first, prioritizing CMU stressed-vowel and coda matches before fallback heuristics.","versionCode":29,"apkUrl":"https://temp.sh/YIMRS/the-top-flow-20.0.apk"}
