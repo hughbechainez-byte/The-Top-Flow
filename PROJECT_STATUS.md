@@ -24,13 +24,13 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 - Most behavior lives in one large `MainActivity.java`, so changes should be especially small and carefully scoped.
 - The rhyming system still lives inside `MainActivity.java`, so future tuning should stay targeted.
-- No automated rhyme regression test suite exists yet.
-- In-app update metadata now points to 20.0, but install flow still needs device verification.
+- A focused rhyme regression check exists at `tools/rhyme_quality_check.py`.
+- In-app update metadata now points to the 20.x appcast, but install flow still needs device verification.
 
 ## Current Development Priority
 
-Validate the 20.0 pronunciation-first rhyme engine and add a small regression set for known bad/good rhyme pairs.
+Keep tuning rhyme quality against the focused regression set before unrelated app work.
 
 ## Next Milestone
 
-Add focused rhyme QA/regression coverage and tune slant-rhyme ranking from real writing examples.
+Expand rhyme QA with more real writing examples and tune ranking without changing the UI.

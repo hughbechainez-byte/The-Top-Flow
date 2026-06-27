@@ -1,1 +1,1 @@
-{"versionName":"20.0","notes":"Version 20.0 makes rhyme suggestions pronunciation-first, prioritizing CMU stressed-vowel and coda matches before fallback heuristics.","versionCode":29,"apkUrl":"https://temp.sh/YIMRS/the-top-flow-20.0.apk"}
+{"versionName":"20.1","notes":"Version 20.1 adds focused rhyme regression validation and improves slang, unknown -ing, and curated rhyme ranking.","versionCode":30,"apkUrl":"https://temp.sh/yehuW/the-top-flow-20.1.apk"}

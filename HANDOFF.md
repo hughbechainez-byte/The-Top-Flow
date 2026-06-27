@@ -17,7 +17,7 @@ tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 
 This was not run during the documentation-only initialization.
 
-Latest verified build: 20.0 / versionCode 29 via `assembleRelease`.
+Latest verified build: 20.1 / versionCode 30 via `assembleRelease`.
 
 ## Important Files
 
@@ -28,22 +28,23 @@ Latest verified build: 20.0 / versionCode 29 via `assembleRelease`.
 - `app/src/main/AndroidManifest.xml`: permissions, app label/icon/theme, file provider, and launcher activity.
 - `app/src/main/java/com/davehq/thetopflow/MainActivity.java`: main app UI and behavior, including notes, pronunciation-first rhyme suggestions, recordings, song playback, update checks, persistence, and styling.
 - `app/src/main/assets/cmudict.dict`: CMU pronunciation dictionary used by rhyme suggestions.
+- `tools/rhyme_quality_check.py`: focused rhyme regression check for the 20.x rhyme engine.
 - `appcast.json` and `releases/appcast.json`: update manifest files.
 
 ## Current Next Task
 
-Add a small rhyme regression/QA set and tune slant-rhyme ranking using real examples.
+Expand the rhyme regression set with more real writing examples, especially multi-syllable and phrase suggestions.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
-- Version 20.0 APK is published at `https://temp.sh/YIMRS/the-top-flow-20.0.apk`.
+- Version 20.1 APK is published at `https://temp.sh/yehuW/the-top-flow-20.1.apk`.
 
 ## Warnings / Unknowns
 
 - The Git worktree already had modified and untracked files before this framework setup.
 - `MainActivity.java` is large, so future changes should use targeted searches and focused edits.
-- No test suite was found in the inspected files; 20.0 was verified with a release build and a manual CMU signature sanity check.
+- Rhyme checks now run through `python tools\rhyme_quality_check.py`; 20.1 also passed a release build.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

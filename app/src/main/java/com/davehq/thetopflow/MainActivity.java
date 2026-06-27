@@ -1194,10 +1194,19 @@ public class MainActivity extends Activity {
         if (ck.equals(key)) score += 120;
         if (baseFamily.equals(candidateFamily)) score += 38;
         if (nearSlangFamily(base, c)) score += 24;
+        score += commonRhymeBias(candidate);
         score += internalRhymeBias(base, c);
         score -= bucketPenalty(bucket);
         score -= Math.abs(c.length() - base.length()) / 2;
         return score >= scoreThreshold() ? Math.max(score, 0) : 0;
+    }
+
+    private int commonRhymeBias(String candidate) {
+        String w = candidateRhymeWord(candidate);
+        for (String common : COMMON_RHYME_WORDS) {
+            if (normalizeWord(common).equals(w)) return 18;
+        }
+        return 0;
     }
 
     private int bestCmuRhymeScore(String base, String candidate, ArrayList<PhoneRhymeInfo> baseInfos, ArrayList<PhoneRhymeInfo> candidateInfos, int bucket) {
@@ -1209,7 +1218,8 @@ public class MainActivity extends Activity {
                 boolean exact = a.rhymeKey.equals(b.rhymeKey);
                 if (exactOnly && !exact) continue;
                 int overlap = phoneTailOverlap(a.rhymeKey, b.rhymeKey);
-                boolean codaCompatible = exact || !a.codaKey.isEmpty() && a.codaKey.equals(b.codaKey) || overlap >= 2;
+                boolean slangCompatible = nearSlangFamily(base, candidate);
+                boolean codaCompatible = exact || !a.codaKey.isEmpty() && a.codaKey.equals(b.codaKey) || overlap >= 2 || slangCompatible;
                 if (!codaCompatible) continue;
                 int syllableDiff = Math.abs(a.syllableCount - b.syllableCount);
                 if (!exact && syllableDiff > 2) continue;
@@ -1220,13 +1230,28 @@ public class MainActivity extends Activity {
                 else if (sameFinalPhone(a.codaKey, b.codaKey)) score += 28;
                 if (syllableDiff == 0) score += 28;
                 else score -= syllableDiff * 12;
-                if (nearSlangFamily(base, candidate)) score += 18;
+                if (slangCompatible) score += 30;
+                if (slangVariantPair(base, candidate)) score += 360;
+                score += commonRhymeBias(candidate);
                 score += internalRhymeBias(base, candidate);
                 score -= bucketPenalty(bucket);
                 best = Math.max(best, score);
             }
         }
         return best;
+    }
+
+    private boolean slangVariantPair(String a, String b) {
+        String x = slangVariantKey(a);
+        String y = slangVariantKey(b);
+        return !x.isEmpty() && x.equals(y) && !normalizeWord(a).equals(normalizeWord(b));
+    }
+
+    private String slangVariantKey(String word) {
+        String w = normalizeWord(word);
+        if (w.endsWith("ing") && w.length() > 4) return w.substring(0, w.length() - 3) + "in";
+        if (w.endsWith("in") && w.length() > 3) return w;
+        return "";
     }
 
     private int bucketPenalty(int bucket) {
@@ -1565,9 +1590,20 @@ public class MainActivity extends Activity {
         String w = normalizeWord(word);
         ArrayList<PhoneRhymeInfo> out = new ArrayList<>();
         ArrayList<String> phones = cmuPhones.get(w);
-        if (phones == null) return out;
-        for (String p : phones) {
-            PhoneRhymeInfo info = phoneRhymeInfo(p);
+        if (phones != null) {
+            for (String p : phones) {
+                PhoneRhymeInfo info = phoneRhymeInfo(p);
+                if (info != null) out.add(info);
+            }
+        }
+        String guessedIng = guessedIngPhones(w);
+        if (!guessedIng.isEmpty() && !cmuDictionaryWords.contains(w)) {
+            PhoneRhymeInfo info = phoneRhymeInfo(guessedIng);
+            if (info != null) out.add(info);
+        }
+        String slang = slangPhones(w);
+        if (!slang.isEmpty() && !cmuDictionaryWords.contains(w)) {
+            PhoneRhymeInfo info = phoneRhymeInfo(slang);
             if (info != null) out.add(info);
         }
         return out;
@@ -1619,6 +1655,12 @@ public class MainActivity extends Activity {
         if (s.endsWith("l")) return "K UW1 L";
         if (s.endsWith("v")) return "M UW1 V";
         return "AH1";
+    }
+
+    private String guessedIngPhones(String word) {
+        String w = normalizeWord(word);
+        if (w.endsWith("ing") && w.length() > 4) return guessedOnsetPhones(w.substring(0, w.length() - 3)) + " IH0 NG";
+        return "";
     }
 
     private String cmuRhymePartFromPhones(String phones) {
@@ -1818,6 +1860,7 @@ public class MainActivity extends Activity {
             "voice", "choice", "noise", "poise", "boys", "toy", "joy", "ploy",
             "near", "clear", "fear", "dear", "here", "year", "peer", "tear",
             "heat", "beat", "street", "sweet", "fleet", "meet", "seat", "feat",
+            "cover", "lover", "hover", "running", "runnin", "proving", "grooving",
             "pullin", "pulling", "coolant", "woolen", "bullet", "couldn't", "shouldn't", "wouldn't",
             "movin", "moving", "proven", "losing", "choosing", "ruin", "fluid", "student"
     };

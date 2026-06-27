@@ -2,8 +2,8 @@ plugins {
     id "com.android.application"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "29").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "20.0").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "30").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "20.1").toString()
 
 android {
     namespace "com.davehq.thetopflow"
