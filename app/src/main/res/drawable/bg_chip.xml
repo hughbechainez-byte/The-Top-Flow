@@ -1,0 +1,26 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow_radius_pill" />
+            <gradient
+                android:angle="0"
+                android:startColor="#FF203949"
+                android:endColor="#FF162A38" />
+            <stroke
+                android:width="@dimen/topflow_stroke_hairline"
+                android:color="@color/topflow_accent_gold" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow_radius_pill" />
+            <gradient
+                android:angle="0"
+                android:startColor="@color/topflow_chip_bg_start"
+                android:endColor="@color/topflow_chip_bg_end" />
+            <stroke
+                android:width="@dimen/topflow_stroke_hairline"
+                android:color="@color/topflow_secondary_soft" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,33 @@
+<resources>
+    <dimen name="topflow_space_xxs">4dp</dimen>
+    <dimen name="topflow_space_xs">8dp</dimen>
+    <dimen name="topflow_space_sm">10dp</dimen>
+    <dimen name="topflow_space_md">12dp</dimen>
+    <dimen name="topflow_space_lg">16dp</dimen>
+    <dimen name="topflow_space_xl">20dp</dimen>
+    <dimen name="topflow_space_xxl">24dp</dimen>
+    <dimen name="topflow_space_page">14dp</dimen>
+
+    <dimen name="topflow_radius_sm">10dp</dimen>
+    <dimen name="topflow_radius_md">18dp</dimen>
+    <dimen name="topflow_radius_lg">24dp</dimen>
+    <dimen name="topflow_radius_xl">28dp</dimen>
+    <dimen name="topflow_radius_pill">999dp</dimen>
+
+    <dimen name="topflow_stroke_hairline">1dp</dimen>
+    <dimen name="topflow_elevation_sm">4dp</dimen>
+    <dimen name="topflow_elevation_md">8dp</dimen>
+    <dimen name="topflow_elevation_lg">12dp</dimen>
+    <dimen name="topflow_elevation_xl">18dp</dimen>
+
+    <dimen name="topflow_text_title">26sp</dimen>
+    <dimen name="topflow_text_section">16sp</dimen>
+    <dimen name="topflow_text_body">19sp</dimen>
+    <dimen name="topflow_text_chip">14sp</dimen>
+    <dimen name="topflow_text_caption">13sp</dimen>
+    <dimen name="topflow_text_button">15sp</dimen>
+
+    <dimen name="topflow_button_height">48dp</dimen>
+    <dimen name="topflow_chip_height">40dp</dimen>
+    <dimen name="topflow_max_content_width">860dp</dimen>
+</resources>

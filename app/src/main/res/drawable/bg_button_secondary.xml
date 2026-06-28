@@ -1,0 +1,28 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow_radius_md" />
+            <gradient
+                android:angle="90"
+                android:startColor="#FF182434"
+                android:centerColor="#FF111B29"
+                android:endColor="#FF0B121D" />
+            <stroke
+                android:width="@dimen/topflow_stroke_hairline"
+                android:color="@color/topflow_primary" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow_radius_md" />
+            <gradient
+                android:angle="90"
+                android:startColor="#FF131C2A"
+                android:centerColor="#FF0E1723"
+                android:endColor="#FF09111A" />
+            <stroke
+                android:width="@dimen/topflow_stroke_hairline"
+                android:color="@color/topflow_surface_stroke_soft" />
+        </shape>
+    </item>
+</selector>
