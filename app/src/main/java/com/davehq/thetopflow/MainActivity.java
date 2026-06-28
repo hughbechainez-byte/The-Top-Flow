@@ -112,8 +112,9 @@ public class MainActivity extends Activity {
     private static final String PREF_REMOVED_RHYMES = "removedRhymes";
     private static final int RHYME_BUCKET_EXACT = 0;
     private static final int RHYME_BUCKET_NEAR = 1;
-    private static final int RHYME_BUCKET_PHRASE = 2;
-    private static final int RHYME_BUCKET_FALLBACK = 3;
+    private static final int RHYME_BUCKET_SLANT = 2;
+    private static final int RHYME_BUCKET_PHRASE = 3;
+    private static final int RHYME_BUCKET_FALLBACK = 4;
     private static final String[] COMMON_WORDS = {
             "a", "all", "and", "around", "back", "beat", "before", "believe", "big", "blue",
             "born", "break", "bright", "call", "change", "clean", "cold", "come", "day", "dream",
@@ -1145,9 +1146,14 @@ public class MainActivity extends Activity {
             if (rhymeWord.equals(base)) continue;
             if (isSuggestionRemoved(candidate.word)) continue;
             int score = rhymeScore(base, candidate.word, candidate.bucket);
-            if (score > 0) matches.add(new RhymeMatch(candidate.word, score));
+            if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
         }
-        Collections.sort(matches, (a, b) -> Integer.compare(b.score, a.score));
+        Collections.sort(matches, (a, b) -> {
+            if (b.score != a.score) return Integer.compare(b.score, a.score);
+            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
+            if (b.priority != a.priority) return Integer.compare(b.priority, a.priority);
+            return a.word.compareTo(b.word);
+        });
         for (RhymeMatch match : matches) {
             if (!out.contains(match.word)) out.add(match.word);
             if (out.size() >= limit) break;
@@ -1162,11 +1168,19 @@ public class MainActivity extends Activity {
             String w = normalizeWord(word);
             if (w.isEmpty() || w.equals(base)) continue;
             if (isSuggestionRemoved(word)) continue;
-            if (smallTailDistance(rhymeKey(w), key) > 1) continue;
+            if (!fallbackTailCompatible(base, w, key)) continue;
             if (!out.contains(w)) out.add(w);
             if (out.size() >= limit) break;
         }
         return out;
+    }
+
+    private boolean fallbackTailCompatible(String base, String candidate, String baseKey) {
+        String candidateKey = rhymeKey(candidate);
+        String baseCmu = cmuRhymeTail(base);
+        String candidateCmu = cmuRhymeTail(candidate);
+        if (!baseCmu.isEmpty() && !candidateCmu.isEmpty()) return baseCmu.equals(candidateCmu);
+        return smallTailDistance(candidateKey, baseKey) <= 1;
     }
 
     private int rhymeScore(String base, String candidate, int bucket) {
@@ -1204,7 +1218,7 @@ public class MainActivity extends Activity {
     private int commonRhymeBias(String candidate) {
         String w = candidateRhymeWord(candidate);
         for (String common : COMMON_RHYME_WORDS) {
-            if (normalizeWord(common).equals(w)) return 18;
+            if (normalizeWord(common).equals(w)) return 90;
         }
         return 0;
     }
@@ -1256,9 +1270,10 @@ public class MainActivity extends Activity {
 
     private int bucketPenalty(int bucket) {
         if (bucket == RHYME_BUCKET_EXACT) return 0;
-        if (bucket == RHYME_BUCKET_NEAR) return 10;
-        if (bucket == RHYME_BUCKET_PHRASE) return 20;
-        return 44;
+        if (bucket == RHYME_BUCKET_NEAR) return 12;
+        if (bucket == RHYME_BUCKET_SLANT) return 52;
+        if (bucket == RHYME_BUCKET_PHRASE) return 90;
+        return 130;
     }
 
     private ArrayList<RhymeCandidate> candidatePoolFor(String base) {
@@ -1280,13 +1295,13 @@ public class MainActivity extends Activity {
                 if (w.isEmpty() || w.equals(base)) continue;
                 int relation = cmuRelation(baseInfos, cmuRhymeInfos(w));
                 if (relation >= 0) addCandidate(pool, word, relation);
-                else if (nearSlangFamily(base, w)) addCandidate(pool, word, RHYME_BUCKET_NEAR);
+                else if (nearSlangFamily(base, w)) addCandidate(pool, word, RHYME_BUCKET_SLANT);
             }
             for (String phrase : COMMON_RHYME_PHRASES) {
                 String w = candidateRhymeWord(phrase);
                 if (w.isEmpty() || w.equals(base)) continue;
                 int relation = cmuRelation(baseInfos, cmuRhymeInfos(w));
-                if (relation >= 0 || nearSlangFamily(base, w)) addCandidate(pool, phrase, RHYME_BUCKET_PHRASE);
+                if (relation == RHYME_BUCKET_EXACT || relation == RHYME_BUCKET_NEAR || nearSlangFamily(base, w)) addCandidate(pool, phrase, RHYME_BUCKET_PHRASE);
             }
         } else {
             String baseKey = rhymeKey(base);
@@ -1328,8 +1343,12 @@ public class MainActivity extends Activity {
             for (PhoneRhymeInfo b : candidateInfos) {
                 if (!a.vowelKey.equals(b.vowelKey)) continue;
                 if (a.rhymeKey.equals(b.rhymeKey)) return RHYME_BUCKET_EXACT;
-                if (a.codaKey.equals(b.codaKey) || phoneTailOverlap(a.rhymeKey, b.rhymeKey) >= 2) {
-                    if (Math.abs(a.syllableCount - b.syllableCount) <= 2) best = RHYME_BUCKET_NEAR;
+                int syllableDiff = Math.abs(a.syllableCount - b.syllableCount);
+                int overlap = phoneTailOverlap(a.rhymeKey, b.rhymeKey);
+                if (a.codaKey.equals(b.codaKey) || overlap >= 2) {
+                    if (syllableDiff <= 2) best = RHYME_BUCKET_NEAR;
+                } else if (sameFinalPhone(a.codaKey, b.codaKey) && syllableDiff <= 1 && best < 0) {
+                    best = RHYME_BUCKET_SLANT;
                 }
             }
         }
@@ -1536,11 +1555,17 @@ public class MainActivity extends Activity {
             }
         } catch (Exception ignored) {
         }
+        addPronunciationOverrides();
         for (String word : COMMON_RHYME_WORDS) {
             String w = normalizeWord(word);
             String phones = slangPhones(w);
             if (!w.isEmpty() && !phones.isEmpty() && !cmuDictionaryWords.contains(w)) addCmuEntry(w, phones);
         }
+    }
+
+    private void addPronunciationOverrides() {
+        addCmuEntry("your", "Y AO1 R");
+        addCmuEntry("yours", "Y AO1 R Z");
     }
 
     private void addCmuEntry(String word, String phones) {
@@ -1799,6 +1824,8 @@ public class MainActivity extends Activity {
             if (!rhyme.isEmpty()) return rhymeKeyFromPhones(rhyme);
         }
         switch (w) {
+            case "my": case "try": case "fly": case "sky": case "high": case "why": case "lie": case "cry": case "buy": case "eye":
+                return "AY";
             case "day": case "way": case "play": case "say": case "stay": case "gray": case "spray": case "sway": case "delay":
                 return "EY";
             case "made": case "fade": case "shade":
@@ -1823,6 +1850,10 @@ public class MainActivity extends Activity {
                 return "OY S";
             case "toy": case "joy": case "ploy": case "boy": case "boys":
                 return "OY";
+            case "yours": case "soars": case "pores": case "doors": case "floors":
+                return "AO R Z";
+            case "your": case "soar": case "pore": case "door": case "floor":
+                return "AO R";
             default:
                 return "";
         }
@@ -1849,11 +1880,13 @@ public class MainActivity extends Activity {
     }
 
     private static final String[] COMMON_RHYME_WORDS = {
+            "my", "try", "fly", "sky", "high", "why", "lie", "cry", "buy", "eye",
             "time", "rhyme", "dime", "climb", "lime", "mine", "shine", "line", "fine", "crime",
             "grind", "blind", "kind", "mind", "wind", "sign", "design", "behind",
             "night", "light", "flight", "bright", "might", "tight", "right", "sight",
             "flow", "go", "show", "glow", "throw", "slow", "grow", "blow",
             "way", "play", "say", "stay", "day", "made", "fade", "shade", "gray", "spray", "sway", "delay",
+            "yours", "soars", "pores", "doors", "floors", "your", "soar", "pore", "door", "floor",
             "heart", "start", "part", "smart", "chart", "art", "hard", "yard",
             "pain", "rain", "chain", "brain", "gain", "train", "plane", "strain",
             "soul", "cold", "gold", "roll", "control", "whole", "goal", "bowl",
@@ -1899,9 +1932,13 @@ public class MainActivity extends Activity {
     private static class RhymeMatch {
         final String word;
         final int score;
-        RhymeMatch(String word, int score) {
+        final int bucket;
+        final int priority;
+        RhymeMatch(String word, int score, int bucket, int priority) {
             this.word = word;
             this.score = score;
+            this.bucket = bucket;
+            this.priority = priority;
         }
     }
 

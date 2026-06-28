@@ -15,15 +15,18 @@ CMU_PATH = ROOT / "app" / "src" / "main" / "assets" / "cmudict.dict"
 
 BUCKET_EXACT = 0
 BUCKET_NEAR = 1
-BUCKET_PHRASE = 2
-BUCKET_FALLBACK = 3
+BUCKET_SLANT = 2
+BUCKET_PHRASE = 3
+BUCKET_FALLBACK = 4
 
 COMMON_RHYME_WORDS = [
+    "my", "try", "fly", "sky", "high", "why", "lie", "cry", "buy", "eye",
     "time", "rhyme", "dime", "climb", "lime", "mine", "shine", "line", "fine", "crime",
     "grind", "blind", "kind", "mind", "wind", "sign", "design", "behind",
     "night", "light", "flight", "bright", "might", "tight", "right", "sight",
     "flow", "go", "show", "glow", "throw", "slow", "grow", "blow",
     "way", "play", "say", "stay", "day", "made", "fade", "shade", "gray", "spray", "sway", "delay",
+    "yours", "soars", "pores", "doors", "floors", "your", "soar", "pore", "door", "floor",
     "heart", "start", "part", "smart", "chart", "art", "hard", "yard",
     "pain", "rain", "chain", "brain", "gain", "train", "plane", "strain",
     "soul", "cold", "gold", "roll", "control", "whole", "goal", "bowl",
@@ -186,11 +189,17 @@ def load_cmu():
             continue
         add_cmu_entry(word, parts[1].strip())
         cmu_dictionary_words.add(word)
+    add_pronunciation_overrides()
     for word in COMMON_RHYME_WORDS:
         normalized = normalize_word(word)
         phones = slang_phones(normalized)
         if normalized and phones and normalized not in cmu_dictionary_words:
             add_cmu_entry(normalized, phones)
+
+
+def add_pronunciation_overrides():
+    add_cmu_entry("your", "Y AO1 R")
+    add_cmu_entry("yours", "Y AO1 R Z")
 
 
 def candidate_rhyme_word(candidate):
@@ -255,9 +264,95 @@ def near_slang_family(a, b):
     return bool(x and x == y)
 
 
+def cmu_rhyme_tail(word):
+    word = normalize_word(word)
+    infos = cmu_rhyme_infos(word)
+    if infos:
+        return infos[0]["rhyme_key"]
+    if word in {"my", "try", "fly", "sky", "high", "why", "lie", "cry", "buy", "eye"}:
+        return "AY"
+    if word in {"day", "way", "play", "say", "stay", "gray", "spray", "sway", "delay"}:
+        return "EY"
+    if word in {"made", "fade", "shade"}:
+        return "EY D"
+    if word in {"pain", "rain", "chain", "brain", "gain", "train", "plane", "strain"}:
+        return "EY N"
+    if word in {"time", "rhyme", "dime", "climb", "lime", "crime"}:
+        return "AY M"
+    if word in {"mine", "shine", "line", "fine", "sign", "design"}:
+        return "AY N"
+    if word in {"night", "light", "flight", "bright", "might", "tight", "right", "sight"}:
+        return "AY T"
+    if word in {"flow", "go", "show", "glow", "throw", "slow", "grow", "blow"}:
+        return "OW"
+    if word in {"yours", "soars", "pores", "doors", "floors"}:
+        return "AO R Z"
+    if word in {"your", "soar", "pore", "door", "floor"}:
+        return "AO R"
+    return ""
+
+
+def phonetic_tail(word):
+    word = normalize_word(word)
+    if not word:
+        return ""
+    word = word.replace("ph", "f").replace("gh", "").replace("ck", "k")
+    word = word.replace("qu", "kw").replace("x", "ks")
+    if word.endswith("e") and len(word) > 3:
+        word = word[:-1]
+    for i in range(len(word) - 1, -1, -1):
+        if word[i] in "aeiouy":
+            return word[i:]
+    return word[-3:]
+
+
+def rhyme_key(word):
+    tail = cmu_rhyme_tail(word)
+    if tail:
+        return tail.lower().replace(" ", "")
+    return phonetic_tail(word)
+
+
+def small_tail_distance(a, b):
+    a = a or ""
+    b = b or ""
+    diff = abs(len(a) - len(b))
+    for i in range(min(len(a), len(b))):
+        if a[-1 - i] != b[-1 - i]:
+            diff += 1
+        if diff > 2:
+            break
+    return diff
+
+
+def fallback_tail_compatible(base, candidate, base_key):
+    candidate_key = rhyme_key(candidate)
+    base_cmu = cmu_rhyme_tail(base)
+    candidate_cmu = cmu_rhyme_tail(candidate)
+    if base_cmu and candidate_cmu:
+        return base_cmu == candidate_cmu
+    return small_tail_distance(candidate_key, base_key) <= 1
+
+
+def quick_fallback_rhymes(base, limit=12):
+    out = []
+    key = rhyme_key(base)
+    for word in COMMON_RHYME_WORDS:
+        normalized = normalize_word(word)
+        if not normalized or normalized == base:
+            continue
+        if not fallback_tail_compatible(base, normalized, key):
+            continue
+        if normalized not in out:
+            out.append(normalized)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def common_rhyme_bias(candidate):
     word = candidate_rhyme_word(candidate)
-    return 18 if any(normalize_word(common) == word for common in COMMON_RHYME_WORDS) else 0
+    return 90 if any(normalize_word(common) == word for common in COMMON_RHYME_WORDS) else 0
 
 
 def slang_variant_key(word):
@@ -276,7 +371,7 @@ def slang_variant_pair(a, b):
 
 
 def bucket_penalty(bucket):
-    return [0, 10, 20, 44][bucket]
+    return [0, 12, 52, 90, 130][bucket]
 
 
 def cmu_relation(base_infos, candidate_infos):
@@ -289,9 +384,13 @@ def cmu_relation(base_infos, candidate_infos):
                 continue
             if a["rhyme_key"] == b["rhyme_key"]:
                 return BUCKET_EXACT
-            if a["coda_key"] == b["coda_key"] or phone_tail_overlap(a["rhyme_key"], b["rhyme_key"]) >= 2:
-                if abs(a["syllable_count"] - b["syllable_count"]) <= 2:
+            syllable_diff = abs(a["syllable_count"] - b["syllable_count"])
+            overlap = phone_tail_overlap(a["rhyme_key"], b["rhyme_key"])
+            if a["coda_key"] == b["coda_key"] or overlap >= 2:
+                if syllable_diff <= 2:
                     best = BUCKET_NEAR
+            elif same_final_phone(a["coda_key"], b["coda_key"]) and syllable_diff <= 1 and best < 0:
+                best = BUCKET_SLANT
     return best
 
 
@@ -317,11 +416,11 @@ def candidate_pool_for(base):
             if relation >= 0:
                 add_candidate(pool, word, relation)
             elif near_slang_family(base, normalized):
-                add_candidate(pool, word, BUCKET_NEAR)
+                add_candidate(pool, word, BUCKET_SLANT)
         for phrase in COMMON_RHYME_PHRASES:
             rhyme_word = candidate_rhyme_word(phrase)
             relation = cmu_relation(base_infos, cmu_rhyme_infos(rhyme_word))
-            if relation >= 0 or near_slang_family(base, rhyme_word):
+            if relation in (BUCKET_EXACT, BUCKET_NEAR) or near_slang_family(base, rhyme_word):
                 add_candidate(pool, phrase, BUCKET_PHRASE)
     return pool
 
@@ -383,7 +482,7 @@ def suggest(word, limit=12):
         value = score(base, candidate, bucket)
         if value > 0:
             matches.append((candidate, value, bucket))
-    matches.sort(key=lambda item: (-item[1], item[2], item[0]))
+    matches.sort(key=lambda item: (-item[1], item[2], -common_rhyme_bias(item[0]), item[0]))
     return matches[:limit]
 
 
@@ -404,15 +503,36 @@ def require(name, condition, detail):
     return condition
 
 
+def require_all_top(name, result, expected, top_n):
+    top = set(words(result[:top_n]))
+    return require(name, set(expected).issubset(top), str(words(result[:top_n])))
+
+
+def require_none_top(name, result, blocked, top_n):
+    top = set(words(result[:top_n]))
+    return require(name, top.isdisjoint(set(blocked)), str(words(result[:top_n])))
+
+
 def main():
     load_cmu()
     checks = []
+    my = suggest("my", 20)
+    try_word = suggest("try", 20)
+    yours = suggest("yours", 20)
     hover = suggest("hover")
     cover = suggest("cover")
     near = suggest("near")
     moving = suggest("moving")
     running = suggest("running")
     time = suggest("time")
+    my_fallback = quick_fallback_rhymes("my", 12)
+
+    checks.append(require_all_top("my strong AY rhymes", my, ["try", "fly", "sky", "high", "why", "lie", "cry", "buy", "eye"], 14))
+    checks.append(require_none_top("my excludes EY in top row", my, ["stay", "play"], 14))
+    checks.append(require_none_top("my preload fallback excludes EY", [(w, 0, BUCKET_FALLBACK) for w in my_fallback], ["stay", "play"], 12))
+    checks.append(require_all_top("try strong AY rhymes", try_word, ["my", "fly", "sky", "high", "why"], 12))
+    checks.append(require_all_top("yours strong AO R Z rhymes", yours, ["soars", "pores", "doors", "floors"], 12))
+    checks.append(require_none_top("yours avoids unrelated spelling", yours, ["years", "yells", "young"], 12))
 
     checks.append(require("hover excludes near/clear", "near" not in words(hover) and "clear" not in words(hover), str(words(hover[:8]))))
     checks.append(require("hover groups with lover", "lover" in words(hover[:8]), str(words(hover[:8]))))
