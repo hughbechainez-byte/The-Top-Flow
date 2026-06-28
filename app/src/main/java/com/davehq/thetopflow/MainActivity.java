@@ -145,6 +145,7 @@ public class MainActivity extends Activity {
     private final HashSet<String> cmuDictionaryWords = new HashSet<>();
     private volatile boolean cmuLoaded = false;
     private volatile boolean cmuLoading = false;
+    private RhymeEngine rhymeEngine;
     private FrameLayout root;
     private LinearLayout shell;
     private FrameLayout contentHost;
@@ -234,6 +235,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        rhymeEngine = new RhymeEngine(this);
         countdownSeconds = prefs.getInt("countdown", 0);
         loadRemovedSuggestions();
         createChannels();
@@ -298,14 +300,14 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        header.setBackgroundResource(R.drawable.bg_surface_panel);
-        header.setElevation(dimen(R.dimen.topflow_elevation_md));
+        header.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg));
+        header.setBackgroundResource(R.drawable.bg_studio_toolbar);
+        header.setElevation(dimen(R.dimen.topflow_elevation_lg));
         TextView brand = new TextView(this);
-        brand.setText("The Top Flow");
+        brand.setText("THE TOP FLOW");
         textStyle(brand, R.style.TextAppearance_TopFlow_Title);
         TextView sub = new TextView(this);
-        sub.setText("Studio notes");
+        sub.setText("Offline writing studio");
         textStyle(sub, R.style.TextAppearance_TopFlow_Caption);
         sub.setPadding(2, dp(2), 0, 0);
         LinearLayout titleWrap = new LinearLayout(this);
@@ -322,20 +324,25 @@ public class MainActivity extends Activity {
         left.addView(titleWrap);
         left.addView(sub);
         header.addView(left, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        Button menu = button("Menu");
+        Button menu = button("Studio");
         menu.setOnClickListener(v -> showMainMenu());
         header.addView(menu);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(-1, -2);
-        headerLp.bottomMargin = dimen(R.dimen.topflow_space_md);
+        headerLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
         shell.addView(header, headerLp);
+
+        LinearLayout dock = buildStudioDock();
+        LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-1, -2);
+        dockLp.bottomMargin = dimen(R.dimen.topflow_space_md);
+        shell.addView(dock, dockLp);
 
         contentHost = new FrameLayout(this);
         shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
 
         menuPanel = new LinearLayout(this);
         menuPanel.setOrientation(LinearLayout.VERTICAL);
-        menuPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        menuPanel.setBackgroundResource(R.drawable.bg_surface_panel);
+        menuPanel.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        menuPanel.setBackgroundResource(R.drawable.bg_studio_panel);
         menuPanel.setElevation(dimen(R.dimen.topflow_elevation_lg));
         contentHost.addView(menuPanel, new FrameLayout.LayoutParams(-1, -1));
 
@@ -350,8 +357,8 @@ public class MainActivity extends Activity {
         editorPanel = new LinearLayout(this);
         editorPanel.setOrientation(LinearLayout.VERTICAL);
         editorPanel.setVisibility(View.GONE);
-        editorPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        editorPanel.setBackgroundResource(R.drawable.bg_surface_panel);
+        editorPanel.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        editorPanel.setBackgroundResource(R.drawable.bg_studio_panel);
         editorPanel.setElevation(dimen(R.dimen.topflow_elevation_lg));
         contentHost.addView(editorPanel, new FrameLayout.LayoutParams(-1, -1));
 
@@ -370,7 +377,7 @@ public class MainActivity extends Activity {
         editor.addView(editorCard, editorCardLp);
 
         TextView editorHead = new TextView(this);
-        editorHead.setText("Note");
+        editorHead.setText("WRITING DESK");
         textStyle(editorHead, R.style.TextAppearance_TopFlow_Caption);
         editorHead.setTextColor(color(R.color.topflow_accent_gold));
         editorHead.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
@@ -408,11 +415,11 @@ public class MainActivity extends Activity {
         editorCard.addView(playbackStatus, new LinearLayout.LayoutParams(-1, -2));
         playbackStatus.setVisibility(View.GONE);
 
-        songCard = createSectionCard("Song");
+        songCard = createSectionCard("Track");
         LinearLayout.LayoutParams songLp = new LinearLayout.LayoutParams(-1, -2);
         songLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         editor.addView(songCard, songLp);
-        voiceCard = createSectionCard("Voice Note");
+        voiceCard = createSectionCard("Voice Capture");
         editor.addView(voiceCard, new LinearLayout.LayoutParams(-1, -2));
 
         LinearLayout songMeta = new LinearLayout(this);
@@ -524,6 +531,46 @@ public class MainActivity extends Activity {
         styleActionButtonPalette(C_GREEN);
         applyInsetsNow();
         animateScreenSwap(menuPanel, 1f);
+    }
+
+    private LinearLayout buildStudioDock() {
+        LinearLayout dock = new LinearLayout(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setPadding(dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs));
+        dock.setBackgroundResource(R.drawable.bg_studio_dock);
+        dock.setElevation(dimen(R.dimen.topflow_elevation_md));
+        Button notes = button("Notes");
+        notes.setOnClickListener(v -> showMenuScreen());
+        Button rhymes = button("Rhymes");
+        rhymes.setOnClickListener(v -> {
+            if (current == null) {
+                Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showExpandedRhymes();
+        });
+        Button style = button("Style");
+        style.setOnClickListener(v -> {
+            if (current == null) {
+                Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showStyleMenu();
+        });
+        Button settings = button("Settings");
+        settings.setOnClickListener(v -> showRhymeSettingsMenu());
+        dock.addView(notes, dockButtonLp(0));
+        dock.addView(rhymes, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
+        dock.addView(style, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
+        dock.addView(settings, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
+        return dock;
+    }
+
+    private LinearLayout.LayoutParams dockButtonLp(int leftMargin) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1);
+        lp.leftMargin = leftMargin;
+        return lp;
     }
 
     private void showStartupSplash() {
@@ -887,8 +934,8 @@ public class MainActivity extends Activity {
 
     private void applyStyle() {
         if (current == null) return;
-        titleInput.setBackgroundColor(Color.TRANSPARENT);
-        bodyInput.setBackgroundColor(Color.TRANSPARENT);
+        titleInput.setBackgroundResource(R.drawable.bg_text_field);
+        bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
         titleInput.setTextColor(current.textColor);
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
@@ -906,7 +953,7 @@ public class MainActivity extends Activity {
         if (recordingStatus != null) recordingStatus.setTextColor(recorder != null ? C_RED : C_TEXT_MUTED);
         if (songSeek != null) styleSeekBar(songSeek, current.accentColor);
         if (bodyInput != null) {
-            bodyInput.setBackgroundColor(Color.TRANSPARENT);
+            bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
             if (bodyInput instanceof RuledEditText) {
                 ((RuledEditText) bodyInput).setRuleColor(current.accentColor);
             }
@@ -1057,11 +1104,11 @@ public class MainActivity extends Activity {
     private LinearLayout buildSuggestionRow(String title) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
-        wrap.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
-        wrap.setBackgroundResource(R.drawable.bg_surface_sheet);
+        wrap.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
+        wrap.setBackgroundResource(R.drawable.bg_rhyme_panel);
         wrap.setElevation(dimen(R.dimen.topflow_elevation_lg));
         TextView label = new TextView(this);
-        label.setText(title);
+        label.setText("RHYME ENGINE");
         textStyle(label, R.style.TextAppearance_TopFlow_Caption);
         label.setTextColor(color(R.color.topflow_accent_gold));
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
@@ -1116,7 +1163,7 @@ public class MainActivity extends Activity {
         String query = normalizeWord(info.word);
         String cacheKey = rhymeCacheKey(query, limit);
         pendingSuggestionKey = cacheKey;
-        if (!cmuLoaded) {
+        if (!rhymeEngine.isReady()) {
             cancelSuggestionJob();
             suggestionStart = info.start;
             suggestionEnd = info.end;
@@ -1219,11 +1266,12 @@ public class MainActivity extends Activity {
     private String rhymeCacheKey(String word, int limit) {
         return normalizeWord(word)
                 + "|" + limit
-                + "|" + (cmuLoaded ? "cmu" : "loading")
+                + "|" + (rhymeEngine.isReady() ? "engine" : "loading")
                 + "|" + strictnessName()
                 + "|" + prefs.getBoolean(PREF_EXACT_ONLY, false)
                 + "|" + prefs.getBoolean(PREF_INCLUDE_SLANG, true)
-                + "|" + rhymeCacheVersion;
+                + "|" + rhymeCacheVersion
+                + "|" + rhymeEngine.generation();
     }
 
     private ArrayList<String> cachedRhymes(String cacheKey) {
@@ -1244,6 +1292,7 @@ public class MainActivity extends Activity {
             rhymeCache.clear();
             rhymeCacheVersion++;
         }
+        if (rhymeEngine != null) rhymeEngine.clearCache();
     }
 
     private void cancelSuggestionJob() {
@@ -1360,40 +1409,8 @@ public class MainActivity extends Activity {
     }
 
     private ArrayList<String> suggestRhymes(String word, int limit, int maxCandidates) {
-        ArrayList<String> out = new ArrayList<>();
-        String base = normalizeWord(word);
-        if (base.isEmpty()) return out;
-        if (!cmuLoaded) return out;
-        ArrayList<RhymeMatch> matches = new ArrayList<>();
-        ArrayList<RhymeCandidate> candidates = candidatePoolFor(base);
-        Collections.sort(candidates, (a, b) -> {
-            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
-            int priority = Integer.compare(commonRhymeBias(b.word), commonRhymeBias(a.word));
-            if (priority != 0) return priority;
-            return a.word.compareTo(b.word);
-        });
-        int scored = 0;
-        for (RhymeCandidate candidate : candidates) {
-            if (Thread.currentThread().isInterrupted()) return out;
-            String rhymeWord = candidateRhymeWord(candidate.word);
-            if (rhymeWord.equals(base)) continue;
-            if (isSuggestionRemoved(candidate.word)) continue;
-            if (maxCandidates > 0 && scored >= maxCandidates) break;
-            scored++;
-            int score = rhymeScore(base, candidate.word, candidate.bucket);
-            if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
-        }
-        Collections.sort(matches, (a, b) -> {
-            if (b.score != a.score) return Integer.compare(b.score, a.score);
-            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
-            if (b.priority != a.priority) return Integer.compare(b.priority, a.priority);
-            return a.word.compareTo(b.word);
-        });
-        for (RhymeMatch match : matches) {
-            if (!out.contains(match.word)) out.add(match.word);
-            if (out.size() >= limit) break;
-        }
-        return out;
+        if (rhymeEngine == null) return new ArrayList<>();
+        return rhymeEngine.suggest(word, limit, maxCandidates, rhymeOptions());
     }
 
     private ArrayList<String> quickFallbackRhymes(String base, int limit) {
@@ -1623,6 +1640,16 @@ public class MainActivity extends Activity {
         return prefs.getString(PREF_RHYME_STRICTNESS, "Balanced");
     }
 
+    private RhymeEngine.Options rhymeOptions() {
+        return new RhymeEngine.Options(
+                strictnessName(),
+                prefs.getBoolean(PREF_EXACT_ONLY, false),
+                prefs.getBoolean(PREF_INCLUDE_SLANG, true),
+                new HashSet<>(removedSuggestions),
+                current == null || current.body == null ? "" : current.body
+        );
+    }
+
     private int strictnessIndex() {
         String s = strictnessName();
         if ("Strict".equals(s)) return 0;
@@ -1761,15 +1788,11 @@ public class MainActivity extends Activity {
     }
 
     private void startCmuLoad() {
-        if (cmuLoaded || cmuLoading) return;
-        cmuLoading = true;
-        new Thread(() -> {
-            loadCmuDictionary();
-            cmuLoaded = true;
-            cmuLoading = false;
+        if (rhymeEngine == null) return;
+        rhymeEngine.loadAsync(() -> editHandler.post(() -> {
             clearRhymeCache();
-            editHandler.post(this::scheduleSuggestionUpdate);
-        }).start();
+            scheduleSuggestionUpdate();
+        }));
     }
 
     private void loadCmuDictionary() {
@@ -3000,16 +3023,16 @@ public class MainActivity extends Activity {
     private int iconForButton(String text) {
         if (text == null) return 0;
         String label = text.toLowerCase(Locale.US);
-        if (label.equals("menu")) return R.drawable.ic_menu_24;
+        if (label.equals("menu") || label.equals("studio")) return R.drawable.ic_menu_24;
         if (label.contains("+ note")) return R.drawable.ic_add_note_24;
         if (label.contains("close")) return R.drawable.ic_close_24;
         if (label.contains("attach song")) return R.drawable.ic_song_24;
         if (label.contains("play / pause song") || label.equals("play")) return R.drawable.ic_play_24;
         if (label.contains("record voice")) return R.drawable.ic_mic_24;
         if (label.equals("stop")) return R.drawable.ic_stop_24;
-        if (label.contains("note style") || label.contains("font")) return R.drawable.ic_style_24;
-        if (label.contains("expanded rhymes")) return R.drawable.ic_rhyme_24;
-        if (label.contains("rhyme settings")) return R.drawable.ic_settings_24;
+        if (label.contains("note style") || label.contains("font") || label.equals("style")) return R.drawable.ic_style_24;
+        if (label.contains("expanded rhymes") || label.equals("rhymes")) return R.drawable.ic_rhyme_24;
+        if (label.contains("rhyme settings") || label.equals("settings")) return R.drawable.ic_settings_24;
         if (label.contains("check for updates")) return R.drawable.ic_update_24;
         if (label.contains("restore")) return R.drawable.ic_restore_24;
         if (label.equals("save")) return R.drawable.ic_save_24;

@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-The Top Flow is a native Android songwriting notes app. It currently appears to be a single-activity Java app with programmatic premium dark UI, local JSON note storage, pronunciation-first rhyme suggestions, song playback, voice recording, styling controls, update checks, resource-backed design-system integration, and 20.6 rhyme readiness/performance tuning.
+The Top Flow is a native Android songwriting notes app. It is still a single-activity Java app for core workflows, but 21.0 extracts rhyme logic into a dedicated offline `RhymeEngine`, adds a generated pronunciation index asset, and replaces the visible shell with a more distinct premium studio toolbar/dock/editor/rhyme panel structure.
 
 ## Build / Run
 
@@ -15,7 +15,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 20.6 / versionCode 35 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -24,7 +24,9 @@ Latest verified build: 20.6 / versionCode 35 passed `tools\rhyme_quality_check.p
 - `build.gradle`: Android application plugin version.
 - `app/build.gradle`: Android app module configuration, package namespace, SDK versions, signing config, version properties, and current update manifest URL.
 - `app/src/main/AndroidManifest.xml`: permissions, app label/icon/theme, file provider, and launcher activity.
-- `app/src/main/java/com/davehq/thetopflow/MainActivity.java`: main app UI and behavior, including notes, design-system-backed surfaces/buttons/chips/editor states, async pronunciation-first rhyme suggestions, CMU-loading rhyme row gating, recordings, song playback, update checks, persistence, and styling.
+- `app/src/main/java/com/davehq/thetopflow/MainActivity.java`: main app UI and behavior, including notes, the 21.0 studio shell/dock/editor/rhyme panel, async rhyme row calls, recordings, song playback, update checks, persistence, and styling.
+- `app/src/main/java/com/davehq/thetopflow/RhymeEngine.java`: dedicated offline pronunciation-first rhyme engine with readiness state, indexed candidate lookup, scoring, result cache, slang handling, and fallback gating.
+- `app/src/main/assets/rhyme_index.tsv`: generated offline pronunciation/rhyme index derived from CMU to reduce runtime indexing work.
 - `app/src/main/res/values/colors.xml`, `dimens.xml`, `styles.xml`, and `drawable/*`: reusable design system foundation, pressed states, panel/button/chip backgrounds, and lightweight button icons.
 - `app/src/main/assets/cmudict.dict`: CMU pronunciation dictionary used by rhyme suggestions.
 - `tools/rhyme_quality_check.py`: focused rhyme regression check for the 20.x rhyme engine, including real writing examples for `my/try`, `yours`, `out`, slang, phrase, and weak-match exclusions.
@@ -32,14 +34,14 @@ Latest verified build: 20.6 / versionCode 35 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Validate 20.6 on Pixel 10 Pro for long-note typing, caret movement, keyboard show/hide, rhyme row readiness, playback controls, recording controls, and no stale bad rhymes before correct CMU results.
+Validate 21.0 on Pixel 10 Pro for long-note typing, caret movement, keyboard show/hide, rhyme row readiness, playback controls, recording controls, settings, saved notes, and no stale bad rhymes before correct indexed results.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
-- Version 20.6 APK is published at `https://temp.sh/KRzZP/the-top-flow-20.6.apk`.
+- Version 21.0 APK is published at `https://temp.sh/SWhnz/the-top-flow-21.0.apk`.
 - Version 20.6 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; the previous JSONBlob manifest returned `Blob not found`. JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
 
 ## Warnings / Unknowns
@@ -54,4 +56,5 @@ Validate 20.6 on Pixel 10 Pro for long-note typing, caret movement, keyboard sho
 - 20.5C adds visual polish only: resource-backed pressed states and lightweight button icons. It does not change app behavior.
 - 20.5D is the release step for the 20.5 milestone.
 - 20.6 blocks fallback suggestions during CMU/index loading, adds an explicit loading chip, tunes `out` rhyme ordering, and refreshes the editor/list presentation without changing app workflows.
+- 21.0 extracts the rhyme engine, adds a generated offline rhyme index, and introduces a distinct studio toolbar/dock/editor shell. Legacy rhyme helper code remains in `MainActivity.java` until device validation confirms the extraction is stable.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

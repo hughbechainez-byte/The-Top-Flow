@@ -1,0 +1,12 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="@dimen/topflow_radius_pill" />
+    <gradient
+        android:angle="0"
+        android:startColor="#E60F1724"
+        android:centerColor="#E6121D2C"
+        android:endColor="#E60A111C" />
+    <stroke
+        android:width="@dimen/topflow_stroke_hairline"
+        android:color="#6678E6FF" />
+</shape>

@@ -2,8 +2,8 @@
 
 Native Android note app for songwriting on GrapheneOS/Android.
 
-Current local build: `20.6`.
-Current milestone: `20.6` performance + premium experience overhaul.
+Current local build: `21.0`.
+Current milestone: `21.0` bottom-up rebuild.
 
 ## Project Record
 
