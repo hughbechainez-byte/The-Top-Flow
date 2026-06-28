@@ -2,7 +2,7 @@
 
 ## High
 
-- Pixel 10 Pro 21.2 device validation
+- Pixel 10 Pro 21.3 device validation with `rhyme_trace` log capture
   - Complexity: Medium
   - Recommended model: WSL GPT-5.3
   - Recommended reasoning level: Medium
@@ -14,7 +14,7 @@
 
 ## Medium
 
-- Analyze any 21.2 rhyme latency, keyboard, sheet, or note appearance issues found on device
+- Analyze any 21.3 `rhyme_trace` slow segment or keyboard/popup issue found on device
   - Complexity: Medium
   - Recommended model: Desktop GPT-5.5
   - Recommended reasoning level: Medium

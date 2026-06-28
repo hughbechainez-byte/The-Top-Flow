@@ -23,3 +23,9 @@
 - Decision: Fix 21.2 rhyme latency by caching pronunciation/family info, stabilizing fast-row cache keys, bounding expanded scoring, and reducing caret-popup churn inside the existing Java/RhymeEngine architecture.
 - Reason: Device logs pointed to repeated rhyme scoring allocations and popup/IME churn, not a need for a full engine replacement.
 - Alternative rejected: Starting a larger UI/rhyme rewrite before the freeze path was validated.
+
+## 2026-06-28
+
+- Decision: Fix 21.3 lag by moving expanded rhyme lookup off the UI thread and removing long-note per-keystroke body copies before changing rhyme quality or UI styling.
+- Reason: 21.2 script timing passed, so the remaining lag was in real UI paths not covered by lookup-only validation.
+- Alternative rejected: More rhyme scoring changes or visual UI work before isolating the device hot path.

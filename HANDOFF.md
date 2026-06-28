@@ -8,6 +8,8 @@ Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose
 
 21.2 focuses on real device pain points: cached rhyme info/family scoring, fast-row cache stability, bounded expanded scoring, less caret-popup churn, true OLED black outer shell, no notebook editor lines, per-note font size/color/glow controls, and swipe-down bottom sheets.
 
+21.3 fixes the remaining real-device lag path by making expanded rhyme button lookup asynchronous, deferring full-note body copies until draft save, reusing caret popup/chip work, opting the lyric editor out of expensive text services where safe, and adding `rhyme_trace` logs for every UI/background segment.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -19,7 +21,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 21.2 / versionCode 38 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 21.3 / versionCode 39 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -41,15 +43,16 @@ Latest verified build: 21.2 / versionCode 38 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Validate 21.2 on Pixel 10 Pro, especially rhyme latency while editing long notes, keyboard smoothness, note appearance controls, and sheet swipe dismissal.
+Validate 21.3 on Pixel 10 Pro, especially repeated Rhyme button taps, long-note typing/caret movement, keyboard show/hide, popup churn, and `rhyme_trace` timing output.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
-- Version 21.2 APK is published at `https://temp.sh/nTEYR/the-top-flow-21.2.apk`.
-- Version 21.2 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
+- Version 21.3 APK is published at `https://temp.sh/SZvCg/the-top-flow-21.3.apk`.
+- Version 21.3 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
+- Version 21.2 APK was published at `https://temp.sh/nTEYR/the-top-flow-21.2.apk`.
 
 ## Warnings / Unknowns
 
@@ -69,4 +72,5 @@ Validate 21.2 on Pixel 10 Pro, especially rhyme latency while editing long notes
 - Rebuild C has passed `tools\rhyme_quality_check.py` and a clean `assembleRelease`; no release/appcast work was done.
 - 21.1 release packaging updated version metadata, local/live appcast, temp.sh APK, and release artifact.
 - 21.2 addresses rhyme latency and UX issues from device logs without changing notes, recording, playback, storage, or rhyme-quality rules.
+- 21.3 addresses the UI-thread lag path left after 21.2; Pixel was not visible to WSL ADB during release, so fresh on-device `rhyme_trace` logs are still needed.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

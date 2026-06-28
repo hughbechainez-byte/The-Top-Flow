@@ -1,10 +1,10 @@
 # Session Summary
 
-- 21.2 caches rhyme pronunciation/family info and removes fast-row full-note scanning.
-- Fast-row cache no longer depends on the changing note body.
-- Expanded rhyme scoring is bounded; caret popup uses loading status instead of dismiss/recreate.
-- UI shell is true OLED black; editor notebook lines are disabled.
-- Added per-note editor font size, note color/glow controls, and swipe-down bottom sheets.
-- Validation: `tools\rhyme_quality_check.py` passed; `assembleRelease` passed with 21.2 metadata.
-- Performance impact: script-side checked words were all under 114ms after CMU load.
-- Release: 21.2 APK uploaded to `https://temp.sh/nTEYR/the-top-flow-21.2.apk`; live appcast updated.
+- 21.3 moves expanded Rhyme button lookup off the UI thread.
+- Full-note body copying is deferred to draft save instead of every keystroke.
+- Caret popup reuses measurements and chip views; popup is configured not to interact with IME.
+- Editor disables suggestions/autofill/TextClassifier where safe.
+- Added `rhyme_trace` logs for button, fast row, popup, chips, cache, note length, cursor, IME, and thread.
+- Validation: `tools\rhyme_quality_check.py` passed; `assembleRelease` passed locally.
+- Release: 21.3 APK uploaded to `https://temp.sh/SZvCg/the-top-flow-21.3.apk`; live appcast updated.
+- Pixel was not visible to WSL ADB during release, so on-device trace review is the next task.

@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- Released 21.3 with real-device lag fixes for the rhyme button/editor path: async expanded rhymes, deferred long-note body copying, editor text-service opt-outs, popup measurement reuse, chip view reuse, and detailed `rhyme_trace` runtime logs.
 - Released 21.2 with rhyme hot-path caching, fast-row cache stabilization, bounded expanded rhyme scoring, reduced caret-popup churn, true OLED black shell, removed editor notebook lines, note font-size/color/glow controls, and swipe-down bottom sheets.
 - Released 21.1 with the completed phased 21.x rebuild: Compose/Material 3 foundation, 21.x OLED/indigo/mint surfaces, bottom command dock, live font previews, rebuilt Java UI bridge surfaces, and preserved offline rhyme engine behavior.
 - Completed Rebuild C with a bottom command dock, compact floating header, OLED/indigo/mint live surfaces, quieter note/editor/sheet composition, and preserved app behavior.
