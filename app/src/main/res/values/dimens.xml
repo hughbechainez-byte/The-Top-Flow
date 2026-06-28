@@ -30,4 +30,19 @@
     <dimen name="topflow_button_height">48dp</dimen>
     <dimen name="topflow_chip_height">40dp</dimen>
     <dimen name="topflow_max_content_width">860dp</dimen>
+
+    <dimen name="topflow21_space_screen">18dp</dimen>
+    <dimen name="topflow21_space_panel">16dp</dimen>
+    <dimen name="topflow21_radius_panel">26dp</dimen>
+    <dimen name="topflow21_radius_card">18dp</dimen>
+    <dimen name="topflow21_radius_control">16dp</dimen>
+    <dimen name="topflow21_toolbar_height">92dp</dimen>
+    <dimen name="topflow21_dock_height">68dp</dimen>
+    <dimen name="topflow21_hairline">1dp</dimen>
+    <dimen name="topflow21_shadow_elevation">14dp</dimen>
+    <dimen name="topflow21_text_title">24sp</dimen>
+    <dimen name="topflow21_text_section">17sp</dimen>
+    <dimen name="topflow21_text_body">18sp</dimen>
+    <dimen name="topflow21_text_label">14sp</dimen>
+    <dimen name="topflow21_text_caption">12sp</dimen>
 </resources>

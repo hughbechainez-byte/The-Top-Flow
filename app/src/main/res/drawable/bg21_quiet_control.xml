@@ -1,0 +1,20 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow21_radius_control" />
+            <solid android:color="#FF4A5289" />
+            <stroke
+                android:width="@dimen/topflow21_hairline"
+                android:color="@color/topflow21_mint" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow21_radius_control" />
+            <solid android:color="#66444C80" />
+            <stroke
+                android:width="@dimen/topflow21_hairline"
+                android:color="@color/topflow21_hairline" />
+        </shape>
+    </item>
+</selector>

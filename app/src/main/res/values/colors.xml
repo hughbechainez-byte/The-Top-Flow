@@ -23,4 +23,17 @@
     <color name="topflow_sheet_scrim">#A3000000</color>
     <color name="topflow_divider">#1E78E6FF</color>
     <color name="ic_launcher_background">#081226</color>
+
+    <color name="topflow21_oled">#03050A</color>
+    <color name="topflow21_indigo">#2D3458</color>
+    <color name="topflow21_panel">#343B64</color>
+    <color name="topflow21_panel_high">#444C80</color>
+    <color name="topflow21_mint">#5AD7A0</color>
+    <color name="topflow21_cyan">#62C7FF</color>
+    <color name="topflow21_amber">#FFC469</color>
+    <color name="topflow21_coral">#FF6658</color>
+    <color name="topflow21_text">#F8F9FF</color>
+    <color name="topflow21_text_soft">#B8C0DA</color>
+    <color name="topflow21_hairline">#334DDBFF</color>
+    <color name="topflow21_shadow">#99000000</color>
 </resources>

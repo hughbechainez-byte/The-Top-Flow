@@ -6,3 +6,5 @@ keystore.properties
 *.jks
 app/build/
 build/
+references/
+*.hprof

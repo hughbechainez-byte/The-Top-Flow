@@ -94,4 +94,52 @@
         <item name="android:paddingBottom">@dimen/topflow_space_xs</item>
         <item name="android:textAllCaps">false</item>
     </style>
+
+    <style name="TextAppearance.TopFlow21.Title" parent="android:style/TextAppearance.Material">
+        <item name="android:textColor">@color/topflow21_text</item>
+        <item name="android:textSize">@dimen/topflow21_text_title</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.TopFlow21.Section" parent="android:style/TextAppearance.Material">
+        <item name="android:textColor">@color/topflow21_text</item>
+        <item name="android:textSize">@dimen/topflow21_text_section</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.TopFlow21.Body" parent="android:style/TextAppearance.Material">
+        <item name="android:textColor">@color/topflow21_text</item>
+        <item name="android:textSize">@dimen/topflow21_text_body</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.TopFlow21.Caption" parent="android:style/TextAppearance.Material">
+        <item name="android:textColor">@color/topflow21_text_soft</item>
+        <item name="android:textSize">@dimen/topflow21_text_caption</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Widget.TopFlow21.Control" parent="android:style/Widget.Button">
+        <item name="android:background">@drawable/bg21_quiet_control</item>
+        <item name="android:textColor">@color/topflow21_text</item>
+        <item name="android:textSize">@dimen/topflow21_text_label</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Widget.TopFlow21.PrimaryControl" parent="android:style/Widget.Button">
+        <item name="android:background">@drawable/bg21_mint_control</item>
+        <item name="android:textColor">#06130E</item>
+        <item name="android:textSize">@dimen/topflow21_text_label</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
 </resources>

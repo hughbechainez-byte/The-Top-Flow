@@ -4,6 +4,8 @@
 
 The Top Flow is a native Android songwriting notes app. It is still a single-activity Java app for core workflows, but 21.0 extracts rhyme logic into a dedicated offline `RhymeEngine`, adds a generated pronunciation index asset, and replaces the visible shell with a more distinct premium studio toolbar/dock/editor/rhyme panel structure.
 
+Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose, Material 3, dynamic dark theming, 21.x resource tokens, and Java-native presentation helpers. Runtime workflows are not migrated yet.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -26,7 +28,10 @@ Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.p
 - `app/src/main/AndroidManifest.xml`: permissions, app label/icon/theme, file provider, and launcher activity.
 - `app/src/main/java/com/davehq/thetopflow/MainActivity.java`: main app UI and behavior, including notes, the 21.0 studio shell/dock/editor/rhyme panel, async rhyme row calls, recordings, song playback, update checks, persistence, and styling.
 - `app/src/main/java/com/davehq/thetopflow/RhymeEngine.java`: dedicated offline pronunciation-first rhyme engine with readiness state, indexed candidate lookup, scoring, result cache, slang handling, and fallback gating.
+- `app/src/main/kotlin/com/davehq/thetopflow/ui/TopFlowUiFoundation.kt`: Compose/Material 3 design foundation and reusable future UI components.
+- `app/src/main/java/com/davehq/thetopflow/TopFlowUiKit.java`: Java-native presentation helper for gradual migration from existing programmatic views.
 - `app/src/main/assets/rhyme_index.tsv`: generated offline pronunciation/rhyme index derived from CMU to reduce runtime indexing work.
+- `REBUILD_21_UI_FOUNDATION.md`: Rebuild A scope notes and next-section handoff.
 - `app/src/main/res/values/colors.xml`, `dimens.xml`, `styles.xml`, and `drawable/*`: reusable design system foundation, pressed states, panel/button/chip backgrounds, and lightweight button icons.
 - `app/src/main/assets/cmudict.dict`: CMU pronunciation dictionary used by rhyme suggestions.
 - `tools/rhyme_quality_check.py`: focused rhyme regression check for the 20.x rhyme engine, including real writing examples for `my/try`, `yours`, `out`, slang, phrase, and weak-match exclusions.
@@ -34,7 +39,7 @@ Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Validate 21.0 on Pixel 10 Pro for long-note typing, caret movement, keyboard show/hide, rhyme row readiness, playback controls, recording controls, settings, saved notes, and no stale bad rhymes before correct indexed results.
+Wait for approval, then start Rebuild B: wire notes, recording, playback, font preview selection, and the all-offline rhyme bar into the new UI foundation.
 
 ## Assumptions
 
@@ -57,4 +62,5 @@ Validate 21.0 on Pixel 10 Pro for long-note typing, caret movement, keyboard sho
 - 20.5D is the release step for the 20.5 milestone.
 - 20.6 blocks fallback suggestions during CMU/index loading, adds an explicit loading chip, tunes `out` rhyme ordering, and refreshes the editor/list presentation without changing app workflows.
 - 21.0 extracts the rhyme engine, adds a generated offline rhyme index, and introduces a distinct studio toolbar/dock/editor shell. Legacy rhyme helper code remains in `MainActivity.java` until device validation confirms the extraction is stable.
+- Rebuild A has passed `tools\rhyme_quality_check.py` and `assembleRelease`; the build needed higher Gradle heap/metaspace settings after adding Compose.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

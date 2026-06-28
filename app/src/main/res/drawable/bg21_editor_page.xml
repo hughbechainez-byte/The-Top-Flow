@@ -1,0 +1,8 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="@dimen/topflow21_radius_panel" />
+    <solid android:color="#F905070D" />
+    <stroke
+        android:width="@dimen/topflow21_hairline"
+        android:color="#554DDBFF" />
+</shape>

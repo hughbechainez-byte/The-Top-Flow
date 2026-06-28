@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- Completed Rebuild A foundation after 21.0 with Kotlin, Compose, Material 3, dynamic dark theme support, Java-native UI kit helpers, 21.x resource tokens, and local Pixel reference capture through WSL Debian ADB.
 - Released 21.0 with a dedicated offline `RhymeEngine`, generated pronunciation/rhyme index asset, indexed rhyme lookup/cache readiness, a distinct studio toolbar/dock/editor shell, and rebuilt rhyme panel styling.
 - Released 20.6 with CMU-loading rhyme row gating, stricter stale/fallback protection, curated `out` rhyme validation and ordering, refined editor surface styling, disabled/loading chip state, and an empty-note state.
 - Released 20.5 as the published build for the 20.5 milestone after phases 20.5A, 20.5B, and 20.5C.
