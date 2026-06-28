@@ -37,8 +37,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-Continue phased 21.x rebuild. Rebuild C is complete; wait for approval before release packaging.
+21.1 release packaging is complete; next priority is Pixel 10 Pro device validation.
 
 ## Next Milestone
 
-Next: release after approval, including version bump, APK, appcast, temp.sh upload, and commit.
+Next: device validation and targeted follow-up polish from real Pixel screenshots.

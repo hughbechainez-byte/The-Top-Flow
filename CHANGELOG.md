@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- Released 21.1 with the completed phased 21.x rebuild: Compose/Material 3 foundation, 21.x OLED/indigo/mint surfaces, bottom command dock, live font previews, rebuilt Java UI bridge surfaces, and preserved offline rhyme engine behavior.
 - Completed Rebuild C with a bottom command dock, compact floating header, OLED/indigo/mint live surfaces, quieter note/editor/sheet composition, and preserved app behavior.
 - Completed Rebuild B by wiring current Java notes/media/rhyme/font surfaces into the 21.x UI kit, including live font previews, 21.x card/control styling, and rebuilt rhyme row visuals without changing core behavior.
 - Completed Rebuild A foundation after 21.0 with Kotlin, Compose, Material 3, dynamic dark theme support, Java-native UI kit helpers, 21.x resource tokens, and local Pixel reference capture through WSL Debian ADB.

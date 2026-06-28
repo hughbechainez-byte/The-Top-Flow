@@ -17,7 +17,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 21.1 / versionCode 37 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -39,14 +39,14 @@ Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Wait for approval, then run the release section: version bump, final validation, APK build, appcast update, temp.sh upload, and commit.
+Validate 21.1 on Pixel 10 Pro, then use screenshots/logs for targeted follow-up polish.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
-- Version 21.0 APK is published at `https://temp.sh/SWhnz/the-top-flow-21.0.apk`.
+- Version 21.1 APK is published at `https://temp.sh/grOcA/the-top-flow-21.1.apk`.
 - Version 20.6 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; the previous JSONBlob manifest returned `Blob not found`. JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
 
 ## Warnings / Unknowns
@@ -65,4 +65,5 @@ Wait for approval, then run the release section: version bump, final validation,
 - Rebuild A has passed `tools\rhyme_quality_check.py` and `assembleRelease`; the build needed higher Gradle heap/metaspace settings after adding Compose.
 - Rebuild B has passed `tools\rhyme_quality_check.py` and `assembleRelease`; no release/appcast work was done.
 - Rebuild C has passed `tools\rhyme_quality_check.py` and a clean `assembleRelease`; no release/appcast work was done.
+- 21.1 release packaging updated version metadata, local/live appcast, temp.sh APK, and release artifact.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.
