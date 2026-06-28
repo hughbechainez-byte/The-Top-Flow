@@ -14,6 +14,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 - Local note list and lyric editor.
 - Per-note title, body, font, note color, text color, and accent color.
+- Premium dark studio UI with layered native panels, polished controls, and pill-shaped rhyme chips.
 - Rhyme suggestion chips near the cursor, backed by `cmudict.dict`, pronunciation-first CMU ranking, quality buckets, curated writing examples, async fast-row generation, and fallback phonetic heuristics.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -29,8 +30,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-Keep the editor responsive while tuning hip-hop rhyme quality against real writing examples before unrelated app work.
+Preserve the smoother 20.3 rhyme row while validating the 20.4 premium UI on device.
 
 ## Next Milestone
 
-After 20.3 device validation, add more multi-syllable phrase-tail examples and tune expanded-mode slants without changing the UI.
+Device-test 20.4 on Pixel 10 Pro, then add more multi-syllable phrase-tail examples and tune expanded-mode slants without changing the UI.

@@ -91,15 +91,17 @@ public class MainActivity extends Activity {
     private static final int REQ_AUDIO = 11;
     private static final int REQ_NOTIFY = 12;
     private static final String CHANNEL_UPDATES = "updates";
-    private static final int C_BG = Color.rgb(2, 5, 14);
-    private static final int C_SURFACE = Color.argb(236, 8, 16, 30);
-    private static final int C_SURFACE_SOFT = Color.argb(204, 12, 25, 43);
+    private static final int C_BG = Color.rgb(4, 7, 15);
+    private static final int C_SURFACE = Color.argb(238, 10, 16, 29);
+    private static final int C_SURFACE_SOFT = Color.argb(214, 16, 25, 41);
+    private static final int C_SURFACE_HIGH = Color.argb(246, 18, 26, 42);
     private static final int C_TEXT = Color.WHITE;
-    private static final int C_TEXT_MUTED = Color.rgb(146, 162, 184);
+    private static final int C_TEXT_MUTED = Color.rgb(166, 178, 197);
     private static final int C_CYAN = Color.rgb(120, 230, 255);
     private static final int C_GREEN = Color.rgb(40, 214, 163);
     private static final int C_MAGENTA = Color.rgb(225, 86, 255);
     private static final int C_RED = Color.rgb(240, 75, 92);
+    private static final int C_GOLD = Color.rgb(238, 194, 105);
     private static final int DEFAULT_NOTE_COLOR = Color.rgb(14, 205, 190);
     private static final int DEFAULT_NOTE_TEXT_COLOR = Color.rgb(8, 12, 14);
     private static final int DEFAULT_NOTE_ACCENT_COLOR = Color.rgb(132, 255, 238);
@@ -294,15 +296,18 @@ public class MainActivity extends Activity {
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setPadding(dp(14), dp(10), dp(14), dp(12));
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(18), dp(14), dp(16), dp(14));
+        header.setBackground(glassDrawable(Color.argb(188, 10, 16, 30), C_GOLD, 24));
+        header.setElevation(dp(8));
         TextView brand = new TextView(this);
         brand.setText("The Top Flow");
         brand.setTextColor(Color.WHITE);
-        brand.setTextSize(28);
+        brand.setTextSize(26);
         brand.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         TextView sub = new TextView(this);
-        sub.setText("Writing / ideas");
-        sub.setTextColor(Color.argb(220, 160, 220, 255));
+        sub.setText("Studio notes");
+        sub.setTextColor(C_TEXT_MUTED);
         sub.setTextSize(13);
         sub.setPadding(2, dp(2), 0, 0);
         LinearLayout titleWrap = new LinearLayout(this);
@@ -311,8 +316,8 @@ public class MainActivity extends Activity {
         titleWrap.addView(brand);
         TextView version = new TextView(this);
         version.setText("  v" + BuildConfig.VERSION_NAME);
-        version.setTextColor(Color.argb(220, 130, 236, 255));
-        version.setTextSize(16);
+        version.setTextColor(C_GOLD);
+        version.setTextSize(14);
         titleWrap.addView(version);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
@@ -322,15 +327,18 @@ public class MainActivity extends Activity {
         Button menu = button("Menu");
         menu.setOnClickListener(v -> showMainMenu());
         header.addView(menu);
-        shell.addView(header);
+        LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(-1, -2);
+        headerLp.bottomMargin = dp(12);
+        shell.addView(header, headerLp);
 
         contentHost = new FrameLayout(this);
         shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
 
         menuPanel = new LinearLayout(this);
         menuPanel.setOrientation(LinearLayout.VERTICAL);
-        menuPanel.setPadding(dp(12), dp(10), dp(12), dp(14));
-        menuPanel.setBackground(glassDrawable(C_SURFACE_SOFT, C_CYAN, 28));
+        menuPanel.setPadding(dp(16), dp(14), dp(16), dp(16));
+        menuPanel.setBackground(glassDrawable(C_SURFACE_SOFT, C_CYAN, 30));
+        menuPanel.setElevation(dp(10));
         contentHost.addView(menuPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView listScroll = new ScrollView(this);
@@ -344,8 +352,9 @@ public class MainActivity extends Activity {
         editorPanel = new LinearLayout(this);
         editorPanel.setOrientation(LinearLayout.VERTICAL);
         editorPanel.setVisibility(View.GONE);
-        editorPanel.setPadding(dp(12), dp(10), dp(12), dp(14));
-        editorPanel.setBackground(glassDrawable(C_SURFACE_SOFT, C_MAGENTA, 28));
+        editorPanel.setPadding(dp(16), dp(14), dp(16), dp(16));
+        editorPanel.setBackground(glassDrawable(C_SURFACE_SOFT, C_MAGENTA, 30));
+        editorPanel.setElevation(dp(10));
         contentHost.addView(editorPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView editorScroll = new ScrollView(this);
@@ -357,28 +366,31 @@ public class MainActivity extends Activity {
         editorPanel.addView(editorScroll, new LinearLayout.LayoutParams(-1, -1, 1));
 
         editorCard = createCardSurface();
-        editorCard.setPadding(dp(18), dp(18), dp(18), dp(18));
-        editor.addView(editorCard, new LinearLayout.LayoutParams(-1, -2));
+        editorCard.setPadding(dp(20), dp(18), dp(20), dp(18));
+        LinearLayout.LayoutParams editorCardLp = new LinearLayout.LayoutParams(-1, -2);
+        editorCardLp.bottomMargin = dp(12);
+        editor.addView(editorCard, editorCardLp);
 
         TextView editorHead = new TextView(this);
         editorHead.setText("Note");
-        editorHead.setTextColor(Color.argb(230, 200, 240, 255));
+        editorHead.setTextColor(C_GOLD);
         editorHead.setTextSize(13);
-        editorHead.setPadding(2, 0, 2, dp(8));
+        editorHead.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        editorHead.setPadding(2, 0, 2, dp(6));
         editorCard.addView(editorHead);
 
         titleInput = new EditText(this);
         titleInput.setSingleLine(true);
         titleInput.setTextSize(26);
-        titleInput.setPadding(dp(4), dp(6), dp(4), dp(8));
+        titleInput.setPadding(dp(2), dp(4), dp(2), dp(10));
         editorCard.addView(titleInput, new LinearLayout.LayoutParams(-1, -2));
 
         bodyInput = new RuledEditText(this);
         bodyInput.setGravity(Gravity.TOP | Gravity.START);
         bodyInput.setMinLines(18);
-        bodyInput.setTextSize(20);
-        bodyInput.setLineSpacing(dp(2), 1.08f);
-        bodyInput.setPadding(dp(10), dp(10), dp(10), dp(12));
+        bodyInput.setTextSize(19);
+        bodyInput.setLineSpacing(dp(3), 1.08f);
+        bodyInput.setPadding(dp(8), dp(12), dp(8), dp(12));
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
 
         suggestionPanel = buildSuggestionRow("Rhymes");
@@ -395,7 +407,9 @@ public class MainActivity extends Activity {
         playbackStatus.setVisibility(View.GONE);
 
         songCard = createSectionCard("Song");
-        editor.addView(songCard, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams songLp = new LinearLayout.LayoutParams(-1, -2);
+        songLp.bottomMargin = dp(12);
+        editor.addView(songCard, songLp);
         voiceCard = createSectionCard("Voice Note");
         editor.addView(voiceCard, new LinearLayout.LayoutParams(-1, -2));
 
@@ -551,9 +565,10 @@ public class MainActivity extends Activity {
     private void renderNoteList() {
         noteList.removeAllViews();
         TextView head = label("Notes");
-        head.setTextColor(Color.argb(220, 200, 240, 255));
+        head.setTextColor(C_GOLD);
         head.setTextSize(13);
-        head.setPadding(dp(2), 0, dp(2), dp(6));
+        head.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        head.setPadding(dp(2), 0, dp(2), dp(8));
         noteList.addView(head);
         Button add = button("+ Note");
         styleButton(add, C_GREEN);
@@ -565,12 +580,16 @@ public class MainActivity extends Activity {
             openNote(n);
         });
         add.setMinHeight(dp(52));
-        noteList.addView(add);
+        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(-1, -2);
+        addLp.bottomMargin = dp(12);
+        noteList.addView(add, addLp);
         for (int i = 0; i < notes.size(); i++) {
             View row = buildNoteRow(notes.get(i));
             row.setAlpha(0f);
             row.setTranslationY(dp(10));
-            noteList.addView(row);
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+            rowLp.bottomMargin = dp(10);
+            noteList.addView(row, rowLp);
             row.animate()
                     .alpha(1f)
                     .translationY(0f)
@@ -584,9 +603,10 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(14), dp(12), dp(14), dp(12));
-        row.setMinimumHeight(dp(68));
-        row.setBackground(glassDrawable(tintFrom(note.noteColor, 0.08f), note.accentColor, 20));
+        row.setPadding(dp(16), dp(14), dp(16), dp(14));
+        row.setMinimumHeight(dp(76));
+        row.setBackground(glassDrawable(tintFrom(note.noteColor, 0.06f), note.accentColor, 22));
+        row.setElevation(dp(4));
         row.setForeground(ripple(note.accentColor));
         row.setClickable(true);
         row.setFocusable(true);
@@ -613,6 +633,7 @@ public class MainActivity extends Activity {
         preview.setTextColor(C_TEXT_MUTED);
         preview.setTextSize(13);
         preview.setMaxLines(2);
+        preview.setPadding(0, dp(3), 0, 0);
         box.addView(title);
         box.addView(preview);
         row.addView(box);
@@ -657,19 +678,18 @@ public class MainActivity extends Activity {
 
     private void styleActionButtonPalette(int accent) {
         if (editor == null) return;
-        for (int i = 0; i < editor.getChildCount(); i++) {
-            View child = editor.getChildAt(i);
-            if (child instanceof LinearLayout) {
-                LinearLayout ll = (LinearLayout) child;
-                for (int j = 0; j < ll.getChildCount(); j++) {
-                    View inner = ll.getChildAt(j);
-                    if (inner instanceof Button) {
-                        styleButton((Button) inner, accent);
-                    }
-                }
-            } else if (child instanceof Button) {
-                styleButton((Button) child, accent);
-            }
+        styleButtonsIn(editor, accent);
+    }
+
+    private void styleButtonsIn(View view, int accent) {
+        if (view instanceof Button) {
+            styleButton((Button) view, accent);
+            return;
+        }
+        if (!(view instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            styleButtonsIn(group.getChildAt(i), accent);
         }
     }
 
@@ -1015,18 +1035,22 @@ public class MainActivity extends Activity {
     private LinearLayout buildSuggestionRow(String title) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setPadding(dp(12), dp(10), dp(12), dp(12));
+        wrap.setBackground(glassDrawable(Color.argb(246, 12, 18, 31), C_GOLD, 22));
+        wrap.setElevation(dp(12));
         TextView label = new TextView(this);
         label.setText(title);
-        label.setTextColor(C_TEXT_MUTED);
+        label.setTextColor(C_GOLD);
         label.setTextSize(13);
-        label.setPadding(2, 0, 2, dp(6));
+        label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        label.setPadding(2, 0, 2, dp(8));
         wrap.addView(label);
         HorizontalScrollView scroll = new HorizontalScrollView(this);
         scroll.setHorizontalScrollBarEnabled(false);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
         LinearLayout chips = new LinearLayout(this);
         chips.setOrientation(LinearLayout.HORIZONTAL);
-        chips.setPadding(0, 0, 0, 0);
+        chips.setPadding(0, 0, dp(2), 0);
         scroll.addView(chips, new LinearLayout.LayoutParams(-2, -2));
         wrap.addView(scroll, new LinearLayout.LayoutParams(-1, -2));
         rhymeChips = chips;
@@ -1208,7 +1232,7 @@ public class MainActivity extends Activity {
         chips.removeAllViews();
         for (String word : words) {
             Button chip = button(word);
-            chip.setMinHeight(dp(38));
+            styleRhymeChip(chip, current != null ? current.accentColor : C_CYAN);
             chip.setOnClickListener(v -> applySuggestion(word));
             chip.setOnLongClickListener(v -> {
                 promptRemoveSuggestion(word);
@@ -2586,11 +2610,11 @@ public class MainActivity extends Activity {
 
         sheetCard = new LinearLayout(this);
         sheetCard.setOrientation(LinearLayout.VERTICAL);
-        sheetCard.setPadding(dp(20), dp(18), dp(20), dp(22));
-        sheetCard.setBackground(glassDrawable(C_SURFACE, C_CYAN, 28));
+        sheetCard.setPadding(dp(22), dp(20), dp(22), dp(24));
+        sheetCard.setBackground(glassDrawable(C_SURFACE_HIGH, C_GOLD, 30));
+        sheetCard.setElevation(dp(18));
         sheetCard.setClickable(true);
         sheetCard.setFocusable(true);
-        attachTapAnimation(sheetCard);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
         lp.leftMargin = dp(14);
         lp.rightMargin = dp(14);
@@ -2602,7 +2626,7 @@ public class MainActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
         sheetTitle = new TextView(this);
         sheetTitle.setTextColor(C_TEXT);
-        sheetTitle.setTextSize(18);
+        sheetTitle.setTextSize(19);
         sheetTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         header.addView(sheetTitle, new LinearLayout.LayoutParams(0, -2, 1));
         Button close = button("Close");
@@ -2856,9 +2880,10 @@ public class MainActivity extends Activity {
     private TextView label(String text) {
         TextView v = new TextView(this);
         v.setText(text);
-        v.setTextColor(Color.WHITE);
+        v.setTextColor(C_TEXT);
         v.setTextSize(16);
-        v.setPadding(0, 10, 0, 8);
+        v.setPadding(0, dp(8), 0, dp(6));
+        v.setIncludeFontPadding(false);
         return v;
     }
 
@@ -2872,47 +2897,65 @@ public class MainActivity extends Activity {
     }
 
     private void styleButton(Button b, int accent) {
-        b.setBackground(glassDrawable(C_SURFACE, accent, 18));
+        b.setBackground(controlDrawable(C_SURFACE_HIGH, accent, 18));
         b.setTextColor(C_TEXT);
         b.setTextSize(15);
         b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        b.setMinHeight(dp(52));
-        b.setElevation(dp(12));
-        b.setShadowLayer(5f, 0f, 0f, accent);
-        b.setPadding(dp(16), dp(14), dp(16), dp(14));
+        b.setMinHeight(dp(48));
+        b.setMinWidth(dp(76));
+        b.setElevation(dp(6));
+        b.setStateListAnimator(null);
+        b.setIncludeFontPadding(false);
+        b.setPadding(dp(16), dp(12), dp(16), dp(12));
         b.setForeground(ripple(accent));
     }
 
     private void styleCardButton(Button b, int fill, int accent, int text) {
-        b.setBackground(glassDrawable(adjustColor(fill, 0.12f), accent, 18));
+        b.setBackground(controlDrawable(adjustColor(fill, 0.12f), accent, 18));
         b.setTextColor(text);
-        b.setElevation(dp(10));
-        b.setShadowLayer(3f, 0f, 0f, accent);
-        b.setPadding(dp(14), dp(16), dp(14), dp(16));
+        b.setElevation(dp(6));
+        b.setStateListAnimator(null);
+        b.setPadding(dp(14), dp(14), dp(14), dp(14));
         b.setForeground(ripple(accent));
+    }
+
+    private void styleRhymeChip(Button chip, int accent) {
+        chip.setBackground(chipDrawable(accent));
+        chip.setTextColor(C_TEXT);
+        chip.setTextSize(14);
+        chip.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        chip.setMinHeight(dp(40));
+        chip.setMinWidth(dp(62));
+        chip.setElevation(dp(5));
+        chip.setStateListAnimator(null);
+        chip.setIncludeFontPadding(false);
+        chip.setPadding(dp(14), dp(9), dp(14), dp(9));
+        chip.setForeground(ripple(accent));
+        attachTapAnimation(chip);
     }
 
     private LinearLayout createCardSurface() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(16), dp(16), dp(16), dp(16));
+        card.setPadding(dp(18), dp(18), dp(18), dp(18));
         card.setBackground(glassDrawable(C_SURFACE, C_CYAN, RADIUS_DP));
-        card.setElevation(dp(12));
+        card.setElevation(dp(10));
         return card;
     }
 
     private LinearLayout createSectionCard(String title) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setPadding(dp(18), dp(16), dp(18), dp(16));
         card.setBackground(glassDrawable(C_SURFACE, current != null ? current.accentColor : C_CYAN, 24));
-        card.setElevation(dp(8));
+        card.setElevation(dp(7));
         TextView label = new TextView(this);
         label.setText(title);
         label.setTextColor(C_TEXT);
         label.setTextSize(16);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        label.setPadding(0, 0, 0, dp(8));
+        label.setIncludeFontPadding(false);
+        label.setPadding(0, 0, 0, dp(10));
         card.addView(label);
         return card;
     }
@@ -2931,15 +2974,45 @@ public class MainActivity extends Activity {
     }
 
     private Drawable glassDrawable(int tint, int accent, int radiusDp) {
-        GradientDrawable d = new GradientDrawable();
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        blendColor(tint, Color.WHITE, 0.045f),
+                        tint,
+                        blendColor(tint, Color.BLACK, 0.16f)
+                });
         d.setCornerRadius(dp(radiusDp));
-        d.setColor(tint);
-        d.setStroke(dp(1), Color.argb(205, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        d.setStroke(dp(1), Color.argb(92, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable controlDrawable(int tint, int accent, int radiusDp) {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        blendColor(tint, accent, 0.12f),
+                        tint,
+                        blendColor(tint, Color.BLACK, 0.18f)
+                });
+        d.setCornerRadius(dp(radiusDp));
+        d.setStroke(dp(1), Color.argb(126, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable chipDrawable(int accent) {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{
+                        Color.argb(244, Math.max(0, Color.red(accent) - 68), Math.max(0, Color.green(accent) - 78), Math.max(0, Color.blue(accent) - 76)),
+                        Color.argb(244, Math.max(0, Color.red(accent) - 36), Math.max(0, Color.green(accent) - 42), Math.max(0, Color.blue(accent) - 40))
+                });
+        d.setCornerRadius(dp(999));
+        d.setStroke(dp(1), Color.argb(176, Color.red(accent), Color.green(accent), Color.blue(accent)));
         return d;
     }
 
     private Drawable ripple(int accent) {
-        return new RippleDrawable(ColorStateList.valueOf(Color.argb(56, Color.red(accent), Color.green(accent), Color.blue(accent))), null, null);
+        return new RippleDrawable(ColorStateList.valueOf(Color.argb(70, Color.red(accent), Color.green(accent), Color.blue(accent))), null, null);
     }
 
     private void attachTapAnimation(View v) {
@@ -2972,6 +3045,15 @@ public class MainActivity extends Activity {
         int g = Math.min(255, (int) (Color.green(color) * (1f + factor)));
         int b = Math.min(255, (int) (Color.blue(color) * (1f + factor)));
         return Color.rgb(r, g, b);
+    }
+
+    private int blendColor(int color, int target, float amount) {
+        int a = Color.alpha(color);
+        if (a == 0) a = 255;
+        int r = (int) (Color.red(color) + (Color.red(target) - Color.red(color)) * amount);
+        int g = (int) (Color.green(color) + (Color.green(target) - Color.green(color)) * amount);
+        int b = (int) (Color.blue(color) + (Color.blue(target) - Color.blue(color)) * amount);
+        return Color.argb(a, Math.max(0, Math.min(255, r)), Math.max(0, Math.min(255, g)), Math.max(0, Math.min(255, b)));
     }
 
     private int dp(int value) {
@@ -3127,7 +3209,7 @@ public class MainActivity extends Activity {
 
         NeonBackdropView(Context c) {
             super(c);
-            line.setColor(Color.argb(20, 120, 230, 255));
+            line.setColor(Color.argb(14, 150, 190, 210));
             line.setStrokeWidth(1f);
         }
 
@@ -3136,17 +3218,17 @@ public class MainActivity extends Activity {
             int w = getWidth();
             int h = getHeight();
             paint.setShader(new android.graphics.LinearGradient(0, 0, 0, h,
-                    new int[]{Color.rgb(4, 8, 18), Color.rgb(9, 16, 34), Color.rgb(4, 8, 18)},
+                    new int[]{Color.rgb(4, 7, 15), Color.rgb(10, 14, 25), Color.rgb(3, 5, 12)},
                     new float[]{0f, 0.55f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
             paint.setShader(new android.graphics.RadialGradient(w * 0.2f, h * 0.15f, Math.max(w, h) * 0.8f,
-                    new int[]{Color.argb(120, 0, 255, 230), Color.argb(0, 0, 255, 230)},
+                    new int[]{Color.argb(64, 40, 214, 163), Color.argb(0, 40, 214, 163)},
                     new float[]{0f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
             paint.setShader(new android.graphics.RadialGradient(w * 0.8f, h * 0.2f, Math.max(w, h) * 0.65f,
-                    new int[]{Color.argb(100, 255, 0, 214), Color.argb(0, 255, 0, 214)},
+                    new int[]{Color.argb(48, 238, 194, 105), Color.argb(0, 238, 194, 105)},
                     new float[]{0f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
