@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-28
+
+- Released 20.3 with async fast-row rhyme generation, debounce/cancel handling, cached query results, bounded fast-row scoring, reduced popup rebuilds, and lightweight timing logs to address editor freezes.
+
 ## 2026-06-27
 
 - Released 20.2 with stricter hip-hop rhyme buckets, stronger curated exact-rhyme ranking, AY/EY fallback separation for `my/try`, and `yours` pronunciation tuning.

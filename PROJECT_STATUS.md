@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-06-27
+Last updated: 2026-06-28
 
 ## App Name
 
@@ -14,7 +14,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 - Local note list and lyric editor.
 - Per-note title, body, font, note color, text color, and accent color.
-- Rhyme suggestion chips near the cursor, backed by `cmudict.dict`, pronunciation-first CMU ranking, quality buckets, curated writing examples, and fallback phonetic heuristics.
+- Rhyme suggestion chips near the cursor, backed by `cmudict.dict`, pronunciation-first CMU ranking, quality buckets, curated writing examples, async fast-row generation, and fallback phonetic heuristics.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
 - Voice recording, playback, rename, and save-to-disk support.
@@ -23,14 +23,14 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 ## Current Known Issues
 
 - Most behavior lives in one large `MainActivity.java`, so changes should be especially small and carefully scoped.
-- The rhyming system still lives inside `MainActivity.java`, so future tuning should stay targeted.
+- The rhyming system still lives inside `MainActivity.java`, so future tuning should stay targeted and performance-aware.
 - A focused rhyme regression check exists at `tools/rhyme_quality_check.py`, including `my/try`, `yours`, slang, phrase, and known bad-match cases.
 - In-app update metadata now points to the 20.x appcast, but install flow still needs device verification.
 
 ## Current Development Priority
 
-Keep tuning hip-hop rhyme quality against real writing examples before unrelated app work.
+Keep the editor responsive while tuning hip-hop rhyme quality against real writing examples before unrelated app work.
 
 ## Next Milestone
 
-Add more multi-syllable phrase-tail examples and tune expanded-mode slants without changing the UI.
+After 20.3 device validation, add more multi-syllable phrase-tail examples and tune expanded-mode slants without changing the UI.

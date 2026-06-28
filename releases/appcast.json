@@ -1,1 +1,1 @@
-{"versionName":"20.2","notes":"Version 20.2 tightens hip-hop rhyme quality with curated exact-rhyme ranking, AY/EY fallback separation, stronger quality buckets, and yours/soars pronunciation tuning.","versionCode":31,"apkUrl":"https://temp.sh/yPmLp/the-top-flow-20.2.apk"}
+{"versionName":"20.3","notes":"Version 20.3 moves fast rhyme-row generation off the UI thread, adds debounce/cancel/cache behavior, limits fast-row candidate scoring, reduces popup rebuilds, and keeps the 20.x rhyme quality fixes.","versionCode":32,"apkUrl":"https://temp.sh/aHHxm/the-top-flow-20.3.apk"}

@@ -30,6 +30,7 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.Layout;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -77,10 +78,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MainActivity extends Activity {
+    private static final String TAG = "TopFlow";
     private static final int REQ_SONG = 10;
     private static final int REQ_AUDIO = 11;
     private static final int REQ_NOTIFY = 12;
@@ -103,6 +109,10 @@ public class MainActivity extends Activity {
     private static final int SPACE_DP = 14;
     private static final int BUTTON_PRESS_MS = 90;
     private static final int PANEL_TRANSITION_MS = 150;
+    private static final int SUGGESTION_DEBOUNCE_MS = 220;
+    private static final int FAST_RHYME_LIMIT = 6;
+    private static final int FAST_RHYME_CANDIDATE_LIMIT = 360;
+    private static final int RHYME_CACHE_LIMIT = 96;
     private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f086a-01bf-77d9-8da2-a2892669c9d5";
     private static final String PREF_RHYME_STRICTNESS = "rhymeStrictness";
     private static final String PREF_MAX_SUGGESTIONS = "rhymeMaxSuggestions";
@@ -130,7 +140,7 @@ public class MainActivity extends Activity {
     private final Map<String, ArrayList<String>> cmuRhymeIndex = new HashMap<>();
     private final Map<String, ArrayList<String>> cmuFamilyIndex = new HashMap<>();
     private final HashSet<String> cmuDictionaryWords = new HashSet<>();
-    private boolean cmuLoaded = false;
+    private volatile boolean cmuLoaded = false;
     private volatile boolean cmuLoading = false;
     private FrameLayout root;
     private LinearLayout shell;
@@ -174,7 +184,24 @@ public class MainActivity extends Activity {
     private int countdownSeconds = 0;
     private int suggestionStart = -1;
     private int suggestionEnd = -1;
+    private volatile int suggestionRequestId = 0;
+    private volatile int rhymeCacheVersion = 0;
+    private String pendingSuggestionKey = "";
+    private String lastRenderedSuggestionKey = "";
+    private ArrayList<String> lastRenderedRhymes = new ArrayList<>();
+    private int lastPopupLeft = Integer.MIN_VALUE;
+    private int lastPopupTop = Integer.MIN_VALUE;
     private final HashSet<String> removedSuggestions = new HashSet<>();
+    private final Object suggestionJobLock = new Object();
+    private final Object rhymeCacheLock = new Object();
+    private Future<?> suggestionFuture;
+    private final ExecutorService rhymeExecutor = Executors.newSingleThreadExecutor();
+    private final LinkedHashMap<String, ArrayList<String>> rhymeCache = new LinkedHashMap<String, ArrayList<String>>(RHYME_CACHE_LIMIT, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, ArrayList<String>> eldest) {
+            return size() > RHYME_CACHE_LIMIT;
+        }
+    };
     private final Handler editHandler = new Handler(Looper.getMainLooper());
     private final Runnable saveDraftRunnable = this::saveNotes;
     private final Runnable suggestionRunnable = this::updateSuggestionPopup;
@@ -236,6 +263,8 @@ public class MainActivity extends Activity {
         playbackHandler.removeCallbacks(playbackTicker);
         editHandler.removeCallbacks(saveDraftRunnable);
         editHandler.removeCallbacks(suggestionRunnable);
+        cancelSuggestionJob();
+        rhymeExecutor.shutdownNow();
         dismissSuggestionPopup();
         stopRecording(false);
         stopSongPlayback();
@@ -1005,8 +1034,10 @@ public class MainActivity extends Activity {
     }
 
     private void scheduleSuggestionUpdate() {
+        suggestionRequestId++;
+        cancelSuggestionJob();
         editHandler.removeCallbacks(suggestionRunnable);
-        editHandler.postDelayed(suggestionRunnable, 120);
+        editHandler.postDelayed(suggestionRunnable, SUGGESTION_DEBOUNCE_MS);
     }
 
     private void scheduleDraftSave() {
@@ -1015,47 +1046,161 @@ public class MainActivity extends Activity {
     }
 
     private void updateSuggestionPopup() {
+        long started = System.currentTimeMillis();
         if (suggestionPanel == null || bodyInput == null) return;
         if (!prefs.getBoolean(PREF_SHOW_RHYME_ROW, true)) {
+            pendingSuggestionKey = "";
             dismissSuggestionPopup();
             return;
         }
-        String text = bodyInput.getText() == null ? "" : bodyInput.getText().toString();
-        int cursor = Math.max(0, bodyInput.getSelectionStart());
+        CharSequence text = bodyInput.getText() == null ? "" : bodyInput.getText();
+        int cursor = Math.max(0, Math.min(bodyInput.getSelectionStart(), text.length()));
         TokenInfo info = currentToken(text, cursor);
         if (info.word.isEmpty() && cursor > 0) {
             info = previousToken(text, cursor);
         }
-        suggestionStart = info.word.isEmpty() ? -1 : info.start;
-        suggestionEnd = info.word.isEmpty() ? -1 : info.end;
         if (info.word.length() < 2) {
+            pendingSuggestionKey = "";
+            suggestionStart = -1;
+            suggestionEnd = -1;
             dismissSuggestionPopup();
             return;
         }
-        ArrayList<String> rhymes = suggestRhymes(info.word, Math.min(6, configuredMaxSuggestions()));
-        renderSuggestionChips(rhymeChips, rhymes);
+        int limit = Math.min(FAST_RHYME_LIMIT, configuredMaxSuggestions());
+        String query = normalizeWord(info.word);
+        String cacheKey = rhymeCacheKey(query, limit);
+        pendingSuggestionKey = cacheKey;
+        ArrayList<String> cached = cachedRhymes(cacheKey);
+        int requestId = suggestionRequestId;
+        if (cached != null) {
+            applySuggestionResults(requestId, cacheKey, info.start, info.end, cursor, cached, true, 0L, started);
+            return;
+        }
+        if (!cacheKey.equals(lastRenderedSuggestionKey)) {
+            dismissSuggestionPopup();
+        }
+        startSuggestionJob(requestId, cacheKey, info.word, info.start, info.end, cursor, limit, started);
+    }
+
+    private void startSuggestionJob(int requestId, String cacheKey, String word, int start, int end, int cursor, int limit, long requestStartedAt) {
+        cancelSuggestionJob();
+        if (rhymeExecutor.isShutdown()) return;
+        synchronized (suggestionJobLock) {
+            suggestionFuture = rhymeExecutor.submit(() -> {
+                long generateStarted = System.currentTimeMillis();
+                ArrayList<String> cached = cachedRhymes(cacheKey);
+                ArrayList<String> rhymes;
+                boolean cacheHit = cached != null;
+                if (cacheHit) {
+                    rhymes = cached;
+                } else {
+                    rhymes = suggestRhymes(word, limit, FAST_RHYME_CANDIDATE_LIMIT);
+                    if (Thread.currentThread().isInterrupted()) return;
+                    putCachedRhymes(cacheKey, rhymes);
+                }
+                long generateMs = System.currentTimeMillis() - generateStarted;
+                if (generateMs >= 16L || !cacheHit) {
+                    Log.d(TAG, "rhyme generation word=" + normalizeWord(word) + " count=" + rhymes.size() + " ms=" + generateMs + " cache=" + cacheHit);
+                }
+                if (Thread.currentThread().isInterrupted()) return;
+                editHandler.post(() -> applySuggestionResults(requestId, cacheKey, start, end, cursor, rhymes, cacheHit, generateMs, requestStartedAt));
+            });
+        }
+    }
+
+    private void applySuggestionResults(int requestId, String cacheKey, int start, int end, int cursor, ArrayList<String> rhymes, boolean cacheHit, long generateMs, long requestStartedAt) {
+        long uiStarted = System.currentTimeMillis();
+        if (requestId != suggestionRequestId || !cacheKey.equals(pendingSuggestionKey)) return;
+        suggestionStart = start;
+        suggestionEnd = end;
         if (rhymes.isEmpty()) {
             dismissSuggestionPopup();
             return;
         }
+        if (!cacheKey.equals(lastRenderedSuggestionKey) || !sameWords(lastRenderedRhymes, rhymes)) {
+            renderSuggestionChips(rhymeChips, rhymes);
+            lastRenderedSuggestionKey = cacheKey;
+            lastRenderedRhymes = new ArrayList<>(rhymes);
+        }
+        positionSuggestionPopup(cursor);
+        long uiMs = System.currentTimeMillis() - uiStarted;
+        long totalMs = System.currentTimeMillis() - requestStartedAt;
+        if (uiMs >= 8L || generateMs >= 16L || totalMs >= 80L) {
+            Log.d(TAG, "rhyme ui count=" + rhymes.size() + " uiMs=" + uiMs + " genMs=" + generateMs + " totalMs=" + totalMs + " cache=" + cacheHit);
+        }
+    }
+
+    private void positionSuggestionPopup(int cursor) {
+        if (suggestionPanel == null || bodyInput == null || suggestionPopup == null) return;
         suggestionPanel.setVisibility(View.VISIBLE);
         suggestionPanel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         int[] bodyLoc = new int[2];
         bodyInput.getLocationOnScreen(bodyLoc);
         Layout layout = bodyInput.getLayout();
         if (layout == null) return;
+        CharSequence text = bodyInput.getText() == null ? "" : bodyInput.getText();
+        cursor = Math.max(0, Math.min(cursor, text.length()));
         int line = layout.getLineForOffset(Math.max(0, Math.min(cursor, text.length())));
         float x = layout.getPrimaryHorizontal(Math.max(0, Math.min(cursor, text.length())));
         int top = bodyLoc[1] + bodyInput.getCompoundPaddingTop() + layout.getLineBottom(line) - bodyInput.getScrollY() + dp(8);
         int left = bodyLoc[0] + bodyInput.getCompoundPaddingLeft() + Math.round(x) - suggestionPanel.getMeasuredWidth() / 2;
         left = Math.max(dp(8), Math.min(left, getResources().getDisplayMetrics().widthPixels - suggestionPanel.getMeasuredWidth() - dp(8)));
         top = Math.max(dp(8), top);
-        if (suggestionPopup == null) return;
         if (suggestionPopup.isShowing()) {
-            suggestionPopup.update(left, top, -1, -1);
+            if (Math.abs(left - lastPopupLeft) > 3 || Math.abs(top - lastPopupTop) > 3) {
+                suggestionPopup.update(left, top, -1, -1);
+            }
         } else {
             suggestionPopup.showAtLocation(root, Gravity.TOP | Gravity.START, left, top);
         }
+        lastPopupLeft = left;
+        lastPopupTop = top;
+    }
+
+    private String rhymeCacheKey(String word, int limit) {
+        return normalizeWord(word)
+                + "|" + limit
+                + "|" + strictnessName()
+                + "|" + prefs.getBoolean(PREF_EXACT_ONLY, false)
+                + "|" + prefs.getBoolean(PREF_INCLUDE_SLANG, true)
+                + "|" + rhymeCacheVersion;
+    }
+
+    private ArrayList<String> cachedRhymes(String cacheKey) {
+        synchronized (rhymeCacheLock) {
+            ArrayList<String> cached = rhymeCache.get(cacheKey);
+            return cached == null ? null : new ArrayList<>(cached);
+        }
+    }
+
+    private void putCachedRhymes(String cacheKey, ArrayList<String> rhymes) {
+        synchronized (rhymeCacheLock) {
+            rhymeCache.put(cacheKey, new ArrayList<>(rhymes));
+        }
+    }
+
+    private void clearRhymeCache() {
+        synchronized (rhymeCacheLock) {
+            rhymeCache.clear();
+            rhymeCacheVersion++;
+        }
+    }
+
+    private void cancelSuggestionJob() {
+        synchronized (suggestionJobLock) {
+            if (suggestionFuture != null && !suggestionFuture.isDone()) {
+                suggestionFuture.cancel(true);
+            }
+            suggestionFuture = null;
+        }
+    }
+
+    private boolean sameWords(ArrayList<String> a, ArrayList<String> b) {
+        if (a == null || b == null || a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!a.get(i).equals(b.get(i))) return false;
+        }
+        return true;
     }
 
     private void renderSuggestionChips(LinearLayout chips, ArrayList<String> words) {
@@ -1082,7 +1227,7 @@ public class MainActivity extends Activity {
                 .setPositiveButton("Remove", (d, w) -> {
                     rememberRemovedSuggestion(word);
                     saveRemovedSuggestions();
-                    updateSuggestionPopup();
+                    scheduleSuggestionUpdate();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -1092,6 +1237,8 @@ public class MainActivity extends Activity {
         if (suggestionPopup != null && suggestionPopup.isShowing()) {
             suggestionPopup.dismiss();
         }
+        lastPopupLeft = Integer.MIN_VALUE;
+        lastPopupTop = Integer.MIN_VALUE;
     }
 
     private void applySuggestion(String word) {
@@ -1109,25 +1256,25 @@ public class MainActivity extends Activity {
         scheduleSuggestionUpdate();
     }
 
-    private TokenInfo currentToken(String text, int cursor) {
+    private TokenInfo currentToken(CharSequence text, int cursor) {
         if (text == null) text = "";
         cursor = Math.max(0, Math.min(cursor, text.length()));
         int start = cursor;
         while (start > 0 && isTokenChar(text.charAt(start - 1))) start--;
         int end = cursor;
         while (end < text.length() && isTokenChar(text.charAt(end))) end++;
-        String token = text.substring(start, end);
+        String token = text.subSequence(start, end).toString();
         return new TokenInfo(start, end, token, token.substring(0, Math.min(token.length(), cursor - start)));
     }
 
-    private TokenInfo previousToken(String text, int cursor) {
+    private TokenInfo previousToken(CharSequence text, int cursor) {
         if (text == null) text = "";
         cursor = Math.max(0, Math.min(cursor, text.length()));
         int end = cursor;
         while (end > 0 && !isTokenChar(text.charAt(end - 1))) end--;
         int start = end;
         while (start > 0 && isTokenChar(text.charAt(start - 1))) start--;
-        String token = text.substring(start, end);
+        String token = text.subSequence(start, end).toString();
         return new TokenInfo(start, end, token, token);
     }
 
@@ -1136,15 +1283,30 @@ public class MainActivity extends Activity {
     }
 
     private ArrayList<String> suggestRhymes(String word, int limit) {
+        return suggestRhymes(word, limit, 0);
+    }
+
+    private ArrayList<String> suggestRhymes(String word, int limit, int maxCandidates) {
         ArrayList<String> out = new ArrayList<>();
         String base = normalizeWord(word);
         if (base.isEmpty()) return out;
         if (!cmuLoaded) return quickFallbackRhymes(base, limit);
         ArrayList<RhymeMatch> matches = new ArrayList<>();
-        for (RhymeCandidate candidate : candidatePoolFor(base)) {
+        ArrayList<RhymeCandidate> candidates = candidatePoolFor(base);
+        Collections.sort(candidates, (a, b) -> {
+            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
+            int priority = Integer.compare(commonRhymeBias(b.word), commonRhymeBias(a.word));
+            if (priority != 0) return priority;
+            return a.word.compareTo(b.word);
+        });
+        int scored = 0;
+        for (RhymeCandidate candidate : candidates) {
+            if (Thread.currentThread().isInterrupted()) return out;
             String rhymeWord = candidateRhymeWord(candidate.word);
             if (rhymeWord.equals(base)) continue;
             if (isSuggestionRemoved(candidate.word)) continue;
+            if (maxCandidates > 0 && scored >= maxCandidates) break;
+            scored++;
             int score = rhymeScore(base, candidate.word, candidate.bucket);
             if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
         }
@@ -1529,6 +1691,7 @@ public class MainActivity extends Activity {
             loadCmuDictionary();
             cmuLoaded = true;
             cmuLoading = false;
+            clearRhymeCache();
             editHandler.post(this::scheduleSuggestionUpdate);
         }).start();
     }
@@ -2359,6 +2522,7 @@ public class MainActivity extends Activity {
                 String next = progress == 0 ? "Strict" : progress == 1 ? "Balanced" : "Loose";
                 prefs.edit().putString(PREF_RHYME_STRICTNESS, next).apply();
                 value.setText(next);
+                clearRhymeCache();
                 scheduleSuggestionUpdate();
             }
             public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -2384,6 +2548,7 @@ public class MainActivity extends Activity {
                 int max = progress + 4;
                 prefs.edit().putInt(PREF_MAX_SUGGESTIONS, max).apply();
                 value.setText(String.valueOf(max));
+                clearRhymeCache();
                 scheduleSuggestionUpdate();
             }
             public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -2396,6 +2561,7 @@ public class MainActivity extends Activity {
         Button b = button(label + ": " + (enabled ? "On" : "Off"));
         b.setOnClickListener(v -> {
             prefs.edit().putBoolean(key, !enabled).apply();
+            clearRhymeCache();
             scheduleSuggestionUpdate();
             showRhymeSettingsMenu();
         });
@@ -2625,6 +2791,8 @@ public class MainActivity extends Activity {
             songPlayer.pause();
         }
         if (recordingPlayer != null && recordingPlayer.isPlaying()) recordingPlayer.pause();
+        editHandler.removeCallbacks(suggestionRunnable);
+        cancelSuggestionJob();
         dismissSuggestionPopup();
         updatePlaybackStatus();
     }
@@ -2660,6 +2828,7 @@ public class MainActivity extends Activity {
             out.append(word);
         }
         prefs.edit().putString(PREF_REMOVED_RHYMES, out.toString()).apply();
+        clearRhymeCache();
     }
 
     private void saveNotes() {
