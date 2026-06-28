@@ -1,4 +1,16 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/topflow_radius_pill" />
+            <gradient
+                android:angle="0"
+                android:startColor="#FF151C27"
+                android:endColor="#FF0E141D" />
+            <stroke
+                android:width="@dimen/topflow_stroke_hairline"
+                android:color="@color/topflow_surface_stroke_soft" />
+        </shape>
+    </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/topflow_radius_pill" />

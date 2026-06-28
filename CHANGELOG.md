@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- Released 20.6 with CMU-loading rhyme row gating, stricter stale/fallback protection, curated `out` rhyme validation and ordering, refined editor surface styling, disabled/loading chip state, and an empty-note state.
 - Released 20.5 as the published build for the 20.5 milestone after phases 20.5A, 20.5B, and 20.5C.
 - Completed 20.5C premium polish with resource-backed pressed states and lightweight button icons while preserving behavior.
 - Completed 20.5B UI integration by wiring design-system resources into existing Java surfaces, typography, buttons, chips, sheets, and spacing without changing app behavior.

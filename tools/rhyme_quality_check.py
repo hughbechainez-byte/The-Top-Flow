@@ -26,6 +26,7 @@ COMMON_RHYME_WORDS = [
     "night", "light", "flight", "bright", "might", "tight", "right", "sight",
     "flow", "go", "show", "glow", "throw", "slow", "grow", "blow",
     "way", "play", "say", "stay", "day", "made", "fade", "shade", "gray", "spray", "sway", "delay",
+    "out", "bout", "clout", "shout", "doubt", "about", "route", "scout", "spout", "sprout", "trout", "pout", "stout",
     "yours", "soars", "pores", "doors", "floors", "your", "soar", "pore", "door", "floor",
     "heart", "start", "part", "smart", "chart", "art", "hard", "yard",
     "pain", "rain", "chain", "brain", "gain", "train", "plane", "strain",
@@ -289,6 +290,8 @@ def cmu_rhyme_tail(word):
         return "AO R Z"
     if word in {"your", "soar", "pore", "door", "floor"}:
         return "AO R"
+    if word in {"out", "bout", "clout", "shout", "doubt", "about", "route", "scout", "spout", "sprout", "trout", "pout", "stout"}:
+        return "AW T"
     return ""
 
 
@@ -352,7 +355,12 @@ def quick_fallback_rhymes(base, limit=12):
 
 def common_rhyme_bias(candidate):
     word = candidate_rhyme_word(candidate)
-    return 90 if any(normalize_word(common) == word for common in COMMON_RHYME_WORDS) else 0
+    if word == "about":
+        return 101
+    for index, common in enumerate(COMMON_RHYME_WORDS):
+        if normalize_word(common) == word:
+            return max(48, 124 - index)
+    return 0
 
 
 def slang_variant_key(word):
@@ -519,6 +527,7 @@ def main():
     my = suggest("my", 20)
     try_word = suggest("try", 20)
     yours = suggest("yours", 20)
+    out = suggest("out", 20)
     hover = suggest("hover")
     cover = suggest("cover")
     near = suggest("near")
@@ -533,6 +542,8 @@ def main():
     checks.append(require_all_top("try strong AY rhymes", try_word, ["my", "fly", "sky", "high", "why"], 12))
     checks.append(require_all_top("yours strong AO R Z rhymes", yours, ["soars", "pores", "doors", "floors"], 12))
     checks.append(require_none_top("yours avoids unrelated spelling", yours, ["years", "yells", "young"], 12))
+    checks.append(require_all_top("out strong AW T rhymes", out, ["bout", "clout", "shout", "doubt", "about"], 14))
+    checks.append(require_none_top("out excludes near/clear", out, ["near", "clear"], 14))
 
     checks.append(require("hover excludes near/clear", "near" not in words(hover) and "clear" not in words(hover), str(words(hover[:8]))))
     checks.append(require("hover groups with lover", "lover" in words(hover[:8]), str(words(hover[:8]))))

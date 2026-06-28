@@ -379,16 +379,20 @@ public class MainActivity extends Activity {
 
         titleInput = new EditText(this);
         titleInput.setSingleLine(true);
+        titleInput.setHint("Untitled track");
+        titleInput.setBackgroundResource(R.drawable.bg_text_field);
         textStyle(titleInput, R.style.TextAppearance_TopFlow_Title);
-        titleInput.setPadding(dp(2), dp(4), dp(2), dimen(R.dimen.topflow_space_sm));
+        titleInput.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         editorCard.addView(titleInput, new LinearLayout.LayoutParams(-1, -2));
 
         bodyInput = new RuledEditText(this);
         bodyInput.setGravity(Gravity.TOP | Gravity.START);
         bodyInput.setMinLines(18);
+        bodyInput.setHint("Start writing...");
+        bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
         textStyle(bodyInput, R.style.TextAppearance_TopFlow_Body);
         bodyInput.setLineSpacing(dp(3), 1.08f);
-        bodyInput.setPadding(dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_md));
+        bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
 
         suggestionPanel = buildSuggestionRow("Rhymes");
@@ -581,6 +585,10 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(-1, -2);
         addLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         noteList.addView(add, addLp);
+        if (notes.isEmpty()) {
+            noteList.addView(buildEmptyNotesState(), new LinearLayout.LayoutParams(-1, -2));
+            return;
+        }
         for (int i = 0; i < notes.size(); i++) {
             View row = buildNoteRow(notes.get(i));
             row.setAlpha(0f);
@@ -595,6 +603,23 @@ public class MainActivity extends Activity {
                     .setDuration(180)
                     .start();
         }
+    }
+
+    private View buildEmptyNotesState() {
+        LinearLayout empty = new LinearLayout(this);
+        empty.setOrientation(LinearLayout.VERTICAL);
+        empty.setGravity(Gravity.CENTER_VERTICAL);
+        empty.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        empty.setBackgroundResource(R.drawable.bg_empty_state);
+        TextView title = label("No notes yet");
+        textStyle(title, R.style.TextAppearance_TopFlow_Section);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        TextView body = label("Tap + Note to start a writing session.");
+        textStyle(body, R.style.TextAppearance_TopFlow_Caption);
+        body.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
+        empty.addView(title);
+        empty.addView(body);
+        return empty;
     }
 
     private View buildNoteRow(Note note) {
@@ -1091,6 +1116,19 @@ public class MainActivity extends Activity {
         String query = normalizeWord(info.word);
         String cacheKey = rhymeCacheKey(query, limit);
         pendingSuggestionKey = cacheKey;
+        if (!cmuLoaded) {
+            cancelSuggestionJob();
+            suggestionStart = info.start;
+            suggestionEnd = info.end;
+            if (!cacheKey.equals(lastRenderedSuggestionKey)) {
+                renderSuggestionStatus(rhymeChips, "Loading rhymes");
+                lastRenderedSuggestionKey = cacheKey;
+                lastRenderedRhymes = new ArrayList<>();
+            }
+            positionSuggestionPopup(cursor);
+            Log.d(TAG, "rhyme row waiting for CMU index word=" + query);
+            return;
+        }
         ArrayList<String> cached = cachedRhymes(cacheKey);
         int requestId = suggestionRequestId;
         if (cached != null) {
@@ -1181,6 +1219,7 @@ public class MainActivity extends Activity {
     private String rhymeCacheKey(String word, int limit) {
         return normalizeWord(word)
                 + "|" + limit
+                + "|" + (cmuLoaded ? "cmu" : "loading")
                 + "|" + strictnessName()
                 + "|" + prefs.getBoolean(PREF_EXACT_ONLY, false)
                 + "|" + prefs.getBoolean(PREF_INCLUDE_SLANG, true)
@@ -1239,6 +1278,19 @@ public class MainActivity extends Activity {
             lp.rightMargin = dimen(R.dimen.topflow_space_xs);
             chips.addView(chip, lp);
         }
+    }
+
+    private void renderSuggestionStatus(LinearLayout chips, String text) {
+        if (chips == null) return;
+        chips.removeAllViews();
+        Button chip = button(text);
+        styleRhymeChip(chip, color(R.color.topflow_accent_gold));
+        chip.setEnabled(false);
+        chip.setAlpha(0.78f);
+        chip.setOnClickListener(null);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.rightMargin = dimen(R.dimen.topflow_space_xs);
+        chips.addView(chip, lp);
     }
 
     private void promptRemoveSuggestion(String word) {
@@ -1311,7 +1363,7 @@ public class MainActivity extends Activity {
         ArrayList<String> out = new ArrayList<>();
         String base = normalizeWord(word);
         if (base.isEmpty()) return out;
-        if (!cmuLoaded) return quickFallbackRhymes(base, limit);
+        if (!cmuLoaded) return out;
         ArrayList<RhymeMatch> matches = new ArrayList<>();
         ArrayList<RhymeCandidate> candidates = candidatePoolFor(base);
         Collections.sort(candidates, (a, b) -> {
@@ -1400,8 +1452,11 @@ public class MainActivity extends Activity {
 
     private int commonRhymeBias(String candidate) {
         String w = candidateRhymeWord(candidate);
-        for (String common : COMMON_RHYME_WORDS) {
-            if (normalizeWord(common).equals(w)) return 90;
+        if ("about".equals(w)) return 101;
+        for (int i = 0; i < COMMON_RHYME_WORDS.length; i++) {
+            if (normalizeWord(COMMON_RHYME_WORDS[i]).equals(w)) {
+                return Math.max(48, 124 - i);
+            }
         }
         return 0;
     }
@@ -2038,6 +2093,9 @@ public class MainActivity extends Activity {
                 return "AO R Z";
             case "your": case "soar": case "pore": case "door": case "floor":
                 return "AO R";
+            case "out": case "bout": case "clout": case "shout": case "doubt": case "about": case "route":
+            case "scout": case "spout": case "sprout": case "trout": case "pout": case "stout":
+                return "AW T";
             default:
                 return "";
         }
@@ -2070,6 +2128,7 @@ public class MainActivity extends Activity {
             "night", "light", "flight", "bright", "might", "tight", "right", "sight",
             "flow", "go", "show", "glow", "throw", "slow", "grow", "blow",
             "way", "play", "say", "stay", "day", "made", "fade", "shade", "gray", "spray", "sway", "delay",
+            "out", "bout", "clout", "shout", "doubt", "about", "route", "scout", "spout", "sprout", "trout", "pout", "stout",
             "yours", "soars", "pores", "doors", "floors", "your", "soar", "pore", "door", "floor",
             "heart", "start", "part", "smart", "chart", "art", "hard", "yard",
             "pain", "rain", "chain", "brain", "gain", "train", "plane", "strain",
