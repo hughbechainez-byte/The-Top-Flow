@@ -8,6 +8,7 @@ ranking regressions without starting Android.
 from pathlib import Path
 import re
 import sys
+import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -524,16 +525,28 @@ def require_none_top(name, result, blocked, top_n):
 def main():
     load_cmu()
     checks = []
-    my = suggest("my", 20)
-    try_word = suggest("try", 20)
-    yours = suggest("yours", 20)
-    out = suggest("out", 20)
-    hover = suggest("hover")
-    cover = suggest("cover")
-    near = suggest("near")
-    moving = suggest("moving")
-    running = suggest("running")
-    time = suggest("time")
+    timings = {}
+
+    def timed(word, limit=20):
+        started = time.perf_counter()
+        result = suggest(word, limit)
+        timings[word] = (time.perf_counter() - started) * 1000.0
+        return result
+
+    my = timed("my", 20)
+    try_word = timed("try", 20)
+    yours = timed("yours", 20)
+    out = timed("out", 20)
+    downtown = timed("downtown", 20)
+    eyesight = timed("eyesight", 20)
+    rol = timed("rol", 20)
+    hover = timed("hover")
+    lover = timed("lover")
+    cover = timed("cover")
+    near = timed("near")
+    moving = timed("moving")
+    running = timed("running")
+    time_result = timed("time")
     my_fallback = quick_fallback_rhymes("my", 12)
 
     checks.append(require_all_top("my strong AY rhymes", my, ["try", "fly", "sky", "high", "why", "lie", "cry", "buy", "eye"], 14))
@@ -553,9 +566,16 @@ def main():
     checks.append(require("moving rejects weak fallback fluid", "fluid" not in words(moving[:10]), str(words(moving[:10]))))
     checks.append(require("running includes runnin", "runnin" in words(running[:8]), str(words(running[:8]))))
 
-    time_words = words(time)
-    phrase_pos = rank(time, "in due time")
-    rhyme_pos = rank(time, "rhyme")
+    for word in ["out", "my", "yours", "downtown", "eyesight", "rol", "moving", "running", "hover", "lover"]:
+        checks.append(require(
+            f"{word} suggestion timing",
+            timings[word] < 750.0,
+            f"{timings[word]:.2f}ms -> {words((locals().get(word) or [])[:6])}",
+        ))
+
+    time_words = words(time_result)
+    phrase_pos = rank(time_result, "in due time")
+    rhyme_pos = rank(time_result, "rhyme")
     checks.append(require(
         "phrase does not outrank strong single word",
         phrase_pos is None or (rhyme_pos is not None and phrase_pos > rhyme_pos),

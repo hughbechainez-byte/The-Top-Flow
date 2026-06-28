@@ -1,6 +1,6 @@
 <resources>
-    <color name="topflow_background">#04070F</color>
-    <color name="topflow_background_alt">#060C18</color>
+    <color name="topflow_background">#000000</color>
+    <color name="topflow_background_alt">#000000</color>
     <color name="topflow_surface">#0A101D</color>
     <color name="topflow_surface_soft">#101929</color>
     <color name="topflow_surface_high">#121A2A</color>
@@ -24,7 +24,7 @@
     <color name="topflow_divider">#1E78E6FF</color>
     <color name="ic_launcher_background">#081226</color>
 
-    <color name="topflow21_oled">#03050A</color>
+    <color name="topflow21_oled">#000000</color>
     <color name="topflow21_indigo">#2D3458</color>
     <color name="topflow21_panel">#343B64</color>
     <color name="topflow21_panel_high">#444C80</color>

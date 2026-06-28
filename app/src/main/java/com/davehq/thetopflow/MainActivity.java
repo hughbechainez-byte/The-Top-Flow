@@ -115,8 +115,13 @@ public class MainActivity extends Activity {
     private static final int SUGGESTION_DEBOUNCE_MS = 220;
     private static final int FAST_RHYME_LIMIT = 6;
     private static final int FAST_RHYME_CANDIDATE_LIMIT = 360;
+    private static final int EXPANDED_RHYME_CANDIDATE_LIMIT = 720;
     private static final int RHYME_CACHE_LIMIT = 96;
-    private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f086a-01bf-77d9-8da2-a2892669c9d5";
+    private static final int DEFAULT_EDITOR_FONT_SIZE_SP = 18;
+    private static final int MIN_EDITOR_FONT_SIZE_SP = 14;
+    private static final int MAX_EDITOR_FONT_SIZE_SP = 28;
+    private static final int DEFAULT_NOTE_GLOW_STRENGTH = 1;
+    private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df";
     private static final String PREF_RHYME_STRICTNESS = "rhymeStrictness";
     private static final String PREF_MAX_SUGGESTIONS = "rhymeMaxSuggestions";
     private static final String PREF_SHOW_RHYME_ROW = "showRhymeRow";
@@ -279,10 +284,8 @@ public class MainActivity extends Activity {
 
     private void buildUi() {
         root = new FrameLayout(this);
-        root.setBackgroundResource(R.drawable.bg21_oled_canvas);
+        root.setBackgroundColor(Color.BLACK);
         setContentView(root);
-
-        root.addView(new NeonBackdropView(this), new FrameLayout.LayoutParams(-1, -1));
 
         shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.VERTICAL);
@@ -396,7 +399,6 @@ public class MainActivity extends Activity {
         bodyInput.setGravity(Gravity.TOP | Gravity.START);
         bodyInput.setMinLines(18);
         bodyInput.setHint("Start writing...");
-        bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
         textStyle(bodyInput, R.style.TextAppearance_TopFlow21_Body);
         bodyInput.setLineSpacing(dp(3), 1.04f);
         bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
@@ -930,17 +932,28 @@ public class MainActivity extends Activity {
 
     private void applyStyle() {
         if (current == null) return;
-        titleInput.setBackgroundResource(R.drawable.bg21_quiet_control);
-        bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
+        titleInput.setBackground(notePageDrawable(current.noteColor, current.accentColor, 18));
+        bodyInput.setBackground(notePageDrawable(current.noteColor, current.accentColor, 22));
         titleInput.setTextColor(current.textColor);
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
         bodyInput.setHintTextColor(current.accentColor);
         titleInput.setTypeface(android.graphics.Typeface.create(current.font, android.graphics.Typeface.BOLD));
         bodyInput.setTypeface(android.graphics.Typeface.create(current.font, android.graphics.Typeface.NORMAL));
+        titleInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(18, current.fontSizeSp + 5));
+        bodyInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, current.fontSizeSp);
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
-        if (editorCard != null) editorCard.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        if (editorCard != null) {
+            editorCard.setBackground(noteShellDrawable(current.accentColor, current.noteGlow, current.glowStrength));
+            int elevation = current.noteGlow ? 14 + Math.max(0, current.glowStrength) * 5 : 8;
+            TopFlowUiKit.applyFloating(editorCard, elevation);
+            if (Build.VERSION.SDK_INT >= 28) {
+                int shadow = current.noteGlow ? Color.argb(180, Color.red(current.accentColor), Color.green(current.accentColor), Color.blue(current.accentColor)) : Color.BLACK;
+                editorCard.setOutlineAmbientShadowColor(shadow);
+                editorCard.setOutlineSpotShadowColor(shadow);
+            }
+        }
         if (songCard != null) songCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
         if (voiceCard != null) voiceCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
         if (colorPreview != null) colorPreview.setBackgroundColor(current.noteColor);
@@ -949,7 +962,6 @@ public class MainActivity extends Activity {
         if (recordingStatus != null) recordingStatus.setTextColor(recorder != null ? C_RED : TopFlowUiKit.TEXT_SOFT);
         if (songSeek != null) styleSeekBar(songSeek, current.accentColor);
         if (bodyInput != null) {
-            bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
             if (bodyInput instanceof RuledEditText) {
                 ((RuledEditText) bodyInput).setRuleColor(current.accentColor);
             }
@@ -1179,7 +1191,12 @@ public class MainActivity extends Activity {
             return;
         }
         if (!cacheKey.equals(lastRenderedSuggestionKey)) {
-            dismissSuggestionPopup();
+            suggestionStart = info.start;
+            suggestionEnd = info.end;
+            renderSuggestionStatus(rhymeChips, "Finding rhymes");
+            lastRenderedSuggestionKey = cacheKey;
+            lastRenderedRhymes = new ArrayList<>();
+            positionSuggestionPopup(cursor);
         }
         startSuggestionJob(requestId, cacheKey, info.word, info.start, info.end, cursor, limit, started);
     }
@@ -2475,7 +2492,7 @@ public class MainActivity extends Activity {
     private void showStyleMenu() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        String[] names = {"Note Color", "Text Color", "Accent Color", "Font"};
+        String[] names = {"Note Color", "Text Color", "Accent Color", "Font", "Font Size", "Note Glow"};
         for (int i = 0; i < names.length; i++) {
             final int target = i;
             Button b = button(names[i]);
@@ -2484,6 +2501,16 @@ public class MainActivity extends Activity {
                 if (target == 3) {
                     dismissSheet();
                     showFontMenu();
+                    return;
+                }
+                if (target == 4) {
+                    dismissSheet();
+                    showFontSizeMenu();
+                    return;
+                }
+                if (target == 5) {
+                    dismissSheet();
+                    showGlowMenu();
                     return;
                 }
                 selectedColorTarget = target;
@@ -2496,6 +2523,86 @@ public class MainActivity extends Activity {
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
         showSheet("Note Style", box);
+    }
+
+    private void showFontSizeMenu() {
+        if (current == null) return;
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView value = label("Editor font size: " + current.fontSizeSp + "sp");
+        value.setTextColor(C_TEXT_MUTED);
+        box.addView(value);
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(MAX_EDITOR_FONT_SIZE_SP - MIN_EDITOR_FONT_SIZE_SP);
+        bar.setProgress(current.fontSizeSp - MIN_EDITOR_FONT_SIZE_SP);
+        styleSeekBar(bar, current.accentColor);
+        box.addView(bar, new LinearLayout.LayoutParams(-1, -2));
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser || current == null) return;
+                current.fontSizeSp = MIN_EDITOR_FONT_SIZE_SP + progress;
+                value.setText("Editor font size: " + current.fontSizeSp + "sp");
+                applyStyle();
+                saveNotes();
+            }
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        Button close = button("Close");
+        close.setOnClickListener(v -> dismissSheet());
+        box.addView(close);
+        showSheet("Font Size", box);
+    }
+
+    private void showGlowMenu() {
+        if (current == null) return;
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView status = label(glowStatus());
+        status.setTextColor(C_TEXT_MUTED);
+        box.addView(status);
+        Button toggle = button("Glow: " + (current.noteGlow ? "On" : "Off"));
+        toggle.setOnClickListener(v -> {
+            if (current == null) return;
+            current.noteGlow = !current.noteGlow;
+            status.setText(glowStatus());
+            toggle.setText("Glow: " + (current.noteGlow ? "On" : "Off"));
+            applyButtonIcon(toggle, toggle.getText().toString());
+            saveNotes();
+            applyStyle();
+        });
+        box.addView(toggle);
+        TextView strength = label("Strength: " + current.glowStrength);
+        strength.setTextColor(C_TEXT_MUTED);
+        box.addView(strength);
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(4);
+        bar.setProgress(current.glowStrength);
+        styleSeekBar(bar, current.accentColor);
+        box.addView(bar, new LinearLayout.LayoutParams(-1, -2));
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser || current == null) return;
+                current.glowStrength = progress;
+                strength.setText("Strength: " + progress);
+                if (progress > 0) current.noteGlow = true;
+                status.setText(glowStatus());
+                toggle.setText("Glow: " + (current.noteGlow ? "On" : "Off"));
+                saveNotes();
+                applyStyle();
+            }
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        Button close = button("Close");
+        close.setOnClickListener(v -> dismissSheet());
+        box.addView(close);
+        showSheet("Note Glow", box);
+    }
+
+    private String glowStatus() {
+        if (current == null) return "Glow: Off";
+        return "Glow: " + (current.noteGlow ? "On" : "Off") + "  Strength: " + current.glowStrength;
     }
 
     private void showFontMenu() {
@@ -2595,7 +2702,7 @@ public class MainActivity extends Activity {
             TextView title = label("For: " + word);
             title.setTextColor(C_TEXT_MUTED);
             box.addView(title);
-            ArrayList<String> words = suggestRhymes(word, Math.max(12, configuredMaxSuggestions()));
+            ArrayList<String> words = suggestRhymes(word, Math.max(12, configuredMaxSuggestions()), EXPANDED_RHYME_CANDIDATE_LIMIT);
             if (words.isEmpty()) {
                 TextView empty = label("No rhymes found with current settings.");
                 empty.setTextColor(C_TEXT_MUTED);
@@ -2731,6 +2838,14 @@ public class MainActivity extends Activity {
         lp.bottomMargin = dp(14);
         overlay.addView(sheetCard, lp);
 
+        View handle = new View(this);
+        handle.setBackground(dragHandleDrawable());
+        LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(dp(46), dp(5));
+        handleLp.gravity = Gravity.CENTER_HORIZONTAL;
+        handleLp.bottomMargin = dimen(R.dimen.topflow_space_lg);
+        sheetCard.addView(handle, handleLp);
+        attachSheetDragDismiss(handle);
+
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
@@ -2750,6 +2865,36 @@ public class MainActivity extends Activity {
         return overlay;
     }
 
+    private void attachSheetDragDismiss(View dragHandle) {
+        final float[] downY = {0f};
+        dragHandle.setOnTouchListener((v, event) -> {
+            if (sheetCard == null || sheetOverlay == null) return false;
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downY[0] = event.getRawY();
+                    sheetCard.animate().cancel();
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dy = Math.max(0f, event.getRawY() - downY[0]);
+                    sheetCard.setTranslationY(dy);
+                    sheetOverlay.setAlpha(Math.max(0.35f, 1f - dy / Math.max(1f, dp(420))));
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    float releaseDy = Math.max(0f, event.getRawY() - downY[0]);
+                    if (releaseDy > dp(82)) {
+                        dismissSheet();
+                    } else {
+                        sheetOverlay.animate().alpha(1f).setDuration(120).start();
+                        sheetCard.animate().translationY(0f).alpha(1f).setDuration(150).start();
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        });
+    }
+
     private void showSheet(String title, View content) {
         if (sheetOverlay == null || sheetCard == null || sheetBody == null || sheetTitle == null) return;
         sheetTitle.setText(title);
@@ -2765,8 +2910,9 @@ public class MainActivity extends Activity {
 
     private void dismissSheet() {
         if (sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) return;
-        sheetCard.animate().translationY(dp(20)).alpha(0f).setDuration(110).start();
-        sheetOverlay.animate().alpha(0f).setDuration(110).withEndAction(() -> {
+        int travel = sheetCard != null && sheetCard.getHeight() > 0 ? sheetCard.getHeight() + dp(48) : dp(260);
+        sheetCard.animate().translationY(travel).alpha(0f).setDuration(150).start();
+        sheetOverlay.animate().alpha(0f).setDuration(150).withEndAction(() -> {
             sheetOverlay.setVisibility(View.GONE);
             if (sheetBody != null) sheetBody.removeAllViews();
         }).start();
@@ -3018,7 +3164,7 @@ public class MainActivity extends Activity {
         b.setBackgroundResource(R.drawable.bg21_quiet_control);
         b.setTextColor(TopFlowUiKit.TEXT);
         textSize(b, R.dimen.topflow21_text_label);
-        b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        b.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
         b.setMinHeight(dp(48));
         b.setMinWidth(dp(58));
         TopFlowUiKit.applyFloating(b, 3);
@@ -3116,6 +3262,34 @@ public class MainActivity extends Activity {
             row.addView(v, lp);
         }
         return row;
+    }
+
+    private Drawable noteShellDrawable(int accent, boolean glow, int strength) {
+        int strokeAlpha = glow ? Math.min(190, 72 + Math.max(0, strength) * 38) : 58;
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.rgb(11, 12, 16), Color.rgb(4, 5, 8)}
+        );
+        d.setCornerRadius(dp(26));
+        d.setStroke(dp(1), Color.argb(strokeAlpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable notePageDrawable(int color, int accent, int radiusDp) {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{blendColor(color, Color.WHITE, 0.035f), color, blendColor(color, Color.BLACK, 0.055f)}
+        );
+        d.setCornerRadius(dp(radiusDp));
+        d.setStroke(dp(1), Color.argb(138, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable dragHandleDrawable() {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.argb(168, 190, 204, 226));
+        d.setCornerRadius(dp(999));
+        return d;
     }
 
     private Drawable glassDrawable(int tint, int accent, int radiusDp) {
@@ -3254,9 +3428,12 @@ public class MainActivity extends Activity {
         String title;
         String body;
         String font = "sans";
+        int fontSizeSp = DEFAULT_EDITOR_FONT_SIZE_SP;
         int noteColor = DEFAULT_NOTE_COLOR;
         int textColor = DEFAULT_NOTE_TEXT_COLOR;
         int accentColor = DEFAULT_NOTE_ACCENT_COLOR;
+        boolean noteGlow = false;
+        int glowStrength = DEFAULT_NOTE_GLOW_STRENGTH;
         String songUri = "";
         ArrayList<RecordingTag> recordings = new ArrayList<>();
 
@@ -3267,6 +3444,9 @@ public class MainActivity extends Activity {
             n.noteColor = DEFAULT_NOTE_COLOR;
             n.textColor = DEFAULT_NOTE_TEXT_COLOR;
             n.accentColor = DEFAULT_NOTE_ACCENT_COLOR;
+            n.fontSizeSp = DEFAULT_EDITOR_FONT_SIZE_SP;
+            n.noteGlow = false;
+            n.glowStrength = DEFAULT_NOTE_GLOW_STRENGTH;
             return n;
         }
 
@@ -3275,9 +3455,12 @@ public class MainActivity extends Activity {
             o.put("title", title);
             o.put("body", body);
             o.put("font", font);
+            o.put("fontSizeSp", fontSizeSp);
             o.put("noteColor", noteColor);
             o.put("textColor", textColor);
             o.put("accentColor", accentColor);
+            o.put("noteGlow", noteGlow);
+            o.put("glowStrength", glowStrength);
             o.put("songUri", songUri);
             JSONArray r = new JSONArray();
             for (RecordingTag path : recordings) r.put(path.toJson());
@@ -3289,9 +3472,12 @@ public class MainActivity extends Activity {
             Note n = create(o.optString("title", "Untitled"));
             n.body = o.optString("body", "");
             n.font = o.optString("font", "sans");
+            n.fontSizeSp = Math.max(MIN_EDITOR_FONT_SIZE_SP, Math.min(MAX_EDITOR_FONT_SIZE_SP, o.optInt("fontSizeSp", DEFAULT_EDITOR_FONT_SIZE_SP)));
             n.noteColor = o.optInt("noteColor", DEFAULT_NOTE_COLOR);
             n.textColor = o.optInt("textColor", DEFAULT_NOTE_TEXT_COLOR);
             n.accentColor = o.optInt("accentColor", DEFAULT_NOTE_ACCENT_COLOR);
+            n.noteGlow = o.optBoolean("noteGlow", false);
+            n.glowStrength = Math.max(0, Math.min(4, o.optInt("glowStrength", DEFAULT_NOTE_GLOW_STRENGTH)));
             n.songUri = o.optString("songUri", "");
             JSONArray r = o.optJSONArray("recordings");
             if (r != null) {
@@ -3456,8 +3642,7 @@ public class MainActivity extends Activity {
         }
 
         void setRuleColor(int accent) {
-            rulePaint.setColor(Color.argb(92, Color.red(accent), Color.green(accent), Color.blue(accent)));
-            invalidate();
+            // Kept for compatibility with existing style wiring; notebook rules are intentionally disabled.
         }
 
         @Override
@@ -3468,16 +3653,6 @@ public class MainActivity extends Activity {
 
         @Override
         protected void onDraw(Canvas canvas) {
-            Layout layout = getLayout();
-            if (layout != null) {
-                int left = getCompoundPaddingLeft();
-                int right = getWidth() - getCompoundPaddingRight();
-                int count = layout.getLineCount();
-                for (int i = 0; i < count; i++) {
-                    float y = layout.getLineBottom(i) + 2f;
-                    canvas.drawLine(left, y, right, y, rulePaint);
-                }
-            }
             super.onDraw(canvas);
         }
     }

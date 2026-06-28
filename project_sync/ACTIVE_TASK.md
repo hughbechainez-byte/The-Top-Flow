@@ -1,7 +1,7 @@
 # Active Task
 
-- Current milestone: 21.1 post-release synchronization setup
-- Current phase: Design
+- Current milestone: 21.2 real UX + rhyme-performance rebuild
+- Current phase: Complete
 - Current owner: Desktop GPT-5.5
-- Current objective: Initialize dual-agent repository synchronization files.
-- Estimated completion: Complete after sync files are committed.
+- Current objective: 21.2 targeted rhyme hot-path and UX fixes are released.
+- Estimated completion: Complete.

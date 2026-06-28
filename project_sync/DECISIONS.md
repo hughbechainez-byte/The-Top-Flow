@@ -17,3 +17,9 @@
 - Decision: WSL GPT-5.3 owns implementation support, XML/resources, documentation, builds, tests, commits, and release preparation.
 - Reason: Separates building/release work from architectural direction.
 - Alternative rejected: Duplicating build and implementation tasks across both agents.
+
+## 2026-06-28
+
+- Decision: Fix 21.2 rhyme latency by caching pronunciation/family info, stabilizing fast-row cache keys, bounding expanded scoring, and reducing caret-popup churn inside the existing Java/RhymeEngine architecture.
+- Reason: Device logs pointed to repeated rhyme scoring allocations and popup/IME churn, not a need for a full engine replacement.
+- Alternative rejected: Starting a larger UI/rhyme rewrite before the freeze path was validated.

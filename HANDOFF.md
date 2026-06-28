@@ -6,6 +6,8 @@ The Top Flow is a native Android songwriting notes app. It is still a single-act
 
 Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose, Material 3, dynamic dark theming, 21.x resource tokens, and Java-native presentation helpers. Rebuild B wires existing Java notes/media/rhyme/font surfaces into that foundation. Rebuild C applies the live composition pass: bottom dock, compact top bar, OLED/indigo/mint surfaces, quieter rows, softer backdrop, and polished sheets.
 
+21.2 focuses on real device pain points: cached rhyme info/family scoring, fast-row cache stability, bounded expanded scoring, less caret-popup churn, true OLED black outer shell, no notebook editor lines, per-note font size/color/glow controls, and swipe-down bottom sheets.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -17,7 +19,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 21.1 / versionCode 37 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 21.2 / versionCode 38 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -34,20 +36,20 @@ Latest verified build: 21.1 / versionCode 37 passed `tools\rhyme_quality_check.p
 - `REBUILD_21_UI_FOUNDATION.md`: Rebuild A scope notes and next-section handoff.
 - `app/src/main/res/values/colors.xml`, `dimens.xml`, `styles.xml`, and `drawable/*`: reusable design system foundation, pressed states, panel/button/chip backgrounds, and lightweight button icons.
 - `app/src/main/assets/cmudict.dict`: CMU pronunciation dictionary used by rhyme suggestions.
-- `tools/rhyme_quality_check.py`: focused rhyme regression check for the 20.x rhyme engine, including real writing examples for `my/try`, `yours`, `out`, slang, phrase, and weak-match exclusions.
+- `tools/rhyme_quality_check.py`: focused rhyme regression and timing check for the rhyme engine, including `my/try`, `yours`, `out`, `downtown`, `eyesight`, `rol`, slang, phrase, and weak-match exclusions.
 - `appcast.json` and `releases/appcast.json`: update manifest files.
 
 ## Current Next Task
 
-Validate 21.1 on Pixel 10 Pro, then use screenshots/logs for targeted follow-up polish.
+Validate 21.2 on Pixel 10 Pro, especially rhyme latency while editing long notes, keyboard smoothness, note appearance controls, and sheet swipe dismissal.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
-- Version 21.1 APK is published at `https://temp.sh/grOcA/the-top-flow-21.1.apk`.
-- Version 20.6 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; the previous JSONBlob manifest returned `Blob not found`. JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
+- Version 21.2 APK is published at `https://temp.sh/nTEYR/the-top-flow-21.2.apk`.
+- Version 21.2 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
 
 ## Warnings / Unknowns
 
@@ -66,4 +68,5 @@ Validate 21.1 on Pixel 10 Pro, then use screenshots/logs for targeted follow-up 
 - Rebuild B has passed `tools\rhyme_quality_check.py` and `assembleRelease`; no release/appcast work was done.
 - Rebuild C has passed `tools\rhyme_quality_check.py` and a clean `assembleRelease`; no release/appcast work was done.
 - 21.1 release packaging updated version metadata, local/live appcast, temp.sh APK, and release artifact.
+- 21.2 addresses rhyme latency and UX issues from device logs without changing notes, recording, playback, storage, or rhyme-quality rules.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

@@ -10,7 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 
 final class TopFlowUiKit {
-    static final int OLED = Color.rgb(3, 5, 10);
+    static final int OLED = Color.BLACK;
     static final int INDIGO = Color.rgb(45, 52, 88);
     static final int PANEL = Color.rgb(52, 59, 100);
     static final int RAISED = Color.rgb(68, 76, 128);
@@ -72,7 +72,7 @@ final class TopFlowUiKit {
         if ("monospace".equals(id)) return Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL);
         if ("casual".equals(id)) return Typeface.create("casual", Typeface.NORMAL);
         if ("cursive".equals(id)) return Typeface.create("cursive", Typeface.NORMAL);
-        return Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+        return Typeface.create("sans-serif-light", Typeface.NORMAL);
     }
 
     static String[] fontPreviewIds() {

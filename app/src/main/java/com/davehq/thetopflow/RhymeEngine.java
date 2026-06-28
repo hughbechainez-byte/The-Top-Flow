@@ -58,6 +58,18 @@ final class RhymeEngine {
             return size() > CACHE_LIMIT;
         }
     };
+    private final LinkedHashMap<String, ArrayList<PhoneRhymeInfo>> infoCache = new LinkedHashMap<String, ArrayList<PhoneRhymeInfo>>(CACHE_LIMIT * 4, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, ArrayList<PhoneRhymeInfo>> eldest) {
+            return size() > CACHE_LIMIT * 4;
+        }
+    };
+    private final LinkedHashMap<String, String> familyCache = new LinkedHashMap<String, String>(CACHE_LIMIT * 4, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > CACHE_LIMIT * 4;
+        }
+    };
     private volatile boolean ready = false;
     private volatile boolean loading = false;
     private volatile int generation = 0;
@@ -97,8 +109,10 @@ final class RhymeEngine {
             ArrayList<String> cached = resultCache.get(cacheKey);
             if (cached != null) return new ArrayList<>(cached);
         }
+        ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
+        Map<String, Integer> contextHits = maxCandidates > 0 ? Collections.emptyMap() : contextFamilyHits(base, options);
         ArrayList<RhymeMatch> matches = new ArrayList<>();
-        ArrayList<RhymeCandidate> candidates = candidatePoolFor(base, options);
+        ArrayList<RhymeCandidate> candidates = candidatePoolFor(base, options, baseInfos);
         Collections.sort(candidates, (a, b) -> {
             if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
             int priority = Integer.compare(commonRhymeBias(b.word), commonRhymeBias(a.word));
@@ -112,7 +126,7 @@ final class RhymeEngine {
             if (rhymeWord.equals(base) || isRemoved(candidate.word, options)) continue;
             if (maxCandidates > 0 && scored >= maxCandidates) break;
             scored++;
-            int score = rhymeScore(base, candidate.word, candidate.bucket, options);
+            int score = rhymeScore(base, candidate.word, candidate.bucket, options, baseInfos, contextHits);
             if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
         }
         Collections.sort(matches, (a, b) -> {
@@ -134,14 +148,17 @@ final class RhymeEngine {
     void clearCache() {
         synchronized (cacheLock) {
             resultCache.clear();
+            infoCache.clear();
+            familyCache.clear();
             generation++;
         }
     }
 
     private String cacheKey(String base, int limit, int maxCandidates, Options options) {
+        String contextKey = maxCandidates > 0 ? "fast" : String.valueOf(options.contextBody.hashCode());
         return base + "|" + limit + "|" + maxCandidates + "|" + generation + "|" + options.strictness
                 + "|" + options.exactOnly + "|" + options.includeSlang
-                + "|" + options.removed.hashCode() + "|" + options.contextBody.hashCode();
+                + "|" + options.removed.hashCode() + "|" + contextKey;
     }
 
     private void load() {
@@ -228,9 +245,8 @@ final class RhymeEngine {
         if (words.size() < 360 && !words.contains(word)) words.add(word);
     }
 
-    private ArrayList<RhymeCandidate> candidatePoolFor(String base, Options options) {
+    private ArrayList<RhymeCandidate> candidatePoolFor(String base, Options options, ArrayList<PhoneRhymeInfo> baseInfos) {
         HashMap<String, Integer> pool = new HashMap<>();
-        ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
         if (!baseInfos.isEmpty()) {
             for (PhoneRhymeInfo info : baseInfos) {
                 ArrayList<String> exact = exactIndex.get(info.rhymeKey);
@@ -274,19 +290,18 @@ final class RhymeEngine {
         if (existing == null || bucket < existing) pool.put(word, bucket);
     }
 
-    private int rhymeScore(String base, String candidate, int bucket, Options options) {
+    private int rhymeScore(String base, String candidate, int bucket, Options options, ArrayList<PhoneRhymeInfo> baseInfos, Map<String, Integer> contextHits) {
         String c = candidateRhymeWord(candidate);
         if (c.isEmpty() || c.equals(base)) return 0;
-        ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
         ArrayList<PhoneRhymeInfo> candidateInfos = rhymeInfos(c, options);
         if (!baseInfos.isEmpty() && !candidateInfos.isEmpty()) {
-            int score = bestCmuRhymeScore(base, c, baseInfos, candidateInfos, bucket, options);
+            int score = bestCmuRhymeScore(base, c, baseInfos, candidateInfos, bucket, options, contextHits);
             return score >= scoreThreshold(options) ? score : 0;
         }
         if (options.exactOnly) return 0;
         if (!baseInfos.isEmpty() || !candidateInfos.isEmpty()) {
             if (!nearSlangFamily(base, c, options)) return 0;
-            int score = 116 + internalRhymeBias(base, c, options) - bucketPenalty(bucket);
+            int score = 116 + internalRhymeBias(c, options, contextHits) - bucketPenalty(bucket);
             return score >= scoreThreshold(options) ? score : 0;
         }
         String key = rhymeKey(base, options);
@@ -299,13 +314,13 @@ final class RhymeEngine {
         if (baseFamily.equals(candidateFamily)) score += 38;
         if (nearSlangFamily(base, c, options)) score += 24;
         score += commonRhymeBias(candidate);
-        score += internalRhymeBias(base, c, options);
+        score += internalRhymeBias(c, options, contextHits);
         score -= bucketPenalty(bucket);
         score -= Math.abs(c.length() - base.length()) / 2;
         return score >= scoreThreshold(options) ? Math.max(score, 0) : 0;
     }
 
-    private int bestCmuRhymeScore(String base, String candidate, ArrayList<PhoneRhymeInfo> baseInfos, ArrayList<PhoneRhymeInfo> candidateInfos, int bucket, Options options) {
+    private int bestCmuRhymeScore(String base, String candidate, ArrayList<PhoneRhymeInfo> baseInfos, ArrayList<PhoneRhymeInfo> candidateInfos, int bucket, Options options, Map<String, Integer> contextHits) {
         int best = 0;
         for (PhoneRhymeInfo a : baseInfos) {
             for (PhoneRhymeInfo b : candidateInfos) {
@@ -327,7 +342,7 @@ final class RhymeEngine {
                 if (slangCompatible) score += 30;
                 if (slangVariantPair(base, candidate)) score += 360;
                 score += commonRhymeBias(candidate);
-                score += internalRhymeBias(base, candidate, options);
+                score += internalRhymeBias(candidate, options, contextHits);
                 score -= bucketPenalty(bucket);
                 best = Math.max(best, score);
             }
@@ -356,6 +371,11 @@ final class RhymeEngine {
 
     private ArrayList<PhoneRhymeInfo> rhymeInfos(String word, Options options) {
         String w = normalizeWord(word);
+        String key = w + "|" + options.includeSlang + "|" + generation;
+        synchronized (cacheLock) {
+            ArrayList<PhoneRhymeInfo> cached = infoCache.get(key);
+            if (cached != null) return new ArrayList<>(cached);
+        }
         ArrayList<PhoneRhymeInfo> out = new ArrayList<>();
         ArrayList<String> phones = phonesByWord.get(w);
         if (phones != null) {
@@ -373,6 +393,9 @@ final class RhymeEngine {
         if (!slang.isEmpty() && !dictionaryWords.contains(w)) {
             PhoneRhymeInfo info = phoneRhymeInfo(slang);
             if (info != null) out.add(info);
+        }
+        synchronized (cacheLock) {
+            infoCache.put(key, new ArrayList<>(out));
         }
         return out;
     }
@@ -447,17 +470,30 @@ final class RhymeEngine {
     }
 
     private String phonemeFamily(String word, Options options) {
+        String normalized = normalizeWord(word);
+        String cacheKey = normalized + "|" + options.includeSlang + "|" + generation;
+        synchronized (cacheLock) {
+            String cached = familyCache.get(cacheKey);
+            if (cached != null) return cached;
+        }
+        String family;
         String cmu = cmuRhymeTail(word, options);
-        if (!cmu.isEmpty()) return phonemeFamilyFromPhones(cmu);
+        if (!cmu.isEmpty()) family = phonemeFamilyFromPhones(cmu);
+        else {
         String sound = lastVowelSound(word);
-        if (sound.startsWith("igh") || sound.startsWith("y") || sound.startsWith("i")) return "AY" + endingConsonantCluster(sound);
-        if (sound.startsWith("ay") || sound.startsWith("ai") || sound.startsWith("ei")) return "EY" + endingConsonantCluster(sound);
-        if (sound.startsWith("ou") || sound.startsWith("ow")) return "AW" + endingConsonantCluster(sound);
-        if (sound.startsWith("oo") || sound.startsWith("u")) return "UW" + endingConsonantCluster(sound);
-        if (sound.startsWith("ee") || sound.startsWith("ea")) return "IY" + endingConsonantCluster(sound);
-        if (sound.startsWith("o")) return "O" + endingConsonantCluster(sound);
-        if (sound.startsWith("a")) return "AH" + endingConsonantCluster(sound);
-        return sound.length() <= 4 ? sound : sound.substring(0, 4);
+        if (sound.startsWith("igh") || sound.startsWith("y") || sound.startsWith("i")) family = "AY" + endingConsonantCluster(sound);
+        else if (sound.startsWith("ay") || sound.startsWith("ai") || sound.startsWith("ei")) family = "EY" + endingConsonantCluster(sound);
+        else if (sound.startsWith("ou") || sound.startsWith("ow")) family = "AW" + endingConsonantCluster(sound);
+        else if (sound.startsWith("oo") || sound.startsWith("u")) family = "UW" + endingConsonantCluster(sound);
+        else if (sound.startsWith("ee") || sound.startsWith("ea")) family = "IY" + endingConsonantCluster(sound);
+        else if (sound.startsWith("o")) family = "O" + endingConsonantCluster(sound);
+        else if (sound.startsWith("a")) family = "AH" + endingConsonantCluster(sound);
+        else family = sound.length() <= 4 ? sound : sound.substring(0, 4);
+        }
+        synchronized (cacheLock) {
+            familyCache.put(cacheKey, family);
+        }
+        return family;
     }
 
     private String phonemeFamilyFromPhones(String phones) {
@@ -532,19 +568,30 @@ final class RhymeEngine {
         return 0;
     }
 
-    private int internalRhymeBias(String base, String candidate, Options options) {
-        if (options.contextBody.isEmpty()) return 0;
-        String family = phonemeFamily(candidate, options);
-        if (family.isEmpty()) return 0;
+    private Map<String, Integer> contextFamilyHits(String base, Options options) {
+        HashMap<String, Integer> hits = new HashMap<>();
+        if (options.contextBody.isEmpty()) return hits;
         String[] parts = options.contextBody.toLowerCase(Locale.US).split("[^a-z']+");
-        int hits = 0;
+        int counted = 0;
         for (String part : parts) {
             String w = normalizeWord(part);
-            if (w.isEmpty() || w.equals(base) || w.equals(candidate)) continue;
-            if (phonemeFamily(w, options).equals(family)) hits++;
-            if (hits >= 2) break;
+            if (w.isEmpty() || w.equals(base)) continue;
+            String family = phonemeFamily(w, options);
+            if (family.isEmpty()) continue;
+            Integer current = hits.get(family);
+            hits.put(family, current == null ? 1 : Math.min(2, current + 1));
+            counted++;
+            if (counted >= 160) break;
         }
-        return hits * 8;
+        return hits;
+    }
+
+    private int internalRhymeBias(String candidate, Options options, Map<String, Integer> contextHits) {
+        if (contextHits == null || contextHits.isEmpty()) return 0;
+        String family = phonemeFamily(candidate, options);
+        if (family.isEmpty()) return 0;
+        Integer hits = contextHits.get(family);
+        return hits == null ? 0 : Math.min(2, hits) * 8;
     }
 
     private boolean isRemoved(String suggestion, Options options) {
