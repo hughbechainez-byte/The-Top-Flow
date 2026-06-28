@@ -18,6 +18,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - Existing Java UI helpers consume the design system for major surfaces, buttons, chips, sheets, spacing, typography, and editor presentation.
 - 21.0 studio shell with a distinct top toolbar, global dock, premium editor/rhyme panel surfaces, polished note list, and empty-note state.
 - Rebuild A foundation after 21.0: Kotlin, Compose, Material 3, dynamic dark theme support, Java-native UI kit helpers, and 21.x resource tokens are present for the next UI migration stage.
+- Rebuild B wires current Java notes/media/rhyme/font surfaces into the 21.x UI kit, including live font preview rows and rebuilt rhyme row/card controls.
 - Rhyme suggestion chips near the cursor, backed by a dedicated `RhymeEngine`, generated offline `rhyme_index.tsv`, pronunciation-first CMU ranking, quality buckets, curated writing examples, async fast-row generation, loading-state gating, and fallback phonetic heuristics for genuine unknowns.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -31,12 +32,12 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - A focused rhyme regression check exists at `tools/rhyme_quality_check.py`, including `my/try`, `yours`, `out`, slang, phrase, and known bad-match cases.
 - In-app update metadata now points to the 20.x appcast, but install flow still needs device verification.
 - The 20.6 appcast was recreated after the prior JSONBlob manifest expired; durable hosting is still needed.
-- Rebuild A is foundation-only; the live runtime UI is not fully migrated to Compose yet.
+- Rebuild B is still a Java-runtime bridge; the live app is not fully Compose yet.
 
 ## Current Development Priority
 
-Continue phased 21.x rebuild. Rebuild A is complete; wait for approval before Rebuild B.
+Continue phased 21.x rebuild. Rebuild B is complete; wait for approval before Rebuild C.
 
 ## Next Milestone
 
-Next: Rebuild B after approval, focused on wiring notes, recording, playback, font previews, and the offline rhyme bar into the new UI foundation.
+Next: Rebuild C after approval, focused on the final minimalist futuristic UI composition and polish.

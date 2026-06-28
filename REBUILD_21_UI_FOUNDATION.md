@@ -26,6 +26,14 @@ The pulled images are local references only and are not intended for release pac
 - Font preview UI is scaffolded, not wired into the live settings flow yet.
 - The pulled Pixel reference images were inspected but not committed.
 
+## Rebuild B Scope Completed
+
+- Wired existing Java surfaces to the Rebuild A Java-native UI kit.
+- Reworked shared buttons, media cards, editor card, and rhyme chips to use 21.x quiet controls and floating panels.
+- Reworked the rhyme suggestion row to use the 21.x panel treatment while preserving offline engine behavior.
+- Added live font preview rows in the font picker so each option displays in its own typeface before selection.
+- Kept notes, local persistence, recording, playback, and rhyme scoring behavior intact.
+
 ## Next Section
 
-Rebuild B should wire the app's internal systems to the new foundation: editor state, note controls, recording controls, playback controls, font picker with real previews, and all-offline rhyme suggestion bar behavior.
+Rebuild C should tie the live app together behind the final minimalist futuristic UI: screen-level layout, bottom navigation rhythm, motion, blur/tint polish, spacing cleanup, and final target-render alignment.

@@ -425,8 +425,7 @@ public class MainActivity extends Activity {
         LinearLayout songMeta = new LinearLayout(this);
         songMeta.setOrientation(LinearLayout.VERTICAL);
         songCard.addView(songMeta);
-        songStatus = label("No song attached");
-        songStatus.setTextColor(C_TEXT_MUTED);
+        songStatus = metadataLabel("No song attached");
         songMeta.addView(songStatus);
         songSeek = new SeekBar(this);
         songSeek.setMax(1000);
@@ -451,8 +450,7 @@ public class MainActivity extends Activity {
             }
         });
         songMeta.addView(songSeek, new LinearLayout.LayoutParams(-1, -2));
-        songTime = label("0:00 / 0:00");
-        songTime.setTextColor(C_TEXT_MUTED);
+        songTime = metadataLabel("0:00 / 0:00");
         songMeta.addView(songTime);
 
         Button attach = button("Attach Song");
@@ -465,11 +463,10 @@ public class MainActivity extends Activity {
         play.setVisibility(BuildConfig.VERSION_CODE >= 2 ? View.VISIBLE : View.GONE);
         Button record = button("Record Voice Note");
         record.setOnClickListener(v -> startCountdownThenRecord());
-        recordingStatus = label("Ready to record");
-        recordingStatus.setTextColor(C_TEXT_MUTED);
+        recordingStatus = metadataLabel("Ready to record");
         voiceCard.addView(recordingStatus);
         voiceCard.addView(countdownView = new TextView(this));
-        countdownView.setTextColor(C_TEXT);
+        countdownView.setTextColor(TopFlowUiKit.TEXT);
         countdownView.setTextSize(28);
         countdownView.setGravity(Gravity.CENTER_VERTICAL);
         countdownView.setVisibility(View.GONE);
@@ -944,13 +941,13 @@ public class MainActivity extends Activity {
         bodyInput.setTypeface(android.graphics.Typeface.create(current.font, android.graphics.Typeface.NORMAL));
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
-        if (editorCard != null) editorCard.setBackground(glassDrawable(tintFrom(current.noteColor, 0.08f), current.accentColor, 28));
-        if (songCard != null) songCard.setBackground(glassDrawable(tintFrom(current.noteColor, 0.03f), current.accentColor, 24));
-        if (voiceCard != null) voiceCard.setBackground(glassDrawable(tintFrom(current.noteColor, 0.03f), current.accentColor, 24));
+        if (editorCard != null) editorCard.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        if (songCard != null) songCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
+        if (voiceCard != null) voiceCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
         if (colorPreview != null) colorPreview.setBackgroundColor(current.noteColor);
         if (playbackStatus != null) playbackStatus.setTextColor(current.accentColor);
-        if (songStatus != null) songStatus.setTextColor(C_TEXT_MUTED);
-        if (recordingStatus != null) recordingStatus.setTextColor(recorder != null ? C_RED : C_TEXT_MUTED);
+        if (songStatus != null) songStatus.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        if (recordingStatus != null) recordingStatus.setTextColor(recorder != null ? C_RED : TopFlowUiKit.TEXT_SOFT);
         if (songSeek != null) styleSeekBar(songSeek, current.accentColor);
         if (bodyInput != null) {
             bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
@@ -1104,13 +1101,13 @@ public class MainActivity extends Activity {
     private LinearLayout buildSuggestionRow(String title) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
-        wrap.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        wrap.setBackgroundResource(R.drawable.bg_rhyme_panel);
-        wrap.setElevation(dimen(R.dimen.topflow_elevation_lg));
+        wrap.setPadding(dimen(R.dimen.topflow21_space_panel), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow21_space_panel), dimen(R.dimen.topflow21_space_panel));
+        wrap.setBackground(TopFlowUiKit.floatingPanel(this, 22));
+        TopFlowUiKit.applyFloating(wrap, 14);
         TextView label = new TextView(this);
         label.setText("RHYME ENGINE");
-        textStyle(label, R.style.TextAppearance_TopFlow_Caption);
-        label.setTextColor(color(R.color.topflow_accent_gold));
+        textStyle(label, R.style.TextAppearance_TopFlow21_Caption);
+        label.setTextColor(TopFlowUiKit.MINT);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         label.setPadding(2, 0, 2, dimen(R.dimen.topflow_space_xs));
         wrap.addView(label);
@@ -2503,11 +2500,11 @@ public class MainActivity extends Activity {
     }
 
     private void showFontMenu() {
-        String[] fonts = {"sans", "serif", "monospace", "casual", "cursive"};
+        String[] fonts = TopFlowUiKit.fontPreviewIds();
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         for (String f : fonts) {
-            Button b = button(f);
+            View b = buildFontPreviewRow(f);
             b.setOnClickListener(v -> {
                 if (current != null) {
                     current.font = f;
@@ -2522,6 +2519,41 @@ public class MainActivity extends Activity {
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
         showSheet("Font", box);
+    }
+
+    private View buildFontPreviewRow(String fontId) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        row.setBackgroundResource(R.drawable.bg21_quiet_control);
+        row.setForeground(TopFlowUiKit.ripple(TopFlowUiKit.MINT));
+        row.setClickable(true);
+        row.setFocusable(true);
+        TopFlowUiKit.applyFloating(row, current != null && fontId.equals(current.font) ? 8 : 2);
+        TextView name = new TextView(this);
+        name.setText(fontLabel(fontId) + (current != null && fontId.equals(current.font) ? "  Selected" : ""));
+        textStyle(name, R.style.TextAppearance_TopFlow21_Caption);
+        name.setTextColor(current != null && fontId.equals(current.font) ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT_SOFT);
+        TextView preview = new TextView(this);
+        preview.setText("whisper my name");
+        textStyle(preview, R.style.TextAppearance_TopFlow21_Section);
+        preview.setTypeface(TopFlowUiKit.fontForPreview(fontId));
+        preview.setTextColor(TopFlowUiKit.TEXT);
+        preview.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
+        row.addView(name);
+        row.addView(preview);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    private String fontLabel(String fontId) {
+        if ("serif".equals(fontId)) return "Serif";
+        if ("monospace".equals(fontId)) return "Mono";
+        if ("casual".equals(fontId)) return "Casual";
+        if ("cursive".equals(fontId)) return "Cursive";
+        return "System";
     }
 
     private void showDeletedRhymesMenu() {
@@ -2964,6 +2996,15 @@ public class MainActivity extends Activity {
         return v;
     }
 
+    private TextView metadataLabel(String text) {
+        TextView v = new TextView(this);
+        v.setText(text);
+        textStyle(v, R.style.TextAppearance_TopFlow21_Caption);
+        TopFlowUiKit.applyQuietText(v);
+        v.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_xs));
+        return v;
+    }
+
     private Button button(String text) {
         Button b = new Button(this);
         b.setText(text);
@@ -2975,17 +3016,17 @@ public class MainActivity extends Activity {
     }
 
     private void styleButton(Button b, int accent) {
-        b.setBackgroundResource(R.drawable.bg_button_primary);
-        b.setTextColor(color(R.color.topflow_text_primary));
-        textSize(b, R.dimen.topflow_text_button);
+        b.setBackgroundResource(R.drawable.bg21_quiet_control);
+        b.setTextColor(TopFlowUiKit.TEXT);
+        textSize(b, R.dimen.topflow21_text_label);
         b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        b.setMinHeight(dimen(R.dimen.topflow_button_height));
-        b.setMinWidth(dp(76));
-        b.setElevation(dimen(R.dimen.topflow_elevation_sm));
+        b.setMinHeight(dp(48));
+        b.setMinWidth(dp(58));
+        TopFlowUiKit.applyFloating(b, 3);
         b.setStateListAnimator(null);
         b.setIncludeFontPadding(false);
-        b.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
-        b.setForeground(ripple(accent));
+        b.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        b.setForeground(TopFlowUiKit.ripple(accent));
     }
 
     private void styleCardButton(Button b, int fill, int accent, int text) {
@@ -2998,18 +3039,18 @@ public class MainActivity extends Activity {
     }
 
     private void styleRhymeChip(Button chip, int accent) {
-        chip.setBackgroundResource(R.drawable.bg_chip);
-        chip.setTextColor(color(R.color.topflow_text_primary));
-        textSize(chip, R.dimen.topflow_text_chip);
+        chip.setBackgroundResource(R.drawable.bg21_quiet_control);
+        chip.setTextColor(TopFlowUiKit.TEXT);
+        textSize(chip, R.dimen.topflow21_text_label);
         chip.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         chip.setMinHeight(dimen(R.dimen.topflow_chip_height));
         chip.setMinWidth(dp(62));
-        chip.setElevation(dimen(R.dimen.topflow_elevation_sm));
+        TopFlowUiKit.applyFloating(chip, 4);
         chip.setStateListAnimator(null);
         chip.setIncludeFontPadding(false);
         chip.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xs));
         chip.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
-        chip.setForeground(ripple(accent));
+        chip.setForeground(TopFlowUiKit.ripple(accent));
         attachTapAnimation(chip);
     }
 
@@ -3043,8 +3084,8 @@ public class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        card.setBackgroundResource(R.drawable.bg_surface_panel);
-        card.setElevation(dimen(R.dimen.topflow_elevation_md));
+        card.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        TopFlowUiKit.applyFloating(card, 12);
         return card;
     }
 
@@ -3052,11 +3093,12 @@ public class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg));
-        card.setBackgroundResource(R.drawable.bg_surface_panel);
-        card.setElevation(dimen(R.dimen.topflow_elevation_md));
+        card.setBackground(TopFlowUiKit.floatingPanel(this, 20));
+        TopFlowUiKit.applyFloating(card, 8);
         TextView label = new TextView(this);
         label.setText(title);
-        textStyle(label, R.style.TextAppearance_TopFlow_Section);
+        textStyle(label, R.style.TextAppearance_TopFlow21_Section);
+        label.setTextColor(TopFlowUiKit.TEXT);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         label.setIncludeFontPadding(false);
         label.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
