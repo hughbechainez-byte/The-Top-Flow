@@ -3,7 +3,7 @@
 Native Android note app for songwriting on GrapheneOS/Android.
 
 Current local build: `21.0`.
-Current milestone: phased 21.x bottom-up rebuild. Rebuild B is complete pending approval for Rebuild C.
+Current milestone: phased 21.x bottom-up rebuild. Rebuild C is complete pending approval for release.
 
 ## Project Record
 

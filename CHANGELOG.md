@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- Completed Rebuild C with a bottom command dock, compact floating header, OLED/indigo/mint live surfaces, quieter note/editor/sheet composition, and preserved app behavior.
 - Completed Rebuild B by wiring current Java notes/media/rhyme/font surfaces into the 21.x UI kit, including live font previews, 21.x card/control styling, and rebuilt rhyme row visuals without changing core behavior.
 - Completed Rebuild A foundation after 21.0 with Kotlin, Compose, Material 3, dynamic dark theme support, Java-native UI kit helpers, 21.x resource tokens, and local Pixel reference capture through WSL Debian ADB.
 - Released 21.0 with a dedicated offline `RhymeEngine`, generated pronunciation/rhyme index asset, indexed rhyme lookup/cache readiness, a distinct studio toolbar/dock/editor shell, and rebuilt rhyme panel styling.

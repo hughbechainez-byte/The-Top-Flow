@@ -19,6 +19,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 21.0 studio shell with a distinct top toolbar, global dock, premium editor/rhyme panel surfaces, polished note list, and empty-note state.
 - Rebuild A foundation after 21.0: Kotlin, Compose, Material 3, dynamic dark theme support, Java-native UI kit helpers, and 21.x resource tokens are present for the next UI migration stage.
 - Rebuild B wires current Java notes/media/rhyme/font surfaces into the 21.x UI kit, including live font preview rows and rebuilt rhyme row/card controls.
+- Rebuild C moves the command dock to the bottom, tightens the top bar, shifts live screens to OLED/indigo/mint surfaces, and softens sheets/backdrop styling.
 - Rhyme suggestion chips near the cursor, backed by a dedicated `RhymeEngine`, generated offline `rhyme_index.tsv`, pronunciation-first CMU ranking, quality buckets, curated writing examples, async fast-row generation, loading-state gating, and fallback phonetic heuristics for genuine unknowns.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -36,8 +37,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-Continue phased 21.x rebuild. Rebuild B is complete; wait for approval before Rebuild C.
+Continue phased 21.x rebuild. Rebuild C is complete; wait for approval before release packaging.
 
 ## Next Milestone
 
-Next: Rebuild C after approval, focused on the final minimalist futuristic UI composition and polish.
+Next: release after approval, including version bump, APK, appcast, temp.sh upload, and commit.

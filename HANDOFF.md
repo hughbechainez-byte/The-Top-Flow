@@ -4,7 +4,7 @@
 
 The Top Flow is a native Android songwriting notes app. It is still a single-activity Java app for core workflows, but 21.0 extracts rhyme logic into a dedicated offline `RhymeEngine`, adds a generated pronunciation index asset, and replaces the visible shell with a more distinct premium studio toolbar/dock/editor/rhyme panel structure.
 
-Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose, Material 3, dynamic dark theming, 21.x resource tokens, and Java-native presentation helpers. Rebuild B then wires existing Java notes/media/rhyme/font surfaces into that foundation without changing app behavior.
+Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose, Material 3, dynamic dark theming, 21.x resource tokens, and Java-native presentation helpers. Rebuild B wires existing Java notes/media/rhyme/font surfaces into that foundation. Rebuild C applies the live composition pass: bottom dock, compact top bar, OLED/indigo/mint surfaces, quieter rows, softer backdrop, and polished sheets.
 
 ## Build / Run
 
@@ -39,7 +39,7 @@ Latest verified build: 21.0 / versionCode 36 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Wait for approval, then start Rebuild C: final minimalist futuristic UI composition, motion, spacing cleanup, blur/tint polish, and target-render alignment.
+Wait for approval, then run the release section: version bump, final validation, APK build, appcast update, temp.sh upload, and commit.
 
 ## Assumptions
 
@@ -64,4 +64,5 @@ Wait for approval, then start Rebuild C: final minimalist futuristic UI composit
 - 21.0 extracts the rhyme engine, adds a generated offline rhyme index, and introduces a distinct studio toolbar/dock/editor shell. Legacy rhyme helper code remains in `MainActivity.java` until device validation confirms the extraction is stable.
 - Rebuild A has passed `tools\rhyme_quality_check.py` and `assembleRelease`; the build needed higher Gradle heap/metaspace settings after adding Compose.
 - Rebuild B has passed `tools\rhyme_quality_check.py` and `assembleRelease`; no release/appcast work was done.
+- Rebuild C has passed `tools\rhyme_quality_check.py` and a clean `assembleRelease`; no release/appcast work was done.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

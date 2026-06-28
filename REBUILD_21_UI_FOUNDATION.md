@@ -34,6 +34,15 @@ The pulled images are local references only and are not intended for release pac
 - Added live font preview rows in the font picker so each option displays in its own typeface before selection.
 - Kept notes, local persistence, recording, playback, and rhyme scoring behavior intact.
 
+## Rebuild C Scope Completed
+
+- Moved the live command dock to the bottom to better match the target-render navigation rhythm.
+- Tightened the top bar into a compact floating studio header.
+- Shifted live surfaces toward OLED/indigo/mint 21.x tokens.
+- Reworked note rows, editor fields, panels, and bottom sheets away from heavy neon/outline styling.
+- Softened the backdrop gradients and sheet scrim.
+- Preserved current notes, recording, playback, settings, update, and offline rhyme behavior.
+
 ## Next Section
 
-Rebuild C should tie the live app together behind the final minimalist futuristic UI: screen-level layout, bottom navigation rhythm, motion, blur/tint polish, spacing cleanup, and final target-render alignment.
+Release should package this phased rebuild only after device review.

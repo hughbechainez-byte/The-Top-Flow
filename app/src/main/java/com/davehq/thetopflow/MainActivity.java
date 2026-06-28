@@ -279,7 +279,7 @@ public class MainActivity extends Activity {
 
     private void buildUi() {
         root = new FrameLayout(this);
-        root.setBackgroundResource(R.drawable.bg_app_background);
+        root.setBackgroundResource(R.drawable.bg21_oled_canvas);
         setContentView(root);
 
         root.addView(new NeonBackdropView(this), new FrameLayout.LayoutParams(-1, -1));
@@ -293,22 +293,22 @@ public class MainActivity extends Activity {
         root.addView(shell, shellLp);
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            shell.setPadding(dimen(R.dimen.topflow_space_page), bars.top + dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_page), bars.bottom + dimen(R.dimen.topflow_space_sm));
+            shell.setPadding(dimen(R.dimen.topflow21_space_screen), bars.top + dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow21_space_screen), bars.bottom + dimen(R.dimen.topflow_space_sm));
             return insets;
         });
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg));
-        header.setBackgroundResource(R.drawable.bg_studio_toolbar);
-        header.setElevation(dimen(R.dimen.topflow_elevation_lg));
+        header.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        header.setBackground(TopFlowUiKit.floatingPanel(this, 24));
+        TopFlowUiKit.applyFloating(header, 10);
         TextView brand = new TextView(this);
-        brand.setText("THE TOP FLOW");
-        textStyle(brand, R.style.TextAppearance_TopFlow_Title);
+        brand.setText("Top Flow");
+        textStyle(brand, R.style.TextAppearance_TopFlow21_Title);
         TextView sub = new TextView(this);
-        sub.setText("Offline writing studio");
-        textStyle(sub, R.style.TextAppearance_TopFlow_Caption);
+        sub.setText("Offline studio");
+        textStyle(sub, R.style.TextAppearance_TopFlow21_Caption);
         sub.setPadding(2, dp(2), 0, 0);
         LinearLayout titleWrap = new LinearLayout(this);
         titleWrap.setOrientation(LinearLayout.HORIZONTAL);
@@ -316,34 +316,34 @@ public class MainActivity extends Activity {
         titleWrap.addView(brand);
         TextView version = new TextView(this);
         version.setText("  v" + BuildConfig.VERSION_NAME);
-        textStyle(version, R.style.TextAppearance_TopFlow_Caption);
-        version.setTextColor(color(R.color.topflow_accent_gold));
+        textStyle(version, R.style.TextAppearance_TopFlow21_Caption);
+        version.setTextColor(TopFlowUiKit.MINT);
         titleWrap.addView(version);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.addView(titleWrap);
         left.addView(sub);
         header.addView(left, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        Button menu = button("Studio");
+        Button menu = button("Menu");
         menu.setOnClickListener(v -> showMainMenu());
         header.addView(menu);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(-1, -2);
-        headerLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        headerLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         shell.addView(header, headerLp);
-
-        LinearLayout dock = buildStudioDock();
-        LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-1, -2);
-        dockLp.bottomMargin = dimen(R.dimen.topflow_space_md);
-        shell.addView(dock, dockLp);
 
         contentHost = new FrameLayout(this);
         shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
 
+        LinearLayout dock = buildStudioDock();
+        LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-1, -2);
+        dockLp.topMargin = dimen(R.dimen.topflow_space_md);
+        shell.addView(dock, dockLp);
+
         menuPanel = new LinearLayout(this);
         menuPanel.setOrientation(LinearLayout.VERTICAL);
-        menuPanel.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        menuPanel.setBackgroundResource(R.drawable.bg_studio_panel);
-        menuPanel.setElevation(dimen(R.dimen.topflow_elevation_lg));
+        menuPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
+        menuPanel.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        TopFlowUiKit.applyFloating(menuPanel, 12);
         contentHost.addView(menuPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView listScroll = new ScrollView(this);
@@ -357,9 +357,9 @@ public class MainActivity extends Activity {
         editorPanel = new LinearLayout(this);
         editorPanel.setOrientation(LinearLayout.VERTICAL);
         editorPanel.setVisibility(View.GONE);
-        editorPanel.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        editorPanel.setBackgroundResource(R.drawable.bg_studio_panel);
-        editorPanel.setElevation(dimen(R.dimen.topflow_elevation_lg));
+        editorPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
+        editorPanel.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        TopFlowUiKit.applyFloating(editorPanel, 12);
         contentHost.addView(editorPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView editorScroll = new ScrollView(this);
@@ -377,9 +377,9 @@ public class MainActivity extends Activity {
         editor.addView(editorCard, editorCardLp);
 
         TextView editorHead = new TextView(this);
-        editorHead.setText("WRITING DESK");
-        textStyle(editorHead, R.style.TextAppearance_TopFlow_Caption);
-        editorHead.setTextColor(color(R.color.topflow_accent_gold));
+        editorHead.setText("Draft");
+        textStyle(editorHead, R.style.TextAppearance_TopFlow21_Caption);
+        editorHead.setTextColor(TopFlowUiKit.MINT);
         editorHead.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         editorHead.setPadding(2, 0, 2, dimen(R.dimen.topflow_space_xs));
         editorCard.addView(editorHead);
@@ -387,8 +387,8 @@ public class MainActivity extends Activity {
         titleInput = new EditText(this);
         titleInput.setSingleLine(true);
         titleInput.setHint("Untitled track");
-        titleInput.setBackgroundResource(R.drawable.bg_text_field);
-        textStyle(titleInput, R.style.TextAppearance_TopFlow_Title);
+        titleInput.setBackgroundResource(R.drawable.bg21_quiet_control);
+        textStyle(titleInput, R.style.TextAppearance_TopFlow21_Title);
         titleInput.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         editorCard.addView(titleInput, new LinearLayout.LayoutParams(-1, -2));
 
@@ -396,9 +396,9 @@ public class MainActivity extends Activity {
         bodyInput.setGravity(Gravity.TOP | Gravity.START);
         bodyInput.setMinLines(18);
         bodyInput.setHint("Start writing...");
-        bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
-        textStyle(bodyInput, R.style.TextAppearance_TopFlow_Body);
-        bodyInput.setLineSpacing(dp(3), 1.08f);
+        bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
+        textStyle(bodyInput, R.style.TextAppearance_TopFlow21_Body);
+        bodyInput.setLineSpacing(dp(3), 1.04f);
         bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
 
@@ -535,11 +535,11 @@ public class MainActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs));
-        dock.setBackgroundResource(R.drawable.bg_studio_dock);
-        dock.setElevation(dimen(R.dimen.topflow_elevation_md));
+        dock.setBackgroundResource(R.drawable.bg21_bottom_dock);
+        TopFlowUiKit.applyFloating(dock, 10);
         Button notes = button("Notes");
         notes.setOnClickListener(v -> showMenuScreen());
-        Button rhymes = button("Rhymes");
+        Button rhymes = button("Rhyme");
         rhymes.setOnClickListener(v -> {
             if (current == null) {
                 Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
@@ -555,7 +555,7 @@ public class MainActivity extends Activity {
             }
             showStyleMenu();
         });
-        Button settings = button("Settings");
+        Button settings = button("Set");
         settings.setOnClickListener(v -> showRhymeSettingsMenu());
         dock.addView(notes, dockButtonLp(0));
         dock.addView(rhymes, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
@@ -611,8 +611,8 @@ public class MainActivity extends Activity {
     private void renderNoteList() {
         noteList.removeAllViews();
         TextView head = label("Notes");
-        textStyle(head, R.style.TextAppearance_TopFlow_Caption);
-        head.setTextColor(color(R.color.topflow_accent_gold));
+        textStyle(head, R.style.TextAppearance_TopFlow21_Caption);
+        head.setTextColor(TopFlowUiKit.MINT);
         head.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         head.setPadding(dp(2), 0, dp(2), dimen(R.dimen.topflow_space_xs));
         noteList.addView(head);
@@ -654,12 +654,12 @@ public class MainActivity extends Activity {
         empty.setOrientation(LinearLayout.VERTICAL);
         empty.setGravity(Gravity.CENTER_VERTICAL);
         empty.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        empty.setBackgroundResource(R.drawable.bg_empty_state);
+        empty.setBackground(TopFlowUiKit.floatingPanel(this, 22));
         TextView title = label("No notes yet");
-        textStyle(title, R.style.TextAppearance_TopFlow_Section);
+        textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         TextView body = label("Tap + Note to start a writing session.");
-        textStyle(body, R.style.TextAppearance_TopFlow_Caption);
+        textStyle(body, R.style.TextAppearance_TopFlow21_Caption);
         body.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
         empty.addView(title);
         empty.addView(body);
@@ -670,11 +670,11 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        row.setMinimumHeight(dp(76));
-        row.setBackground(glassDrawable(tintFrom(note.noteColor, 0.06f), note.accentColor, 22));
-        row.setElevation(dp(4));
-        row.setForeground(ripple(note.accentColor));
+        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        row.setMinimumHeight(dp(68));
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 18));
+        TopFlowUiKit.applyFloating(row, 6);
+        row.setForeground(TopFlowUiKit.ripple(note.accentColor));
         row.setClickable(true);
         row.setFocusable(true);
         attachTapAnimation(row);
@@ -691,13 +691,12 @@ public class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText(note.title == null || note.title.isEmpty() ? "Untitled" : note.title);
         title.setTextColor(note.textColor);
-        textSize(title, R.dimen.topflow_text_section);
+        textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         title.setMaxLines(1);
-        title.setShadowLayer(3f, 0f, 0f, Color.argb(120, Color.red(note.accentColor), Color.green(note.accentColor), Color.blue(note.accentColor)));
         TextView preview = new TextView(this);
         preview.setText(compactPreview(note.body));
-        textStyle(preview, R.style.TextAppearance_TopFlow_Caption);
+        textStyle(preview, R.style.TextAppearance_TopFlow21_Caption);
         preview.setMaxLines(2);
         preview.setPadding(0, dp(3), 0, 0);
         box.addView(title);
@@ -931,8 +930,8 @@ public class MainActivity extends Activity {
 
     private void applyStyle() {
         if (current == null) return;
-        titleInput.setBackgroundResource(R.drawable.bg_text_field);
-        bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
+        titleInput.setBackgroundResource(R.drawable.bg21_quiet_control);
+        bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
         titleInput.setTextColor(current.textColor);
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
@@ -950,7 +949,7 @@ public class MainActivity extends Activity {
         if (recordingStatus != null) recordingStatus.setTextColor(recorder != null ? C_RED : TopFlowUiKit.TEXT_SOFT);
         if (songSeek != null) styleSeekBar(songSeek, current.accentColor);
         if (bodyInput != null) {
-            bodyInput.setBackgroundResource(R.drawable.bg_editor_surface);
+            bodyInput.setBackgroundResource(R.drawable.bg21_editor_page);
             if (bodyInput instanceof RuledEditText) {
                 ((RuledEditText) bodyInput).setRuleColor(current.accentColor);
             }
@@ -2715,15 +2714,15 @@ public class MainActivity extends Activity {
     private View buildSheetOverlay() {
         FrameLayout overlay = new FrameLayout(this);
         overlay.setVisibility(View.GONE);
-        overlay.setBackgroundColor(color(R.color.topflow_sheet_scrim));
+        overlay.setBackgroundResource(R.drawable.bg21_blur_scrim);
         overlay.setClickable(true);
         overlay.setOnClickListener(v -> dismissSheet());
 
         sheetCard = new LinearLayout(this);
         sheetCard.setOrientation(LinearLayout.VERTICAL);
         sheetCard.setPadding(dimen(R.dimen.topflow_space_xxl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xxl), dimen(R.dimen.topflow_space_xxl));
-        sheetCard.setBackgroundResource(R.drawable.bg_surface_sheet);
-        sheetCard.setElevation(dimen(R.dimen.topflow_elevation_xl));
+        sheetCard.setBackground(TopFlowUiKit.floatingPanel(this, 28));
+        TopFlowUiKit.applyFloating(sheetCard, 18);
         sheetCard.setClickable(true);
         sheetCard.setFocusable(true);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
@@ -2736,7 +2735,7 @@ public class MainActivity extends Activity {
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
         sheetTitle = new TextView(this);
-        textStyle(sheetTitle, R.style.TextAppearance_TopFlow_Section);
+        textStyle(sheetTitle, R.style.TextAppearance_TopFlow21_Section);
         sheetTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         header.addView(sheetTitle, new LinearLayout.LayoutParams(0, -2, 1));
         Button close = button("Close");
@@ -3371,7 +3370,7 @@ public class MainActivity extends Activity {
 
         NeonBackdropView(Context c) {
             super(c);
-            line.setColor(Color.argb(14, 150, 190, 210));
+            line.setColor(Color.argb(10, 130, 150, 210));
             line.setStrokeWidth(1f);
         }
 
@@ -3380,17 +3379,17 @@ public class MainActivity extends Activity {
             int w = getWidth();
             int h = getHeight();
             paint.setShader(new android.graphics.LinearGradient(0, 0, 0, h,
-                    new int[]{Color.rgb(4, 7, 15), Color.rgb(10, 14, 25), Color.rgb(3, 5, 12)},
+                    new int[]{Color.rgb(3, 5, 10), Color.rgb(22, 27, 49), Color.rgb(3, 5, 10)},
                     new float[]{0f, 0.55f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
             paint.setShader(new android.graphics.RadialGradient(w * 0.2f, h * 0.15f, Math.max(w, h) * 0.8f,
-                    new int[]{Color.argb(64, 40, 214, 163), Color.argb(0, 40, 214, 163)},
+                    new int[]{Color.argb(40, 90, 215, 160), Color.argb(0, 90, 215, 160)},
                     new float[]{0f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
             paint.setShader(new android.graphics.RadialGradient(w * 0.8f, h * 0.2f, Math.max(w, h) * 0.65f,
-                    new int[]{Color.argb(48, 238, 194, 105), Color.argb(0, 238, 194, 105)},
+                    new int[]{Color.argb(28, 98, 199, 255), Color.argb(0, 98, 199, 255)},
                     new float[]{0f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, w, h, paint);
 
