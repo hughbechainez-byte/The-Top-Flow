@@ -1,0 +1,80 @@
+TopFlow UI Alpha Builds Report
+Generated: June 29, 2026
+
+Desktop build folder:
+C:\Users\blowb\Desktop\TopFlowUIalphabuilds
+
+Repository:
+C:\Users\blowb\Documents\Codex\2026-06-19\build-an-app-for-my-pixel
+
+Overall goal
+Dave's direction for this milestone was to push The Top Flow toward a crisp, high-resolution, minimalist OLED neon UI that feels quick, smooth, and responsive. The priority was eliminating cheap or grainy surfaces, improving gestures, making menus feel premium, adding stronger typography and visual identity, and building toward a flagship songwriting app experience without breaking notes, rhymes, media, recording, or updates.
+
+Release policy followed
+Versions 22.1 through 23.0 were compiled, stored in the repository `releases` folder, copied into the Desktop `TopFlowUIalphabuilds` folder, uploaded to temp.sh, and published on the required 22.0 JSONBlob/appcast line using the multi-version chooser format. No separate app-store update manifest was pushed.
+
+Planning and implementation format
+Each version used the supervisor plus 5.3 workflow:
+1. Codex defined a narrow next-version UI goal.
+2. 5.3 implemented only that scoped task.
+3. Codex reviewed the diff, rejected risky behavior or weak visual choices, and either patched small issues or kicked corrections back to 5.3.
+4. Codex handled versioning, release APKs, temp.sh upload, JSONBlob/appcast update, records, and commits.
+
+Version outcomes
+22.1: Added multi-version update discovery, legacy appcast fallback, and an OLED chooser sheet for multiple available updates.
+22.2: Added the Compose-backed true-black premium studio backdrop behind existing Java workflows.
+22.3: Rebuilt Notes into a premium session dashboard with stronger current-session cards, accent rails, previews, and signal markers.
+22.4: Upgraded the editor into a Draft Studio surface with chrome, accent rail, metadata, and refined title/body fields.
+22.5: Added real bundled OFL fonts: Space Grotesk, Share Tech Mono, and Silkscreen.
+22.6: Rebuilt sheets and menus into premium OLED command panels with stronger handles, headers, and command rows.
+22.7: Tuned gestures and motion with larger edge hitboxes, shared swipe helpers, and faster sheet/dock/tap feedback.
+22.8: Reworked settings and personalization into preview-first color, font, glow, and rhyme-setting surfaces.
+22.9: Rebuilt startup/preload identity with an OLED launch surface, crisp signal rails, and refined preload status.
+23.0: Completed a cohesive global chrome pass with live Notes/Editor context, refreshed header signal rail, version visibility, and `Tune` dock polish.
+
+5.3 implementation and Codex review highlights
+5.3 carried the bounded implementation work for each version. Codex review corrected several issues before release: a Compose backdrop fill issue in 22.2, misleading Notes copy in 22.3, editor label tone in 22.4, sheet/menu copy in 22.6, gesture alpha reset in 22.7, preview contrast and settings card spacing in 22.8, fake preload percentages in 22.9, and a 23.0 body-editor status update that could have scanned long notes on every keystroke.
+
+Artifact list
+22.1: https://temp.sh/bqCQA/the-top-flow-22.1.apk
+SHA256: 2852C2804F08B0B92BAAB3FD4D64DA3C64FF2F2D6DFCA1848E8864B1B272D9ED
+
+22.2: https://temp.sh/LOUQV/the-top-flow-22.2.apk
+SHA256: 39F3BF26CCE5878BEDCB53BF5DFFC97D464F2FDF424196B220E408CE2CB1EF96
+
+22.3: https://temp.sh/mAxWr/the-top-flow-22.3.apk
+SHA256: 116AA21E22EAD82197A7C445BFB5F6475D472413222ADBA0D7E61DEAAFFB09DC
+
+22.4: https://temp.sh/NlOcY/the-top-flow-22.4.apk
+SHA256: C004309A504C5E60FE948D6C2FBDB395AF7A78BBD7C2FC0BEF79C2789617AA71
+
+22.5: https://temp.sh/aYvxe/the-top-flow-22.5.apk
+SHA256: 63C85D732490A068BA8F3177435F94E2998B96965B66555AD04D5AD48AE8D3DE
+
+22.6: https://temp.sh/BjhEG/the-top-flow-22.6.apk
+SHA256: 707C7D652263FD47D8F2493D28EC1BD360AF962DA7B412AE190DF8B20A2BE8BC
+
+22.7: https://temp.sh/Eehmr/the-top-flow-22.7.apk
+SHA256: 3AA711D1298576A88C57A3D8550D60D43E5810294BA85425CD4D4C5B26E2D328
+
+22.8: https://temp.sh/Lscyd/the-top-flow-22.8.apk
+SHA256: FFCDFF964034F2A4BE07355E17B0A2677ADB54703FB47BA6C3DED17DD8675E4D
+
+22.9: https://temp.sh/gQSck/the-top-flow-22.9.apk
+SHA256: 359760EE069B0656ABB4D7930A827A736BCDA74ABC072E182DB104937CB7BEB5
+
+23.0: https://temp.sh/NXoxM/the-top-flow-23.0.apk
+SHA256: 31D632C3658C49A7FBC10CB7AA8D7734B4043226512EFDAD23EB9FD016DD5938
+
+Verification completed
+- `tools\rhyme_quality_check.py` passed for the final release.
+- `assembleRelease` passed for 23.0 / versionCode 56.
+- The 23.0 APK was copied to the repository and Desktop build folders.
+- The 23.0 temp.sh download was verified through the app-compatible POST path and matched the local SHA256.
+- The JSONBlob/appcast line now reports 23.0 as latest with versions 23.0 and 22.9 through 22.1 in the chooser list.
+
+How close 23.0 is to Dave's vision
+23.0 is a meaningful alpha-quality transformation compared to 22.0. The app now has true OLED foundations, a premium backdrop, stronger Notes and Editor surfaces, better sheets, richer local fonts, smoother gestures, preview-first personalization, a branded launch/preload surface, and cohesive global chrome. It looks and behaves much closer to the requested high-resolution OLED neon songwriting studio.
+
+What is still not fully complete
+This is not yet a full Compose rewrite, and the APK is still about 9 MB rather than 50 MB because I did not add artificial bloat. The size growth came from real font assets and UI code only. A future jump in APK size should come from justified assets, richer animation systems, or deeper Compose/native visual systems. The next practical step is real-device visual QA at high refresh rate, screenshot review, and durable hosting to replace JSONBlob/temp.sh.

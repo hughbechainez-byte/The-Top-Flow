@@ -239,6 +239,8 @@ public class MainActivity extends Activity {
     private View editorMiniSignal;
     private TextView editorHeaderTitle;
     private TextView editorHeaderMeta;
+    private TextView shellStatusLabel;
+    private View shellSignal;
     private LinearLayout songCard;
     private LinearLayout voiceCard;
     private EditText titleInput;
@@ -405,36 +407,64 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        header.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_sm));
         header.setBackground(TopFlowUiKit.floatingPanel(this, 24));
         TopFlowUiKit.applyFloating(header, 10);
-        TextView brand = new TextView(this);
-        brand.setText("Top Flow");
-        textStyle(brand, R.style.TextAppearance_TopFlow21_Title);
-        TextView sub = new TextView(this);
-        sub.setText("Offline studio");
-        textStyle(sub, R.style.TextAppearance_TopFlow21_Caption);
-        sub.setPadding(2, dp(2), 0, 0);
+
+        LinearLayout left = new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
         LinearLayout titleWrap = new LinearLayout(this);
         titleWrap.setOrientation(LinearLayout.HORIZONTAL);
         titleWrap.setGravity(Gravity.CENTER_VERTICAL);
+        TextView brand = new TextView(this);
+        brand.setText("Top Flow");
+        textStyle(brand, R.style.TextAppearance_TopFlow21_Title);
+        brand.setIncludeFontPadding(false);
+        brand.setLetterSpacing(0f);
+        brand.setMaxLines(1);
+        brand.setEllipsize(TextUtils.TruncateAt.END);
         titleWrap.addView(brand);
         TextView version = new TextView(this);
         version.setText("  v" + BuildConfig.VERSION_NAME);
         textStyle(version, R.style.TextAppearance_TopFlow21_Caption);
         version.setTextColor(TopFlowUiKit.MINT);
+        version.setIncludeFontPadding(false);
+        version.setLetterSpacing(0f);
+        version.setMaxLines(1);
         titleWrap.addView(version);
-        LinearLayout left = new LinearLayout(this);
-        left.setOrientation(LinearLayout.VERTICAL);
         left.addView(titleWrap);
-        left.addView(sub);
-        header.addView(left, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        shellStatusLabel = new TextView(this);
+        shellStatusLabel.setText("Studio ready");
+        shellStatusLabel.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        shellStatusLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        shellStatusLabel.setIncludeFontPadding(false);
+        shellStatusLabel.setLetterSpacing(0f);
+        shellStatusLabel.setMaxLines(1);
+        shellStatusLabel.setEllipsize(TextUtils.TruncateAt.END);
+        shellStatusLabel.setPadding(0, dp(2), 0, 0);
+        left.addView(shellStatusLabel);
+
+        shellSignal = buildSessionMiniSignal(C_CYAN, 18, true);
+        if (shellSignal != null) {
+            LinearLayout signalWrap = new LinearLayout(this);
+            signalWrap.setOrientation(LinearLayout.HORIZONTAL);
+            signalWrap.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+            signalWrap.setPadding(0, dp(4), 0, 0);
+            signalWrap.addView(shellSignal);
+            left.addView(signalWrap);
+        }
+
+        header.addView(left);
         Button menu = button("Menu");
         menu.setOnClickListener(v -> showMainMenu());
         header.addView(menu);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(-1, -2);
         headerLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         shell.addView(header, headerLp);
+        updateShellStatus();
 
         contentHost = new FrameLayout(this);
         shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -660,6 +690,7 @@ public class MainActivity extends Activity {
                 current.title = titleInput.getText().toString();
                 saveAndRenderList();
             }
+            updateShellStatus();
         }));
         bodyInput.addTextChangedListener(simpleWatcher(() -> {
             if (!suppressSave && current != null) {
@@ -721,7 +752,7 @@ public class MainActivity extends Activity {
             }
             showStyleMenu();
         });
-        Button settings = button("Set");
+        Button settings = button("Tune");
         dockSettingsButton = settings;
         settings.setOnClickListener(v -> showRhymeSettingsMenu());
         dock.addView(notes, dockButtonLp(0));
@@ -729,6 +760,52 @@ public class MainActivity extends Activity {
         dock.addView(style, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
         dock.addView(settings, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
         return dock;
+    }
+
+    private void updateShellStatus() {
+        if (shellStatusLabel == null) return;
+        boolean editorVisible = editorPanel != null && editorPanel.getVisibility() == View.VISIBLE;
+        String status;
+        int accent = C_CYAN;
+        if (editorVisible && current != null) {
+            status = buildEditorShellStatus(current);
+            accent = current.accentColor;
+        } else {
+            status = buildNotesShellStatus();
+            if (current != null) {
+                accent = current.accentColor;
+            }
+        }
+        shellStatusLabel.setText(status);
+        if (shellSignal != null && shellSignal.getParent() instanceof ViewGroup) {
+            ViewGroup signalHost = (ViewGroup) shellSignal.getParent();
+            signalHost.removeView(shellSignal);
+            shellSignal = buildSessionMiniSignal(accent, 18, true);
+            if (shellSignal != null) signalHost.addView(shellSignal);
+        }
+    }
+
+    private String buildNotesShellStatus() {
+        int totalNotes = notes == null ? 0 : notes.size();
+        String label = "Notes · " + totalNotes + " session" + (totalNotes == 1 ? "" : "s");
+        if (current == null) return label + " · No active session";
+        String title = shellTitlePreview(current.title);
+        return label + " · Active " + title;
+    }
+
+    private String buildEditorShellStatus(Note note) {
+        if (note == null) return "Editor open · 0 lines · 0 words";
+        String title = shellTitlePreview(note.title);
+        String body = bodyInput != null && bodyInput.getText() != null ? bodyInput.getText().toString() : note.body;
+        int lines = lyricLineCount(body);
+        int words = lyricWordCount(body);
+        return "Draft · " + title + " · " + lines + " line" + (lines == 1 ? "" : "s") + " · " + words + " word" + (words == 1 ? "" : "s");
+    }
+
+    private String shellTitlePreview(String title) {
+        String safeTitle = (title == null || title.trim().isEmpty()) ? "Untitled" : title.trim();
+        if (safeTitle.length() <= 28) return safeTitle;
+        return safeTitle.substring(0, 25) + "…";
     }
 
     private LinearLayout.LayoutParams dockButtonLp(int leftMargin) {
@@ -979,6 +1056,7 @@ public class MainActivity extends Activity {
                     .setDuration(180)
                     .start();
         }
+        updateShellStatus();
     }
 
     private LinearLayout buildNotesCommandHeader() {
@@ -1511,6 +1589,7 @@ public class MainActivity extends Activity {
         renderRecordings();
         scheduleSuggestionUpdate();
         updatePlaybackStatus();
+        updateShellStatus();
     }
 
     private void showMenuScreen() {
@@ -1521,6 +1600,7 @@ public class MainActivity extends Activity {
         animatePanel(editorPanel, false);
         setActiveDockState(DOCK_STATE_NOTES);
         renderNoteList();
+        updateShellStatus();
     }
 
     private void showEditorScreen() {
@@ -1529,6 +1609,7 @@ public class MainActivity extends Activity {
         animatePanel(editorPanel, true);
         animatePanel(menuPanel, false);
         setActiveDockState(DOCK_STATE_NONE);
+        updateShellStatus();
     }
 
     private void animatePanel(View panel, boolean show) {
@@ -1752,6 +1833,7 @@ public class MainActivity extends Activity {
         renderRecordings();
         updateMediaLabels();
         scheduleSuggestionUpdate();
+        updateShellStatus();
     }
 
     private void stopSongPlayback() {
@@ -5205,7 +5287,7 @@ public class MainActivity extends Activity {
         if (label.contains("note style") || label.contains("font") || label.equals("style")) return R.drawable.ic_style_24;
         if (label.equals("rhyme")) return R.drawable.ic_rhyme_24;
         if (label.contains("expanded rhymes") || label.equals("rhymes")) return R.drawable.ic_rhyme_24;
-        if (label.contains("rhyme settings") || label.equals("settings") || label.startsWith("set")) return R.drawable.ic_settings_24;
+        if (label.contains("rhyme settings") || label.equals("settings") || label.startsWith("set") || label.equals("tune")) return R.drawable.ic_settings_24;
         if (label.contains("check for updates")) return R.drawable.ic_update_24;
         if (label.contains("deleted rhymes")) return R.drawable.ic_restore_24;
         if (label.contains("restore")) return R.drawable.ic_restore_24;

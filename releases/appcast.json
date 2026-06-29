@@ -1,9 +1,15 @@
 {
-  "versionName": "22.9",
-  "notes": "Version 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined status treatment, and unchanged rhyme preload behavior.",
-  "versionCode": 55,
-  "apkUrl": "https://temp.sh/gQSck/the-top-flow-22.9.apk",
+  "versionName": "23.0",
+  "notes": "Version 23.0 completes the premium UI transformation with cohesive global chrome, live context status, refined dock tuning, and final OLED neon polish across the 22.x UI foundation.",
+  "versionCode": 56,
+  "apkUrl": "https://temp.sh/NXoxM/the-top-flow-23.0.apk",
   "versions": [
+    {
+      "versionName": "23.0",
+      "notes": "Version 23.0 completes the premium UI transformation with cohesive global chrome, live context status, refined dock tuning, and final OLED neon polish across the 22.x UI foundation.",
+      "versionCode": 56,
+      "apkUrl": "https://temp.sh/NXoxM/the-top-flow-23.0.apk"
+    },
     {
       "versionName": "22.9",
       "notes": "Version 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined status treatment, and unchanged rhyme preload behavior.",

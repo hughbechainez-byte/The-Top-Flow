@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 23.0 final flagship polish and acceptance. Preserve note storage, rhyme behavior, media, gestures, update behavior, and the multi-version release line.
+Validate 23.0 on device, review screenshots/logs, and decide durable update hosting when directed.

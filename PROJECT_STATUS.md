@@ -36,6 +36,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.7 tunes the gesture and motion system with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap motion, and consistent workflow animation paths while preserving editor focus guards.
 - 22.8 upgrades settings and personalization into preview-first OLED sheets with richer color, font, font-size, glow, and rhyme-setting controls while preserving saved settings behavior.
 - 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined preload status treatment, and unchanged rhyme preload behavior.
+- 23.0 completes the milestone with cohesive global chrome, live context status for Notes/Editor, a refreshed header signal rail, and final dock polish while preserving app behavior.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -53,8 +54,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.9 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the 23.0 final flagship polish and acceptance pass.
+23.0 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is post-23.0 device QA, durable hosting, and any user-directed update-manifest follow-up.
 
 ## Next Milestone
 
-Next: implement 23.0 final polish, acceptance checks, and final Desktop report.
+Next: validate 23.0 on device, review screenshots/logs, and decide durable update hosting.

@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 23.0 with cohesive global chrome, live Notes/Editor context status, a refreshed header signal rail, `Tune` dock polish, and final review fixes to avoid per-keystroke body scans.
 - Released 22.9 with a premium OLED launch/preload surface, crisp startup signal rails, refined status/progress treatment, and review fixes that removed fake percentage labels while preserving preload behavior.
 - Released 22.8 with preview-first settings and personalization sheets, richer color/font/glow controls, live preview surfaces, refined rhyme-setting cards, and review fixes for preview contrast and card spacing.
 - Released 22.7 with tuned gesture thresholds, larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap motion, and consistent workflow animation paths while preserving input safety.
