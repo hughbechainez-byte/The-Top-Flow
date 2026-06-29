@@ -1,9 +1,15 @@
 {
-  "versionName": "22.4",
-  "notes": "Version 22.4 upgrades the editor into a premium Draft Studio surface with editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces.",
-  "versionCode": 50,
-  "apkUrl": "https://temp.sh/NlOcY/the-top-flow-22.4.apk",
+  "versionName": "22.5",
+  "notes": "Version 22.5 adds bundled OFL Google Fonts assets for Space Grotesk, Share Tech Mono, and Silkscreen, wired into editor rendering and font previews with fallback-safe loading.",
+  "versionCode": 51,
+  "apkUrl": "https://temp.sh/aYvxe/the-top-flow-22.5.apk",
   "versions": [
+    {
+      "versionName": "22.5",
+      "notes": "Version 22.5 adds bundled OFL Google Fonts assets for Space Grotesk, Share Tech Mono, and Silkscreen, wired into editor rendering and font previews with fallback-safe loading.",
+      "versionCode": 51,
+      "apkUrl": "https://temp.sh/aYvxe/the-top-flow-22.5.apk"
+    },
     {
       "versionName": "22.4",
       "notes": "Version 22.4 upgrades the editor into a premium Draft Studio surface with editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces.",

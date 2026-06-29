@@ -31,6 +31,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.2 begins the Compose-led premium shell foundation with a Java-callable Compose backdrop layer behind the existing workflows, using true OLED black plus crisp neon studio linework instead of blurred or grainy effects.
 - 22.3 rebuilds the Notes home presentation into a premium session dashboard with stronger current-session context, richer note cards, accent rails, compact metadata/previews, and view-built signal markers.
 - 22.4 upgrades the editor into a premium Draft Studio surface with editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces while preserving typing and rhyme hot paths.
+- 22.5 adds meaningful bundled font assets: Space Grotesk, Share Tech Mono, and Silkscreen from Google Fonts under OFL, wired into editor rendering and font previews with fallback-safe loading.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -48,8 +49,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.4 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.5 font and asset library.
+22.5 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.6 premium sheets and menus.
 
 ## Next Milestone
 
-Next: implement 22.5 real font and asset library with meaningful local resources only.
+Next: implement 22.6 premium sheets and menus while preserving command behavior.

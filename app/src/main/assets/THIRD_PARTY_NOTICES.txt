@@ -1,0 +1,9 @@
+Font Assets (Open Font License)
+
+This app includes bundled Google Fonts:
+
+- Space Grotesk (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf
+- Share Tech Mono (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/sharetechmono/ShareTechMono-Regular.ttf
+- Silkscreen (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/silkscreen/Silkscreen-Regular.ttf
+
+License terms are Open Font License (OFL-1.1). Fonts are used as shipped with these resources.

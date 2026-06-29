@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 22.5 real font and asset library. Use meaningful local resources only and preserve editor/note behavior.
+Implement 22.6 premium sheets and menus. Preserve command behavior, update chooser behavior, and sheet dismissal safety.

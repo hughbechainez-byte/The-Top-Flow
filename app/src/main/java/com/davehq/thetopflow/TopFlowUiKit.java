@@ -9,6 +9,8 @@ import android.content.res.ColorStateList;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.core.content.res.ResourcesCompat;
+
 final class TopFlowUiKit {
     static final int OLED = Color.BLACK;
     static final int INDIGO = Color.rgb(8, 10, 14);
@@ -70,20 +72,49 @@ final class TopFlowUiKit {
         return new RippleDrawable(ColorStateList.valueOf(Color.argb(54, Color.red(accent), Color.green(accent), Color.blue(accent))), null, null);
     }
 
-    static Typeface fontForPreview(String id) {
-        return fontForEditor(id, Typeface.NORMAL);
+    static Typeface fontForPreview(Context context, String id) {
+        return fontForEditor(context, id, Typeface.NORMAL);
     }
 
-    static Typeface fontForEditor(String id, int style) {
-        if ("slim".equals(id)) return Typeface.create("sans-serif-light", style);
-        if ("pixel".equals(id)) return Typeface.create(Typeface.MONOSPACE, style);
-        if ("terminal".equals(id)) return Typeface.create("monospace", style);
+    static Typeface fontForPreview(String id) {
+        return fontForPreview(null, id);
+    }
+
+    static Typeface fontForEditor(Context context, String id, int style) {
+        if ("slim".equals(id)) {
+            Typeface loaded = loadFont(context, R.font.space_grotesk);
+            if (loaded != null) return Typeface.create(loaded, style);
+            return Typeface.create("sans-serif-light", style);
+        }
+        if ("pixel".equals(id)) {
+            Typeface loaded = loadFont(context, R.font.silkscreen);
+            if (loaded != null) return Typeface.create(loaded, style);
+            return Typeface.create(Typeface.MONOSPACE, style);
+        }
+        if ("terminal".equals(id)) {
+            Typeface loaded = loadFont(context, R.font.share_tech_mono_regular);
+            if (loaded != null) return Typeface.create(loaded, style);
+            return Typeface.create("monospace", style);
+        }
         if ("rounded".equals(id)) return Typeface.create("sans-serif-medium", style);
         if ("serif".equals(id)) return Typeface.create(Typeface.SERIF, style);
         if ("monospace".equals(id)) return Typeface.create(Typeface.MONOSPACE, style);
         if ("casual".equals(id)) return Typeface.create("casual", style);
         if ("cursive".equals(id)) return Typeface.create("cursive", style);
         return Typeface.create("sans-serif", style);
+    }
+
+    private static Typeface loadFont(Context context, int resId) {
+        if (context == null) return null;
+        try {
+            return ResourcesCompat.getFont(context, resId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    static Typeface fontForEditor(String id, int style) {
+        return fontForEditor(null, id, style);
     }
 
     static String[] fontPreviewIds() {

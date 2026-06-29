@@ -2,17 +2,12 @@
 
 ## High
 
-- 22.5 real font/asset library
-  - Complexity: Medium
-  - Recommended model: GPT-5.3
-  - Recommended reasoning level: Low
-
-## Medium
-
 - 22.6 premium sheets/menus and 22.7 gesture/motion system
   - Complexity: Medium-High
   - Recommended model: GPT-5.3 implementation under GPT-5.5 supervision
   - Recommended reasoning level: Medium
+
+## Medium
 
 - 22.8 settings/personalization and 22.9 splash/preload visual identity
   - Complexity: Medium

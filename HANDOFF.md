@@ -26,6 +26,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 22.4 upgrades the editor presentation into a Draft Studio surface. It adds editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces. Text watchers, save debounce, IME flags, cursor/rhyme popup behavior, storage, media, and updates remain preserved.
 
+22.5 adds real bundled font assets from Google Fonts under OFL: Space Grotesk, Share Tech Mono, and Silkscreen. Existing font IDs now map `slim` to Space Grotesk, `terminal` to Share Tech Mono, and `pixel` to Silkscreen through fallback-safe resource loading. Editor rendering and font previews use the bundled fonts.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -37,7 +39,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 22.4 / versionCode 50 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.5 / versionCode 51 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -59,7 +61,7 @@ Latest verified build: 22.4 / versionCode 50 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Implement 22.5 real font and asset library. Add meaningful local resources only; do not bloat APK with useless files.
+Implement 22.6 premium sheets and menus. Preserve command behavior, update chooser behavior, and sheet dismissal safety.
 
 ## Assumptions
 
@@ -70,6 +72,7 @@ Implement 22.5 real font and asset library. Add meaningful local resources only;
 - Version 22.2 adds the first live Compose-backed UI layer and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.3 upgrades the Notes home and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.4 upgrades the editor surface and should remain in the multi-version appcast list after later 22.x releases.
+- Version 22.5 adds bundled OFL font assets and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -104,4 +107,5 @@ Implement 22.5 real font and asset library. Add meaningful local resources only;
 - 22.3 should make the Notes home materially more premium while keeping note persistence unchanged.
 - 22.4 should make the editor surface feel premium without touching input hot paths.
 - 22.5 should add real fonts/assets with clear value and acceptable licensing.
+- 22.6 should rebuild the sheet/menu presentation without changing command behavior.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

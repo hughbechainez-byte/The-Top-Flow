@@ -1539,8 +1539,8 @@ public class MainActivity extends Activity {
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
         bodyInput.setHintTextColor(current.accentColor);
-        titleInput.setTypeface(TopFlowUiKit.fontForEditor(current.font, android.graphics.Typeface.BOLD));
-        bodyInput.setTypeface(TopFlowUiKit.fontForEditor(current.font, android.graphics.Typeface.NORMAL));
+        titleInput.setTypeface(TopFlowUiKit.fontForEditor(this, current.font, android.graphics.Typeface.BOLD));
+        bodyInput.setTypeface(TopFlowUiKit.fontForEditor(this, current.font, android.graphics.Typeface.NORMAL));
         titleInput.setLetterSpacing(0f);
         bodyInput.setLetterSpacing(0f);
         titleInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(18, current.fontSizeSp + 5));
@@ -3461,7 +3461,7 @@ public class MainActivity extends Activity {
         TextView preview = new TextView(this);
         preview.setText("whisper my name");
         textStyle(preview, R.style.TextAppearance_TopFlow21_Section);
-        preview.setTypeface(TopFlowUiKit.fontForPreview(fontId));
+        preview.setTypeface(TopFlowUiKit.fontForPreview(this, fontId));
         preview.setTextColor(TopFlowUiKit.TEXT);
         preview.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
         row.addView(name);
@@ -3473,9 +3473,9 @@ public class MainActivity extends Activity {
     }
 
     private String fontLabel(String fontId) {
-        if ("slim".equals(fontId)) return "Slim Minimal";
-        if ("pixel".equals(fontId)) return "Pixel Retro";
-        if ("terminal".equals(fontId)) return "Tech Terminal";
+        if ("slim".equals(fontId)) return "Slim · Space Grotesk";
+        if ("pixel".equals(fontId)) return "Pixel · Silkscreen";
+        if ("terminal".equals(fontId)) return "Terminal · Share Tech Mono";
         if ("rounded".equals(fontId)) return "Modern Rounded";
         if ("serif".equals(fontId)) return "Serif";
         if ("monospace".equals(fontId)) return "Mono";
