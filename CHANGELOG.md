@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 23.9 with final pure-black chrome cleanup, black command-surface cards in remaining generic chrome paths, and a local laptop QA plan for crash, screenshot, and jank testing without running those tests yet.
 - Released 23.8 with a runtime-used uncompressed prepared rhyme index, a default expanded-rhyme hot cache, scorer/TSV fallbacks, and release APK size above the required 2x target.
 - Released 23.7 with a shipped offline default fast-rhyme hot cache, conservative `RhymeEngine` loader/fallback rules, and no-compress packaging so APK growth comes from runtime-used rhyme data.
 - Released 23.6 with a fixed-height pure-black bottom dock, stronger active neon feedback, accent-aware dock icon/stroke updates, refreshed swipe rails, and safer panel/dock visual continuity without changing gesture thresholds.

@@ -1,9 +1,15 @@
 {
-  "versionName": "23.8",
-  "notes": "Version 23.8 clears the functional size gate with runtime-used rhyme acceleration data: an uncompressed prepared index and default expanded-rhyme hot cache with fallbacks.",
-  "versionCode": 64,
-  "apkUrl": "https://temp.sh/yYCIa/the-top-flow-23.8.apk",
+  "versionName": "23.9",
+  "notes": "Version 23.9 adds final pure-black chrome cleanup plus a local laptop QA plan for crash, screenshot, and jank testing paths without running emulator/device tests yet.",
+  "versionCode": 65,
+  "apkUrl": "https://temp.sh/OPcsu/the-top-flow-23.9.apk",
   "versions": [
+    {
+      "versionName": "23.9",
+      "notes": "Version 23.9 adds final pure-black chrome cleanup plus a local laptop QA plan for crash, screenshot, and jank testing paths without running emulator/device tests yet.",
+      "versionCode": 65,
+      "apkUrl": "https://temp.sh/OPcsu/the-top-flow-23.9.apk"
+    },
     {
       "versionName": "23.8",
       "notes": "Version 23.8 clears the functional size gate with runtime-used rhyme acceleration data: an uncompressed prepared index and default expanded-rhyme hot cache with fallbacks.",

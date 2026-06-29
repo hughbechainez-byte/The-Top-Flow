@@ -54,6 +54,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.8 clears Dave's 24.0 size gate with more runtime-used rhyme data. `RhymeEngine` now tries uncompressed `rhyme_index_accel.tfindex` before falling back to `rhyme_index.tsv`, and it loads `rhyme_expanded_hot_cache.tfcache` for safe default expanded requests. Existing scorer/TSV fallbacks remain intact, and known regression words stay on the scorer for expanded requests. The 23.8 release APK is 19,451,623 bytes before final packaging copy/upload.
 
+23.9 performs the final acceptance polish before 24.0. Remaining generic chrome/card surfaces in the global header and reusable card helpers now use the pure-black command-surface language instead of legacy floating panels, and `LOCAL_QA_24_PLAN.md` documents laptop-based crash, screenshot, jank, Macrobenchmark, Baseline Profile, and JankStats paths. Emulator/device visual tests were deliberately not run per Dave's instruction.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -65,7 +67,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.8 / versionCode 64 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest published build: 23.9 / versionCode 65 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -87,7 +89,7 @@ Latest published build: 23.8 / versionCode 64 passed `tools\rhyme_quality_check.
 
 ## Current Next Task
 
-Next: implement 23.9 acceptance polish and local QA planning. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
+Next: implement 24.0 final release wrap-up and report. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -112,6 +114,7 @@ Next: implement 23.9 acceptance polish and local QA planning. Preserve note stor
 - Version 23.6 unifies dock and swipe affordances with the pure-black neon rail language. Do not change gesture thresholds without explicit evidence.
 - Version 23.7 adds the default fast-rhyme hot cache. Keep hot-cache eligibility conservative; fall back to the scorer whenever settings, removals, or request shape differ.
 - Version 23.8 adds the uncompressed prepared index and expanded hot cache. Keep all new large assets runtime-used and preserve TSV/scorer fallbacks.
+- Version 23.9 adds the local QA plan and final pure-black chrome cleanup. Do not run emulator/device tests unless Dave explicitly allows it.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.

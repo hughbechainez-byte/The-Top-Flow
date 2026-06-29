@@ -208,7 +208,7 @@ Implementation:
 - Final smoke validation.
 - Version bump, APK build/copy/upload.
 - Appcast/JSONBlob update with versions 24.0 down to 22.1.
-- Final report including research findings, local test strategy, APK-size explanation, and how close the result is to Dave's vision.
+- Final report in the Desktop build folder including research findings, local test strategy, APK-size explanation, and how close the result is to Dave's vision.
 
 Review:
 - Latest app pulls from the app.

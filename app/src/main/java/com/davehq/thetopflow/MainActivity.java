@@ -425,8 +425,8 @@ public class MainActivity extends ComponentActivity {
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_sm));
-        header.setBackground(TopFlowUiKit.floatingPanel(this, 24));
-        TopFlowUiKit.applyFloating(header, 10);
+        header.setBackground(oledCommandSurface(22, dockAccent(), true));
+        TopFlowUiKit.applyFloating(header, 6);
 
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
@@ -5410,7 +5410,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
-        panel.setBackground(TopFlowUiKit.floatingPanel(this, 12));
+        panel.setBackground(oledCommandSurface(14, accent, enabled));
         panel.setMinimumHeight(dp(120));
         TextView sample = new TextView(this);
         sample.setText("Glow preview");
@@ -5590,8 +5590,8 @@ public class MainActivity extends ComponentActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        card.setBackground(TopFlowUiKit.floatingPanel(this, 26));
-        TopFlowUiKit.applyFloating(card, 12);
+        card.setBackground(oledCommandSurface(24, dockAccent(), false));
+        TopFlowUiKit.applyFloating(card, 4);
         return card;
     }
 
@@ -5599,8 +5599,8 @@ public class MainActivity extends ComponentActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_lg));
-        card.setBackground(TopFlowUiKit.floatingPanel(this, 20));
-        TopFlowUiKit.applyFloating(card, 8);
+        card.setBackground(oledCommandSurface(18, dockAccent(), false));
+        TopFlowUiKit.applyFloating(card, 4);
         TextView label = new TextView(this);
         label.setText(title);
         textStyle(label, R.style.TextAppearance_TopFlow21_Section);

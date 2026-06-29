@@ -2,7 +2,7 @@
 
 ## High
 
-- 23.9 acceptance polish and local QA planning
+- 24.0 final release wrap-up
   - Complexity: Medium
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium

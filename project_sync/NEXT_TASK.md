@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 23.9 acceptance polish and local QA planning without running emulator/device tests yet.
+Implement 24.0 final release wrap-up, desktop report, and manifest publication.
