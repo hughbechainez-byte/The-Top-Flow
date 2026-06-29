@@ -4,8 +4,8 @@ plugins {
     id "org.jetbrains.kotlin.plugin.compose"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "56").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "23.0").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "57").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "23.1").toString()
 
 android {
     namespace "com.davehq.thetopflow"
@@ -31,7 +31,7 @@ android {
         targetSdk 35
         versionCode = topFlowVersionCode
         versionName = topFlowVersionName
-        buildConfigField "String", "UPDATE_MANIFEST_URL", "\"https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df\""
+        buildConfigField "String", "UPDATE_MANIFEST_URL", "\"https://jsonblob.com/api/jsonBlob/019f13c7-dc3f-7cf2-bf88-038a846852bd\""
     }
 
     signingConfigs {

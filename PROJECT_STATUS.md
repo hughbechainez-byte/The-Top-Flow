@@ -37,7 +37,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.8 upgrades settings and personalization into preview-first OLED sheets with richer color, font, font-size, glow, and rhyme-setting controls while preserving saved settings behavior.
 - 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined preload status treatment, and unchanged rhyme preload behavior.
 - 23.0 completes the milestone with cohesive global chrome, live context status for Notes/Editor, a refreshed header signal rail, and final dock polish while preserving app behavior.
-- 23.1 fix candidate makes the Compose backdrop lifecycle-safe by moving `MainActivity` to `ComponentActivity`, explicitly attaching view-tree owners to manual hosts, and using lifecycle-based Compose disposal. This is built locally but not published until device validation passes.
+- 23.1 makes the Compose backdrop lifecycle-safe by moving `MainActivity` to `ComponentActivity`, explicitly attaching view-tree owners to manual hosts, using lifecycle-based Compose disposal, and removing the blue radar/grid/waveform backdrop so the root returns to pure OLED black.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -50,14 +50,14 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - The 21.0 rhyme system is now extracted into `RhymeEngine.java`, but legacy rhyme helpers still remain in `MainActivity.java` and should be removed only after device validation.
 - A focused rhyme regression check exists at `tools/rhyme_quality_check.py`, including `my/try`, `yours`, `out`, slang, phrase, and known bad-match cases.
 - In-app update metadata points to the current JSONBlob appcast, but install flow still needs device verification on Pixel 10 Pro.
-- JSONBlob/temp.sh are temporary hosts; durable update hosting is still needed.
+- JSONBlob/temp.sh are temporary hosts; durable update hosting is still needed. The original JSONBlob manifest returned 404 during 23.1 release work, so 23.1+ points at replacement temporary blob `019f13c7-dc3f-7cf2-bf88-038a846852bd`.
 - Rebuild B is still a Java-runtime bridge; the live app is not fully Compose yet.
-- Published 23.0 / versionCode 56 crashes on startup from `ViewTreeLifecycleOwner not found`; the fix candidate passes local checks, but live device validation is still required before 23.1 release/appcast publication.
+- Published 23.0 / versionCode 56 could crash on startup from `ViewTreeLifecycleOwner not found`; 23.1 supersedes it with the lifecycle host fix and pure-black backdrop.
 
 ## Current Development Priority
 
-23.1 Compose lifecycle crash fix is implemented as a local release-build candidate. Current priority is device validation on Pixel 10 Pro, then version bump, APK upload, appcast/JSONBlob update, release docs, and commit of final release metadata.
+23.1 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the 23.2 shared motion foundation for Pixel-grade transitions.
 
 ## Next Milestone
 
-Next: install the fixed build on device, confirm launch/editor/keyboard/rhyme popup/bottom menus/update checks, then publish 23.1 if validation passes.
+Next: implement 23.2 shared motion foundation with slower, more coherent 120 Hz-feeling transitions.

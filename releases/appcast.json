@@ -1,9 +1,15 @@
 {
-  "versionName": "23.0",
-  "notes": "Version 23.0 completes the premium UI transformation with cohesive global chrome, live context status, refined dock tuning, and final OLED neon polish across the 22.x UI foundation.",
-  "versionCode": 56,
-  "apkUrl": "https://temp.sh/NXoxM/the-top-flow-23.0.apk",
+  "versionName": "23.1",
+  "notes": "Version 23.1 keeps the Compose lifecycle host fix and removes the blue radar/tech backdrop so the app returns to a pure OLED black foundation with only UI neon/glow above it.",
+  "versionCode": 57,
+  "apkUrl": "https://temp.sh/mOcRV/the-top-flow-23.1.apk",
   "versions": [
+    {
+      "versionName": "23.1",
+      "notes": "Version 23.1 keeps the Compose lifecycle host fix and removes the blue radar/tech backdrop so the app returns to a pure OLED black foundation with only UI neon/glow above it.",
+      "versionCode": 57,
+      "apkUrl": "https://temp.sh/mOcRV/the-top-flow-23.1.apk"
+    },
     {
       "versionName": "23.0",
       "notes": "Version 23.0 completes the premium UI transformation with cohesive global chrome, live context status, refined dock tuning, and final OLED neon polish across the 22.x UI foundation.",

@@ -1,12 +1,10 @@
 # Session Summary
 
-- Current milestone: 22.1 to 23.0 premium UI transformation.
-- Latest completed build: 23.0 / versionCode 56.
-- 23.0 completed the milestone with cohesive global chrome, live Notes/Editor context status, refreshed header signal rail, and `Tune` dock polish.
-- Codex review removed a per-keystroke body status scan before packaging.
+- Current milestone: 23.1 to 24.0 pure-black motion foundation.
+- Latest completed build: 23.1 / versionCode 57.
+- 23.1 retains the Compose lifecycle host fix and removes the blue radar/grid/waveform backdrop.
+- The root/background direction is now pure OLED black; active UI neon/glow is the only allowed interruption.
+- The original JSONBlob manifest returned 404, so 23.1+ uses replacement temporary JSONBlob `019f13c7-dc3f-7cf2-bf88-038a846852bd`.
 - Validation: `tools\rhyme_quality_check.py` passed; `assembleRelease` passed locally.
-- Release: 23.0 APK copied into `releases/` and `Desktop/TopFlowUIalphabuilds`, temp-hosted, and added to the multi-version appcast line.
-- Crash follow-up: 23.0 / versionCode 56 has a startup `ViewTreeLifecycleOwner not found` crash recorded in `V23_CRASH_LOG.md`.
-- Fix candidate: `MainActivity` now extends `ComponentActivity`, manual root/popup hosts receive view-tree owners, and the Compose backdrop attaches owners before `setContent` with lifecycle-based disposal.
-- Validation: rhyme checks and `assembleRelease` pass for the fix candidate. No ADB device or local emulator was available, so live launch/editor/keyboard/rhyme/menu validation and 23.1 publishing remain blocked.
-- Next task: device-validate the fix candidate, then bump/publish 23.1 only if live validation passes.
+- Release: 23.1 APK copied into `releases/` and `Desktop/TopFlowUIalphabuilds`, temp-hosted, and added to the multi-version appcast line.
+- Next task: 23.2 shared motion foundation.

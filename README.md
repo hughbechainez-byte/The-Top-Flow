@@ -2,8 +2,8 @@
 
 Native Android note app for songwriting on GrapheneOS/Android.
 
-Current local build: `23.0`.
-Current milestone: 22.1 to 23.0 premium UI transformation.
+Current local build: `23.1`.
+Current milestone: 23.1 to 24.0 pure-black motion foundation.
 
 ## Project Record
 
@@ -27,7 +27,7 @@ tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 
 The app checks this temporary manifest:
 
-`https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df`
+`https://jsonblob.com/api/jsonBlob/019f13c7-dc3f-7cf2-bf88-038a846852bd`
 
 Publish a newer signed APK and update that JSON with a higher `versionCode`. The original intended GitLab raw manifest remains suitable once GitLab credentials are available:
 

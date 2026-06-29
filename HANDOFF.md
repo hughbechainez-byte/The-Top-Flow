@@ -38,7 +38,7 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.0 completes the 22.1 to 23.0 UI milestone with cohesive global chrome. The top shell now carries live Notes/Editor context status, a refreshed signal rail, version visibility, and the existing Menu action. The bottom dock now uses the shorter `Tune` label for settings while preserving icon mapping and command routing. Codex review removed a per-keystroke full-body status scan before release.
 
-23.1 fix candidate addresses the 23.0 startup crash recorded in `V23_CRASH_LOG.md`. `MainActivity` now extends `ComponentActivity`, manual root/popup hosts receive view-tree lifecycle/saved-state/ViewModel owners, and the Compose backdrop attaches owners before `setContent` with `DisposeOnViewTreeLifecycleDestroyed`. This candidate passes local rhyme checks and `assembleRelease`, but no ADB device or emulator was available, so do not publish 23.1 until live device validation passes.
+23.1 addresses the 23.0 startup crash recorded in `V23_CRASH_LOG.md` and begins the 23.1 to 24.0 pure-black motion foundation. `MainActivity` now extends `ComponentActivity`, manual root/popup hosts receive view-tree lifecycle/saved-state/ViewModel owners, and the Compose backdrop attaches owners before `setContent` with `DisposeOnViewTreeLifecycleDestroyed`. The old blue radar/grid/waveform backdrop has been removed; the Compose backdrop now renders pure black behind active UI surfaces. The original JSONBlob manifest disappeared with 404, so 23.1+ uses replacement JSONBlob `019f13c7-dc3f-7cf2-bf88-038a846852bd` until durable hosting is available.
 
 ## Build / Run
 
@@ -51,7 +51,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.0 / versionCode 56. Latest local fix candidate passes `tools\rhyme_quality_check.py` and `assembleRelease`, but is not published as 23.1 yet.
+Latest published build: 23.1 / versionCode 57 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -73,7 +73,7 @@ Latest published build: 23.0 / versionCode 56. Latest local fix candidate passes
 
 ## Current Next Task
 
-Post-23.0: device-validate the Compose lifecycle crash fix candidate, then publish 23.1 only after launch/editor/keyboard/rhyme popup/bottom menu/update checks pass. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
+Next: implement 23.2 shared motion foundation. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -90,7 +90,7 @@ Post-23.0: device-validate the Compose lifecycle crash fix candidate, then publi
 - Version 22.8 upgrades settings/personalization and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.9 upgrades startup/preload visual identity and should remain in the multi-version appcast list after later releases.
 - Version 23.0 completes the premium UI milestone and should remain the top-level appcast latest until superseded.
-- Version 23.1 must supersede 23.0 once the Compose lifecycle fix is device-validated. Keep Compose; do not fall back to the legacy native backdrop.
+- Version 23.1 supersedes 23.0 with the Compose lifecycle fix, a pure-black backdrop, and a replacement temporary JSONBlob manifest. Keep Compose; do not fall back to the legacy native backdrop.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -130,5 +130,5 @@ Post-23.0: device-validate the Compose lifecycle crash fix candidate, then publi
 - 22.8 should make settings/personalization feel preview-first while preserving existing option persistence.
 - 22.9 should make startup, preload, and visual identity feel premium without blocking app entry or changing rhyme scoring.
 - 23.0 should perform a cohesive acceptance pass over shell, notes, editor, sheets, settings, startup, typography, gestures, and release records.
-- Post-23.0 should prioritize the 23.1 crash fix device validation, then durable hosting instead of more broad local-only polish.
+- 23.2 should centralize motion specs and make transitions slower, smoother, and more coherent without adding input lag.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

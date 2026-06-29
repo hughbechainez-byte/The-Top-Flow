@@ -1,7 +1,7 @@
 # Active Task
 
-- Current milestone: 22.1 to 23.0 premium UI transformation
-- Current phase: 23.0 complete / post-release QA
+- Current milestone: 23.1 to 24.0 pure-black motion foundation
+- Current phase: 23.2 planning/implementation
 - Current owner: Desktop GPT-5.5
-- Current objective: Validate 23.0 on device and decide durable hosting when directed.
-- Estimated completion: 23.0 release complete.
+- Current objective: Build shared motion foundation for Pixel-grade transitions while preserving app behavior.
+- Estimated completion: Active.

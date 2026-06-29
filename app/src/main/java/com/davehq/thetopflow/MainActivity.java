@@ -183,7 +183,7 @@ public class MainActivity extends ComponentActivity {
     private static final float SHEET_DRAG_START_RATIO = 0.58f;
     private static final int DOCK_STATE_ELEVATION_DP = 12;
     private static final boolean RHYME_TRACE = true;
-    private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df";
+    private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f13c7-dc3f-7cf2-bf88-038a846852bd";
     private static final String PREF_RHYME_STRICTNESS = "rhymeStrictness";
     private static final String PREF_MAX_SUGGESTIONS = "rhymeMaxSuggestions";
     private static final String PREF_SHOW_RHYME_ROW = "showRhymeRow";
