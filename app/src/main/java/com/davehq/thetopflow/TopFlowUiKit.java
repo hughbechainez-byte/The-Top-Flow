@@ -11,9 +11,9 @@ import android.widget.TextView;
 
 final class TopFlowUiKit {
     static final int OLED = Color.BLACK;
-    static final int INDIGO = Color.rgb(45, 52, 88);
-    static final int PANEL = Color.rgb(52, 59, 100);
-    static final int RAISED = Color.rgb(68, 76, 128);
+    static final int INDIGO = Color.rgb(8, 10, 14);
+    static final int PANEL = Color.rgb(10, 13, 18);
+    static final int RAISED = Color.rgb(16, 21, 28);
     static final int MINT = Color.rgb(90, 215, 160);
     static final int TEXT = Color.rgb(248, 249, 255);
     static final int TEXT_SOFT = Color.rgb(184, 192, 218);
@@ -24,7 +24,7 @@ final class TopFlowUiKit {
     static GradientDrawable floatingPanel(Context context, int radiusDp) {
         GradientDrawable drawable = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.argb(232, 58, 65, 110), Color.argb(232, 38, 45, 78)}
+                new int[]{Color.argb(234, 12, 16, 22), Color.argb(234, 2, 3, 6)}
         );
         drawable.setCornerRadius(dp(context, radiusDp));
         drawable.setStroke(dp(context, 1), HAIRLINE);
@@ -34,7 +34,7 @@ final class TopFlowUiKit {
     static GradientDrawable oledSurface(Context context, int radiusDp) {
         GradientDrawable drawable = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.rgb(11, 15, 29), OLED}
+                new int[]{OLED, OLED}
         );
         drawable.setCornerRadius(dp(context, radiusDp));
         drawable.setStroke(dp(context, 1), Color.argb(48, 90, 215, 160));
@@ -68,15 +68,23 @@ final class TopFlowUiKit {
     }
 
     static Typeface fontForPreview(String id) {
-        if ("serif".equals(id)) return Typeface.create(Typeface.SERIF, Typeface.NORMAL);
-        if ("monospace".equals(id)) return Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL);
-        if ("casual".equals(id)) return Typeface.create("casual", Typeface.NORMAL);
-        if ("cursive".equals(id)) return Typeface.create("cursive", Typeface.NORMAL);
-        return Typeface.create("sans-serif-light", Typeface.NORMAL);
+        return fontForEditor(id, Typeface.NORMAL);
+    }
+
+    static Typeface fontForEditor(String id, int style) {
+        if ("slim".equals(id)) return Typeface.create("sans-serif-light", style);
+        if ("pixel".equals(id)) return Typeface.create(Typeface.MONOSPACE, style);
+        if ("terminal".equals(id)) return Typeface.create("monospace", style);
+        if ("rounded".equals(id)) return Typeface.create("sans-serif-medium", style);
+        if ("serif".equals(id)) return Typeface.create(Typeface.SERIF, style);
+        if ("monospace".equals(id)) return Typeface.create(Typeface.MONOSPACE, style);
+        if ("casual".equals(id)) return Typeface.create("casual", style);
+        if ("cursive".equals(id)) return Typeface.create("cursive", style);
+        return Typeface.create("sans-serif", style);
     }
 
     static String[] fontPreviewIds() {
-        return new String[]{"sans", "serif", "monospace", "casual", "cursive"};
+        return new String[]{"sans", "slim", "pixel", "terminal", "rounded", "serif", "monospace"};
     }
 
     private static int dp(Context context, int value) {

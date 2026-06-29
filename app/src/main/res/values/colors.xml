@@ -1,11 +1,11 @@
 <resources>
     <color name="topflow_background">#000000</color>
     <color name="topflow_background_alt">#000000</color>
-    <color name="topflow_surface">#0A101D</color>
-    <color name="topflow_surface_soft">#101929</color>
-    <color name="topflow_surface_high">#121A2A</color>
-    <color name="topflow_surface_sheet">#161F31</color>
-    <color name="topflow_surface_tint">#0F1828</color>
+    <color name="topflow_surface">#05070B</color>
+    <color name="topflow_surface_soft">#080B10</color>
+    <color name="topflow_surface_high">#0C1016</color>
+    <color name="topflow_surface_sheet">#070A0F</color>
+    <color name="topflow_surface_tint">#090D12</color>
     <color name="topflow_surface_stroke">#4D78E6FF</color>
     <color name="topflow_surface_stroke_soft">#2678E6FF</color>
     <color name="topflow_text_primary">#FFFFFF</color>
@@ -18,16 +18,16 @@
     <color name="topflow_accent_magenta">#E156FF</color>
     <color name="topflow_accent_gold">#EEC269</color>
     <color name="topflow_accent_red">#F04B5C</color>
-    <color name="topflow_chip_bg_start">#FF182230</color>
-    <color name="topflow_chip_bg_end">#FF101824</color>
-    <color name="topflow_sheet_scrim">#A3000000</color>
+    <color name="topflow_chip_bg_start">#FF0B1016</color>
+    <color name="topflow_chip_bg_end">#FF030507</color>
+    <color name="topflow_sheet_scrim">#A8000000</color>
     <color name="topflow_divider">#1E78E6FF</color>
     <color name="ic_launcher_background">#081226</color>
 
     <color name="topflow21_oled">#000000</color>
-    <color name="topflow21_indigo">#2D3458</color>
-    <color name="topflow21_panel">#343B64</color>
-    <color name="topflow21_panel_high">#444C80</color>
+    <color name="topflow21_indigo">#080A0E</color>
+    <color name="topflow21_panel">#0A0D12</color>
+    <color name="topflow21_panel_high">#10151C</color>
     <color name="topflow21_mint">#5AD7A0</color>
     <color name="topflow21_cyan">#62C7FF</color>
     <color name="topflow21_amber">#FFC469</color>

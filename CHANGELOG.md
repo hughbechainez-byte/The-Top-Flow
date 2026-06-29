@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-29
+
+- Released 21.4 with OLED UI polish, true black main panels, visible note-card halo glow, forgiving bottom-sheet swipe dismissal, dimmed sheet backdrop, expanded offline editor fonts, lightweight selection/menu animations, and startup rhyme cache prewarming with preload/first-query logs.
+
 ## 2026-06-28
 
 - Released 21.3 with real-device lag fixes for the rhyme button/editor path: async expanded rhymes, deferred long-note body copying, editor text-service opt-outs, popup measurement reuse, chip view reuse, and detailed `rhyme_trace` runtime logs.

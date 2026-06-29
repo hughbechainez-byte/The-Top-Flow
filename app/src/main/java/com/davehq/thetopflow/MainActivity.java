@@ -37,6 +37,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.VelocityTracker;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -96,10 +97,10 @@ public class MainActivity extends Activity {
     private static final int REQ_AUDIO = 11;
     private static final int REQ_NOTIFY = 12;
     private static final String CHANNEL_UPDATES = "updates";
-    private static final int C_BG = Color.rgb(4, 7, 15);
-    private static final int C_SURFACE = Color.argb(238, 10, 16, 29);
-    private static final int C_SURFACE_SOFT = Color.argb(214, 16, 25, 41);
-    private static final int C_SURFACE_HIGH = Color.argb(246, 18, 26, 42);
+    private static final int C_BG = Color.BLACK;
+    private static final int C_SURFACE = Color.argb(238, 5, 7, 11);
+    private static final int C_SURFACE_SOFT = Color.argb(214, 8, 11, 16);
+    private static final int C_SURFACE_HIGH = Color.argb(246, 12, 16, 22);
     private static final int C_TEXT = Color.WHITE;
     private static final int C_TEXT_MUTED = Color.rgb(166, 178, 197);
     private static final int C_CYAN = Color.rgb(120, 230, 255);
@@ -125,6 +126,12 @@ public class MainActivity extends Activity {
     private static final int MIN_EDITOR_FONT_SIZE_SP = 14;
     private static final int MAX_EDITOR_FONT_SIZE_SP = 28;
     private static final int DEFAULT_NOTE_GLOW_STRENGTH = 1;
+    private static final int SPLASH_MIN_MS = 760;
+    private static final int SPLASH_MAX_MS = 1800;
+    private static final int SHEET_DISMISS_DISTANCE_DP = 56;
+    private static final int SHEET_DISMISS_VELOCITY = 720;
+    private static final int RHYME_PRELOAD_COMMON_LIMIT = 64;
+    private static final int RHYME_PRELOAD_EXPANDED_LIMIT = 12;
     private static final boolean RHYME_TRACE = true;
     private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df";
     private static final String PREF_RHYME_STRICTNESS = "rhymeStrictness";
@@ -167,6 +174,7 @@ public class MainActivity extends Activity {
     private LinearLayout sheetBody;
     private LinearLayout noteList;
     private LinearLayout editor;
+    private FrameLayout editorGlowFrame;
     private LinearLayout editorCard;
     private LinearLayout songCard;
     private LinearLayout voiceCard;
@@ -183,6 +191,8 @@ public class MainActivity extends Activity {
     private LinearLayout rhymeChips;
     private PopupWindow suggestionPopup;
     private FrameLayout splashOverlay;
+    private TextView splashStatus;
+    private View splashFill;
     private Button stopRecordingButton;
     private SeekBar songSeek;
     private Note current;
@@ -213,6 +223,11 @@ public class MainActivity extends Activity {
     private boolean bodyDraftDirty = false;
     private boolean lastImeVisible = false;
     private boolean lastEditorFocus = false;
+    private boolean splashClosing = false;
+    private long splashStartedAtMs = 0L;
+    private volatile boolean rhymePreloadComplete = false;
+    private volatile long rhymePreloadCompletedAtMs = 0L;
+    private volatile boolean firstQueryAfterPreloadLogged = false;
     private final HashSet<String> removedSuggestions = new HashSet<>();
     private final Object suggestionJobLock = new Object();
     private final Object rhymeCacheLock = new Object();
@@ -365,8 +380,8 @@ public class MainActivity extends Activity {
         menuPanel = new LinearLayout(this);
         menuPanel.setOrientation(LinearLayout.VERTICAL);
         menuPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        menuPanel.setBackground(TopFlowUiKit.floatingPanel(this, 26));
-        TopFlowUiKit.applyFloating(menuPanel, 12);
+        menuPanel.setBackgroundColor(Color.TRANSPARENT);
+        menuPanel.setClipToPadding(false);
         contentHost.addView(menuPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView listScroll = new ScrollView(this);
@@ -381,8 +396,8 @@ public class MainActivity extends Activity {
         editorPanel.setOrientation(LinearLayout.VERTICAL);
         editorPanel.setVisibility(View.GONE);
         editorPanel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
-        editorPanel.setBackground(TopFlowUiKit.floatingPanel(this, 26));
-        TopFlowUiKit.applyFloating(editorPanel, 12);
+        editorPanel.setBackgroundColor(Color.TRANSPARENT);
+        editorPanel.setClipToPadding(false);
         contentHost.addView(editorPanel, new FrameLayout.LayoutParams(-1, -1));
 
         ScrollView editorScroll = new ScrollView(this);
@@ -393,11 +408,16 @@ public class MainActivity extends Activity {
         editorScroll.addView(editor);
         editorPanel.addView(editorScroll, new LinearLayout.LayoutParams(-1, -1, 1));
 
-        editorCard = createCardSurface();
-        editorCard.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        editorGlowFrame = new FrameLayout(this);
+        editorGlowFrame.setClipToPadding(false);
+        editorGlowFrame.setPadding(dp(14), dp(12), dp(14), dp(16));
         LinearLayout.LayoutParams editorCardLp = new LinearLayout.LayoutParams(-1, -2);
         editorCardLp.bottomMargin = dimen(R.dimen.topflow_space_md);
-        editor.addView(editorCard, editorCardLp);
+        editor.addView(editorGlowFrame, editorCardLp);
+
+        editorCard = createCardSurface();
+        editorCard.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        editorGlowFrame.addView(editorCard, new FrameLayout.LayoutParams(-1, -2));
 
         TextView editorHead = new TextView(this);
         editorHead.setText("Draft");
@@ -512,7 +532,7 @@ public class MainActivity extends Activity {
         stopRecordingButton.setVisibility(View.GONE);
 
         fontSpinner = new Spinner(this);
-        String[] fonts = {"sans", "serif", "monospace", "casual", "cursive"};
+        String[] fonts = TopFlowUiKit.fontPreviewIds();
         fontSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, fonts));
         fontSpinner.setVisibility(View.GONE);
         colorPreview = label("");
@@ -598,8 +618,13 @@ public class MainActivity extends Activity {
 
     private void showStartupSplash() {
         if (root == null) return;
+        rhymePreloadComplete = false;
+        firstQueryAfterPreloadLogged = false;
+        rhymePreloadCompletedAtMs = 0L;
+        splashClosing = false;
+        splashStartedAtMs = System.currentTimeMillis();
         splashOverlay = new FrameLayout(this);
-        splashOverlay.setBackgroundColor(Color.rgb(2, 5, 12));
+        splashOverlay.setBackgroundColor(Color.BLACK);
         splashOverlay.setClickable(true);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -612,12 +637,20 @@ public class MainActivity extends Activity {
         intro.setGravity(Gravity.CENTER);
         intro.setShadowLayer(8f, 0f, 0f, C_CYAN);
         box.addView(intro, new LinearLayout.LayoutParams(-1, -2));
+        splashStatus = new TextView(this);
+        splashStatus.setText("Preloading rhyme engine");
+        splashStatus.setTextColor(C_TEXT_MUTED);
+        splashStatus.setTextSize(13);
+        splashStatus.setGravity(Gravity.CENTER);
+        splashStatus.setPadding(0, dp(10), 0, 0);
+        box.addView(splashStatus, new LinearLayout.LayoutParams(-1, -2));
         FrameLayout track = new FrameLayout(this);
-        track.setBackground(glassDrawable(Color.argb(120, 10, 20, 32), C_CYAN, 6));
+        track.setBackground(glassDrawable(Color.argb(160, 4, 8, 12), C_CYAN, 6));
         LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(-1, dp(12));
         trackLp.topMargin = dp(18);
         box.addView(track, trackLp);
         View fill = new View(this);
+        splashFill = fill;
         fill.setBackground(glassDrawable(C_CYAN, C_GREEN, 6));
         fill.setPivotX(0f);
         fill.setScaleX(0f);
@@ -627,10 +660,37 @@ public class MainActivity extends Activity {
         boxLp.rightMargin = dp(24);
         splashOverlay.addView(box, boxLp);
         root.addView(splashOverlay, new FrameLayout.LayoutParams(-1, -1));
-        fill.animate().scaleX(1f).setDuration(650).start();
-        splashOverlay.animate().alpha(0f).setStartDelay(780).setDuration(180).withEndAction(() -> {
+        fill.animate().scaleX(0.82f).setDuration(900).start();
+        handler.postDelayed(() -> maybeFinishStartupSplash(false), SPLASH_MIN_MS);
+        handler.postDelayed(() -> maybeFinishStartupSplash(true), SPLASH_MAX_MS);
+    }
+
+    private void updateSplashStatus(String status) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            editHandler.post(() -> updateSplashStatus(status));
+            return;
+        }
+        if (splashStatus != null) splashStatus.setText(status);
+        if (splashFill != null && "Rhyme engine ready".equals(status)) {
+            splashFill.animate().scaleX(1f).setDuration(180).start();
+        }
+    }
+
+    private void maybeFinishStartupSplash(boolean force) {
+        if (splashOverlay == null || splashClosing) return;
+        long elapsed = System.currentTimeMillis() - splashStartedAtMs;
+        if (elapsed < SPLASH_MIN_MS) {
+            handler.postDelayed(() -> maybeFinishStartupSplash(force), SPLASH_MIN_MS - elapsed);
+            return;
+        }
+        if (!force && !rhymePreloadComplete && elapsed < SPLASH_MAX_MS) return;
+        splashClosing = true;
+        if (splashFill != null) splashFill.animate().scaleX(1f).setDuration(120).start();
+        splashOverlay.animate().alpha(0f).setDuration(180).withEndAction(() -> {
             if (root != null && splashOverlay != null) root.removeView(splashOverlay);
             splashOverlay = null;
+            splashStatus = null;
+            splashFill = null;
         }).start();
     }
 
@@ -885,7 +945,7 @@ public class MainActivity extends Activity {
         suppressSave = true;
         titleInput.setText(note.title);
         bodyInput.setText(note.body);
-        String[] fonts = {"sans", "serif", "monospace", "casual", "cursive"};
+        String[] fonts = TopFlowUiKit.fontPreviewIds();
         for (int i = 0; i < fonts.length; i++) {
             if (fonts[i].equals(note.font)) fontSpinner.setSelection(i);
         }
@@ -964,12 +1024,17 @@ public class MainActivity extends Activity {
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
         bodyInput.setHintTextColor(current.accentColor);
-        titleInput.setTypeface(android.graphics.Typeface.create(current.font, android.graphics.Typeface.BOLD));
-        bodyInput.setTypeface(android.graphics.Typeface.create(current.font, android.graphics.Typeface.NORMAL));
+        titleInput.setTypeface(TopFlowUiKit.fontForEditor(current.font, android.graphics.Typeface.BOLD));
+        bodyInput.setTypeface(TopFlowUiKit.fontForEditor(current.font, android.graphics.Typeface.NORMAL));
+        titleInput.setLetterSpacing(0f);
+        bodyInput.setLetterSpacing(0f);
         titleInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(18, current.fontSizeSp + 5));
         bodyInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, current.fontSizeSp);
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
+        if (editorGlowFrame != null) {
+            editorGlowFrame.setBackground(noteGlowDrawable(current.accentColor, current.noteGlow, current.glowStrength));
+        }
         if (editorCard != null) {
             editorCard.setBackground(noteShellDrawable(current.accentColor, current.noteGlow, current.glowStrength));
             int elevation = current.noteGlow ? 14 + Math.max(0, current.glowStrength) * 5 : 8;
@@ -1300,6 +1365,7 @@ public class MainActivity extends Activity {
         if (requestId != suggestionRequestId || !cacheKey.equals(pendingSuggestionKey)) return;
         suggestionStart = start;
         suggestionEnd = end;
+        logFirstQueryAfterPreload(System.currentTimeMillis() - requestStartedAt, generateMs, cacheHit, rhymes.size());
         if (rhymes.isEmpty()) {
             dismissSuggestionPopup();
             return;
@@ -1318,6 +1384,16 @@ public class MainActivity extends Activity {
         if (uiMs >= 8L || generateMs >= 16L || totalMs >= 80L) {
             Log.d(TAG, "rhyme ui count=" + rhymes.size() + " uiMs=" + uiMs + " genMs=" + generateMs + " totalMs=" + totalMs + " cache=" + cacheHit);
         }
+    }
+
+    private void logFirstQueryAfterPreload(long totalMs, long generateMs, boolean cacheHit, int count) {
+        if (rhymePreloadCompletedAtMs <= 0L || firstQueryAfterPreloadLogged) return;
+        firstQueryAfterPreloadLogged = true;
+        Log.d(TAG, "rhyme_trace stage=first_query_after_preload ms=" + totalMs
+                + " thread=main genMs=" + generateMs
+                + " cache=" + cacheHit
+                + " count=" + count
+                + " sincePreloadMs=" + (System.currentTimeMillis() - rhymePreloadCompletedAtMs));
     }
 
     private void positionSuggestionPopup(int cursor) {
@@ -1400,11 +1476,15 @@ public class MainActivity extends Activity {
     }
 
     private void clearRhymeCache() {
+        clearLocalRhymeCache();
+        if (rhymeEngine != null) rhymeEngine.clearCache();
+    }
+
+    private void clearLocalRhymeCache() {
         synchronized (rhymeCacheLock) {
             rhymeCache.clear();
             rhymeCacheVersion++;
         }
-        if (rhymeEngine != null) rhymeEngine.clearCache();
     }
 
     private void cancelSuggestionJob() {
@@ -1456,7 +1536,7 @@ public class MainActivity extends Activity {
             chip.setEnabled(true);
             chip.setAlpha(1f);
             styleRhymeChip(chip, current != null ? current.accentColor : C_CYAN);
-            chip.setOnClickListener(v -> applySuggestion(word));
+            chip.setOnClickListener(v -> runSelectionAnimation(v, () -> applySuggestion(word)));
             chip.setOnLongClickListener(v -> {
                 promptRemoveSuggestion(word);
                 return true;
@@ -1942,10 +2022,53 @@ public class MainActivity extends Activity {
 
     private void startCmuLoad() {
         if (rhymeEngine == null) return;
-        rhymeEngine.loadAsync(() -> editHandler.post(() -> {
-            clearRhymeCache();
-            scheduleSuggestionUpdate();
-        }));
+        long preloadStarted = System.currentTimeMillis();
+        rhymePreloadComplete = false;
+        firstQueryAfterPreloadLogged = false;
+        logRhymeTrace("preload_start", preloadStarted, "commonLimit=" + RHYME_PRELOAD_COMMON_LIMIT);
+        updateSplashStatus("Loading rhyme index");
+        rhymeEngine.loadAsync(() -> {
+            long indexMs = System.currentTimeMillis() - preloadStarted;
+            updateSplashStatus("Warming common rhymes");
+            clearLocalRhymeCache();
+            int warmed = prewarmRhymeCaches(preloadStarted);
+            rhymePreloadCompletedAtMs = System.currentTimeMillis();
+            rhymePreloadComplete = true;
+            Log.d(TAG, "rhyme_trace stage=preload_complete ms=" + (rhymePreloadCompletedAtMs - preloadStarted)
+                    + " thread=bg indexMs=" + indexMs
+                    + " warmed=" + warmed
+                    + " generation=" + rhymeEngine.generation());
+            editHandler.post(() -> {
+                updateSplashStatus("Rhyme engine ready");
+                scheduleSuggestionUpdate();
+                maybeFinishStartupSplash(false);
+            });
+        });
+    }
+
+    private int prewarmRhymeCaches(long preloadStarted) {
+        if (rhymeEngine == null || !rhymeEngine.isReady()) return 0;
+        int warmed = 0;
+        int fastLimit = Math.min(FAST_RHYME_LIMIT, configuredMaxSuggestions());
+        int expandedLimit = Math.max(12, configuredMaxSuggestions());
+        RhymeEngine.Options options = rhymeOptions();
+        for (int i = 0; i < COMMON_WORDS.length && i < RHYME_PRELOAD_COMMON_LIMIT; i++) {
+            if (Thread.currentThread().isInterrupted()) break;
+            String word = normalizeWord(COMMON_WORDS[i]);
+            if (word.isEmpty()) continue;
+            String cacheKey = rhymeCacheKey(word, fastLimit);
+            ArrayList<String> fast = rhymeEngine.suggest(word, fastLimit, FAST_RHYME_CANDIDATE_LIMIT, options);
+            putCachedRhymes(cacheKey, fast);
+            warmed++;
+            if (i < RHYME_PRELOAD_EXPANDED_LIMIT) {
+                String expandedKey = rhymeCacheKey(word, expandedLimit) + "|expanded";
+                ArrayList<String> expanded = rhymeEngine.suggest(word, expandedLimit, EXPANDED_RHYME_CANDIDATE_LIMIT, options);
+                putCachedRhymes(expandedKey, expanded);
+                warmed++;
+            }
+        }
+        logRhymeTrace("preload_warm", preloadStarted, "entries=" + warmed + " localVersion=" + rhymeCacheVersion);
+        return warmed;
     }
 
     private void loadCmuDictionary() {
@@ -2639,17 +2762,14 @@ public class MainActivity extends Activity {
             b.setOnClickListener(v -> {
                 if (current == null) return;
                 if (target == 3) {
-                    dismissSheet();
                     showFontMenu();
                     return;
                 }
                 if (target == 4) {
-                    dismissSheet();
                     showFontSizeMenu();
                     return;
                 }
                 if (target == 5) {
-                    dismissSheet();
                     showGlowMenu();
                     return;
                 }
@@ -2753,10 +2873,12 @@ public class MainActivity extends Activity {
             View b = buildFontPreviewRow(f);
             b.setOnClickListener(v -> {
                 if (current != null) {
-                    current.font = f;
-                    saveNotes();
-                    applyStyle();
-                    dismissSheet();
+                    runSelectionAnimation(v, () -> {
+                        current.font = f;
+                        saveNotes();
+                        applyStyle();
+                        dismissSheet();
+                    });
                 }
             });
             box.addView(b);
@@ -2795,6 +2917,10 @@ public class MainActivity extends Activity {
     }
 
     private String fontLabel(String fontId) {
+        if ("slim".equals(fontId)) return "Slim Minimal";
+        if ("pixel".equals(fontId)) return "Pixel Retro";
+        if ("terminal".equals(fontId)) return "Tech Terminal";
+        if ("rounded".equals(fontId)) return "Modern Rounded";
         if ("serif".equals(fontId)) return "Serif";
         if ("monospace".equals(fontId)) return "Mono";
         if ("casual".equals(fontId)) return "Casual";
@@ -2915,8 +3041,10 @@ public class MainActivity extends Activity {
             for (String rhyme : words) {
                 Button b = button(rhyme);
                 b.setOnClickListener(v -> {
-                    applySuggestion(rhyme);
-                    dismissSheet();
+                    runSelectionAnimation(v, () -> {
+                        applySuggestion(rhyme);
+                        dismissSheet();
+                    });
                 });
                 b.setOnLongClickListener(v -> {
                     promptRemoveSuggestion(rhyme);
@@ -3045,19 +3173,24 @@ public class MainActivity extends Activity {
         TopFlowUiKit.applyFloating(sheetCard, 18);
         sheetCard.setClickable(true);
         sheetCard.setFocusable(false);
+        attachSheetDragDismiss(sheetCard);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
         lp.leftMargin = dp(14);
         lp.rightMargin = dp(14);
         lp.bottomMargin = dp(14);
         overlay.addView(sheetCard, lp);
 
+        FrameLayout handleHitbox = new FrameLayout(this);
+        handleHitbox.setPadding(0, dp(12), 0, dp(12));
         View handle = new View(this);
         handle.setBackground(dragHandleDrawable());
-        LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(dp(46), dp(5));
+        FrameLayout.LayoutParams handleInnerLp = new FrameLayout.LayoutParams(dp(74), dp(6), Gravity.CENTER);
+        handleHitbox.addView(handle, handleInnerLp);
+        LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(-1, dp(34));
         handleLp.gravity = Gravity.CENTER_HORIZONTAL;
-        handleLp.bottomMargin = dimen(R.dimen.topflow_space_lg);
-        sheetCard.addView(handle, handleLp);
-        attachSheetDragDismiss(handle);
+        handleLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        sheetCard.addView(handleHitbox, handleLp);
+        attachSheetDragDismiss(handleHitbox);
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -3070,6 +3203,7 @@ public class MainActivity extends Activity {
         close.setOnClickListener(v -> dismissSheet());
         header.addView(close);
         sheetCard.addView(header);
+        attachSheetDragDismiss(header);
 
         sheetBody = new LinearLayout(this);
         sheetBody.setOrientation(LinearLayout.VERTICAL);
@@ -3080,26 +3214,57 @@ public class MainActivity extends Activity {
 
     private void attachSheetDragDismiss(View dragHandle) {
         final float[] downY = {0f};
+        final float[] downX = {0f};
+        final boolean[] active = {false};
+        final VelocityTracker[] tracker = {null};
         dragHandle.setOnTouchListener((v, event) -> {
             if (sheetCard == null || sheetOverlay == null) return false;
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    if (!canStartSheetDrag(v, event)) return false;
                     downY[0] = event.getRawY();
+                    downX[0] = event.getRawX();
+                    active[0] = true;
+                    tracker[0] = VelocityTracker.obtain();
+                    tracker[0].addMovement(event);
                     sheetCard.animate().cancel();
+                    sheetOverlay.animate().cancel();
+                    if (shell != null) shell.animate().cancel();
                     return true;
                 case MotionEvent.ACTION_MOVE:
+                    if (!active[0]) return false;
+                    if (tracker[0] != null) tracker[0].addMovement(event);
                     float dy = Math.max(0f, event.getRawY() - downY[0]);
+                    float dx = Math.abs(event.getRawX() - downX[0]);
+                    if (dx > dy * 1.8f && dy < dp(22)) return true;
                     sheetCard.setTranslationY(dy);
-                    sheetOverlay.setAlpha(Math.max(0.35f, 1f - dy / Math.max(1f, dp(420))));
+                    float progress = Math.min(1f, dy / Math.max(1f, dp(360)));
+                    sheetOverlay.setAlpha(Math.max(0.28f, 1f - progress * 0.62f));
+                    if (shell != null) {
+                        float scale = 0.985f + progress * 0.015f;
+                        shell.setScaleX(scale);
+                        shell.setScaleY(scale);
+                        shell.setAlpha(0.82f + progress * 0.18f);
+                    }
                     return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    if (!active[0]) return false;
                     float releaseDy = Math.max(0f, event.getRawY() - downY[0]);
-                    if (releaseDy > dp(82)) {
+                    float velocityY = 0f;
+                    if (tracker[0] != null) {
+                        tracker[0].addMovement(event);
+                        tracker[0].computeCurrentVelocity(1000);
+                        velocityY = tracker[0].getYVelocity();
+                        tracker[0].recycle();
+                        tracker[0] = null;
+                    }
+                    active[0] = false;
+                    if (event.getActionMasked() != MotionEvent.ACTION_CANCEL
+                            && (releaseDy > dp(SHEET_DISMISS_DISTANCE_DP) || velocityY > SHEET_DISMISS_VELOCITY)) {
                         dismissSheet();
                     } else {
-                        sheetOverlay.animate().alpha(1f).setDuration(120).start();
-                        sheetCard.animate().translationY(0f).alpha(1f).setDuration(150).start();
+                        settleSheetOpen();
                     }
                     return true;
                 default:
@@ -3108,27 +3273,63 @@ public class MainActivity extends Activity {
         });
     }
 
+    private boolean canStartSheetDrag(View target, MotionEvent event) {
+        if (target != sheetCard) return true;
+        float y = event.getY();
+        int height = sheetCard.getHeight() > 0 ? sheetCard.getHeight() : dp(420);
+        return y <= Math.max(dp(180), height * 0.52f);
+    }
+
+    private void settleSheetOpen() {
+        if (sheetOverlay != null) sheetOverlay.animate().alpha(1f).setDuration(130).start();
+        if (sheetCard != null) sheetCard.animate().translationY(0f).alpha(1f).setDuration(165).start();
+        animateSheetBackdrop(true);
+    }
+
     private void showSheet(String title, View content) {
         if (sheetOverlay == null || sheetCard == null || sheetBody == null || sheetTitle == null) return;
         sheetTitle.setText(title);
         sheetBody.removeAllViews();
         sheetBody.addView(content);
+        boolean alreadyVisible = sheetOverlay.getVisibility() == View.VISIBLE;
         sheetOverlay.setVisibility(View.VISIBLE);
-        sheetOverlay.setAlpha(0f);
-        sheetOverlay.animate().alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
-        sheetCard.setTranslationY(dp(24));
-        sheetCard.setAlpha(0f);
-        sheetCard.animate().translationY(0f).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+        if (!alreadyVisible) {
+            sheetOverlay.setAlpha(0f);
+            sheetOverlay.animate().alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+        } else {
+            sheetOverlay.animate().alpha(1f).setDuration(90).start();
+        }
+        animateSheetBackdrop(true);
+        sheetCard.animate().cancel();
+        if (!alreadyVisible) {
+            sheetCard.setTranslationY(dp(24));
+            sheetCard.setAlpha(0f);
+            sheetCard.animate().translationY(0f).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+        } else {
+            sheetCard.setTranslationY(0f);
+            sheetCard.setAlpha(1f);
+        }
     }
 
     private void dismissSheet() {
         if (sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) return;
         int travel = sheetCard != null && sheetCard.getHeight() > 0 ? sheetCard.getHeight() + dp(48) : dp(260);
-        sheetCard.animate().translationY(travel).alpha(0f).setDuration(150).start();
-        sheetOverlay.animate().alpha(0f).setDuration(150).withEndAction(() -> {
+        animateSheetBackdrop(false);
+        sheetCard.animate().translationY(travel).alpha(0f).setDuration(170).start();
+        sheetOverlay.animate().alpha(0f).setDuration(170).withEndAction(() -> {
             sheetOverlay.setVisibility(View.GONE);
             if (sheetBody != null) sheetBody.removeAllViews();
         }).start();
+    }
+
+    private void animateSheetBackdrop(boolean active) {
+        if (shell == null) return;
+        shell.animate()
+                .alpha(active ? 0.82f : 1f)
+                .scaleX(active ? 0.985f : 1f)
+                .scaleY(active ? 0.985f : 1f)
+                .setDuration(active ? PANEL_TRANSITION_MS : 170)
+                .start();
     }
 
     private void checkForUpdates(boolean manual) {
@@ -3492,14 +3693,18 @@ public class MainActivity extends Activity {
     }
 
     private Drawable noteShellDrawable(int accent, boolean glow, int strength) {
-        int strokeAlpha = glow ? Math.min(190, 72 + Math.max(0, strength) * 38) : 58;
+        int strokeAlpha = glow ? Math.min(230, 96 + Math.max(0, strength) * 36) : 58;
         GradientDrawable d = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.rgb(11, 12, 16), Color.rgb(4, 5, 8)}
+                new int[]{Color.rgb(7, 8, 11), Color.rgb(0, 0, 0)}
         );
         d.setCornerRadius(dp(26));
         d.setStroke(dp(1), Color.argb(strokeAlpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
         return d;
+    }
+
+    private Drawable noteGlowDrawable(int accent, boolean glow, int strength) {
+        return new NeonGlowDrawable(accent, glow, Math.max(0, Math.min(4, strength)), dp(28), dp(18));
     }
 
     private Drawable notePageDrawable(int color, int accent, int radiusDp) {
@@ -3559,6 +3764,24 @@ public class MainActivity extends Activity {
 
     private Drawable ripple(int accent) {
         return new RippleDrawable(ColorStateList.valueOf(Color.argb(70, Color.red(accent), Color.green(accent), Color.blue(accent))), null, null);
+    }
+
+    private void runSelectionAnimation(View view, Runnable action) {
+        if (view == null) {
+            if (action != null) action.run();
+            return;
+        }
+        view.animate().cancel();
+        view.animate()
+                .scaleX(1.035f)
+                .scaleY(1.035f)
+                .alpha(0.92f)
+                .setDuration(70)
+                .withEndAction(() -> {
+                    if (action != null) action.run();
+                    view.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(90).start();
+                })
+                .start();
     }
 
     private void attachTapAnimation(View v) {
@@ -3898,6 +4121,63 @@ public class MainActivity extends Activity {
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
+        }
+    }
+
+    static class NeonGlowDrawable extends Drawable {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF rect = new RectF();
+        private final int accent;
+        private final boolean glow;
+        private final int strength;
+        private final float radius;
+        private final float spread;
+
+        NeonGlowDrawable(int accent, boolean glow, int strength, float radius, float spread) {
+            this.accent = accent;
+            this.glow = glow;
+            this.strength = strength;
+            this.radius = radius;
+            this.spread = spread;
+            paint.setStyle(Paint.Style.STROKE);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            if (!glow || strength <= 0) return;
+            int layers = 4 + strength;
+            float left = getBounds().left + spread * 0.55f;
+            float top = getBounds().top + spread * 0.45f;
+            float right = getBounds().right - spread * 0.55f;
+            float bottom = getBounds().bottom - spread * 0.55f;
+            for (int i = layers; i >= 1; i--) {
+                float progress = i / (float) layers;
+                float inset = spread * progress;
+                int alpha = Math.min(150, 10 + strength * 12 + (layers - i) * 8);
+                paint.setStrokeWidth(Math.max(2f, spread * (1.1f - progress * 0.62f)));
+                paint.setColor(Color.argb(alpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
+                rect.set(left + inset, top + inset, right - inset, bottom - inset);
+                canvas.drawRoundRect(rect, radius + inset, radius + inset, paint);
+            }
+            paint.setStrokeWidth(2.5f);
+            paint.setColor(Color.argb(Math.min(210, 80 + strength * 32), Color.red(accent), Color.green(accent), Color.blue(accent)));
+            rect.set(left + spread, top + spread, right - spread, bottom - spread);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            paint.setAlpha(alpha);
+        }
+
+        @Override
+        public void setColorFilter(android.graphics.ColorFilter colorFilter) {
+            paint.setColorFilter(colorFilter);
+        }
+
+        @Override
+        public int getOpacity() {
+            return android.graphics.PixelFormat.TRANSLUCENT;
         }
     }
 }

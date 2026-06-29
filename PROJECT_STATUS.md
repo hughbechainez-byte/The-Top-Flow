@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-06-28
+Last updated: 2026-06-29
 
 ## App Name
 
@@ -24,6 +24,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - Rhyme suggestion chips near the cursor, backed by a dedicated `RhymeEngine`, generated offline `rhyme_index.tsv`, pronunciation-first CMU ranking, quality buckets, curated writing examples, async fast-row generation, loading-state gating, and fallback phonetic heuristics for genuine unknowns.
 - 21.2 rhyme hot path caches pronunciation/family info, avoids full-note internal-rhyme scanning for fast-row suggestions, bounds expanded candidate scoring, and avoids dismissing/recreating the caret popup on cache misses.
 - 21.3 moves expanded rhyme button lookup off the UI thread, defers full-note body copying until draft save, reuses caret popup measurements/chips, disables expensive editor text services where safe, and adds `rhyme_trace` runtime logs.
+- 21.4 removes the dark-blue middle panel layer, keeps the shell true OLED black, adds a real note halo behind the editor card, makes bottom-sheet drag dismissal more forgiving, dims/scales the background behind sheets, expands offline font choices, and prewarms common rhyme caches during startup.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
 - Voice recording, playback, rename, and save-to-disk support.
@@ -40,7 +41,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-21.3 release packaging is complete; next priority is Pixel 10 Pro validation of rhyme-button latency, keyboard smoothness, and `rhyme_trace` log review.
+21.4 release packaging is complete; next priority is Pixel 10 Pro validation of OLED background/glow quality, bottom-sheet swipe dismissal, keyboard stability, and `rhyme_trace` preload/first-query timing.
 
 ## Next Milestone
 

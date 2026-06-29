@@ -2,7 +2,7 @@
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/topflow21_radius_control" />
-            <solid android:color="#FF4A5289" />
+            <solid android:color="#FF102018" />
             <stroke
                 android:width="@dimen/topflow21_hairline"
                 android:color="@color/topflow21_mint" />
@@ -11,7 +11,7 @@
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/topflow21_radius_control" />
-            <solid android:color="#66444C80" />
+            <solid android:color="#9A070A0F" />
             <stroke
                 android:width="@dimen/topflow21_hairline"
                 android:color="@color/topflow21_hairline" />
