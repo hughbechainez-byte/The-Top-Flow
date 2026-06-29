@@ -19,27 +19,30 @@ final class TopFlowUiKit {
     static final int TEXT_SOFT = Color.rgb(184, 192, 218);
     static final int HAIRLINE = Color.argb(64, 77, 219, 255);
 
+    static final int PANEL_STROKE = Color.argb(72, 90, 215, 160);
+    static final int PANEL_SOFT_STROKE = Color.argb(44, 90, 215, 160);
+
     private TopFlowUiKit() {}
 
     static GradientDrawable floatingPanel(Context context, int radiusDp) {
-        GradientDrawable drawable = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.argb(234, 12, 16, 22), Color.argb(234, 2, 3, 6)}
-        );
-        drawable.setCornerRadius(dp(context, radiusDp));
-        drawable.setStroke(dp(context, 1), HAIRLINE);
-        return drawable;
+        return oledSurface(context, radiusDp, PANEL_FILL, PANEL_STROKE);
     }
 
     static GradientDrawable oledSurface(Context context, int radiusDp) {
+        return oledSurface(context, radiusDp, OLED, PANEL_SOFT_STROKE);
+    }
+
+    static GradientDrawable oledSurface(Context context, int radiusDp, int fillColor, int strokeColor) {
         GradientDrawable drawable = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{OLED, OLED}
+                new int[]{fillColor, fillColor}
         );
         drawable.setCornerRadius(dp(context, radiusDp));
-        drawable.setStroke(dp(context, 1), Color.argb(48, 90, 215, 160));
+        drawable.setStroke(dp(context, 1), strokeColor);
         return drawable;
     }
+
+    static final int PANEL_FILL = Color.argb(232, 12, 16, 22);
 
     static GradientDrawable mintPill(Context context) {
         GradientDrawable drawable = new GradientDrawable(

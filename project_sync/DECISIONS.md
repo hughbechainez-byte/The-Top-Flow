@@ -29,3 +29,9 @@
 - Decision: Fix 21.3 lag by moving expanded rhyme lookup off the UI thread and removing long-note per-keystroke body copies before changing rhyme quality or UI styling.
 - Reason: 21.2 script timing passed, so the remaining lag was in real UI paths not covered by lookup-only validation.
 - Alternative rejected: More rhyme scoring changes or visual UI work before isolating the device hot path.
+
+## 2026-06-29
+
+- Decision: Move the 22.1 to 23.0 UI transformation through a staged Compose-led shell migration instead of a one-shot rewrite.
+- Reason: Compose is already enabled, but the live app is still a large Java view tree. Staging lets the visible UI become premium while preserving typing, notes, rhyme suggestions, recording, playback, and update install behavior per release.
+- Alternative rejected: Full immediate rewrite of `MainActivity.java`, which would create high risk across storage, keyboard, media, and rhyme behavior.

@@ -1,0 +1,123 @@
+TopFlow UI Alpha Builds Report
+Generated: June 29, 2026
+
+Desktop build folder:
+C:\Users\blowb\Desktop\TopFlowUIalphabuilds
+
+Repository:
+C:\Users\blowb\Documents\Codex\2026-06-19\build-an-app-for-my-pixel
+
+Overall goal
+Dave's current goal is to push The Top Flow through a continued UI overhaul toward a crisp, high-resolution, minimalist OLED neon interface that feels quick and responsive. The priority is removing grainy or low-resolution text, lines, and effects while building toward gesture-first commands, fluid swipe mechanics, background blur behind menus, and a redesigned main menu that surfaces recent notes in a clean OLED neon style.
+
+Release policy followed
+The 21.6 through 22.0 APKs were compiled, stored in the repository release folder, copied to the Desktop build folder, and uploaded to temp.sh. No appcast, JSONBlob, or current app update manifest was published or changed.
+
+Planning and implementation format
+Each version used the same senior-review plus 5.3 implementation loop:
+1. I drafted three small UI implementation goals for the next version based on Dave's current direction.
+2. 5.3 implemented the version.
+3. I reviewed for missed items, risky behavior, naming issues, visual polish problems, and versioning problems.
+4. When anything was questionable, I kicked it back to 5.3 for correction before packaging.
+5. The corrected version was built, copied locally, uploaded temporarily, and checked to confirm the appcast files stayed untouched.
+
+21.6 summary
+Focus:
+- Added blur-backed menu sheet behavior.
+- Added an editor left-edge gesture path back to Notes.
+- Replaced grain-prone sheet/dock surfaces with solid OLED neon panel drawables.
+
+Result:
+21.6 began the move away from textured or low-resolution-feeling UI surfaces and put the first stronger gesture/menu pieces in place.
+
+APK:
+- Repository: releases\the-top-flow-21.6.apk
+- Desktop: C:\Users\blowb\Desktop\TopFlowUIalphabuilds\the-top-flow-21.6.apk
+- temp.sh: https://temp.sh/IQUeW/the-top-flow-21.6.apk
+- SHA256: FA7EA75F95E045C38A6BA5F6ABF62E493731C1EDC90CF3D38441C2328AE2FB51
+
+21.7 summary
+Focus:
+- Added a cleaner Notes command header.
+- Added note metadata rows.
+- Added right-edge gesture flow back into the editor.
+
+Review and correction:
+5.3 initially left parts of the supporting documentation stale, used visible instruction copy that did not match the minimalist direction, had a gesture-direction mismatch, and needed tighter header spacing. I kicked those back before packaging.
+
+Result:
+21.7 made the Notes screen feel more structured and command-driven while continuing the gesture navigation path.
+
+APK:
+- Repository: releases\the-top-flow-21.7.apk
+- Desktop: C:\Users\blowb\Desktop\TopFlowUIalphabuilds\the-top-flow-21.7.apk
+- temp.sh: https://temp.sh/ZAXxZ/the-top-flow-21.7.apk
+- SHA256: 18199ED97DC69C3DD67957B41C0EF779C5220B907B5A14790380FC11411D2908
+
+21.8 summary
+Focus:
+- Added velocity-aware editor-to-Notes and Notes-to-editor swipes.
+- Added shared settle/complete helpers for more predictable gesture completion.
+- Added a current-session chip to make the active note state more visible.
+
+Review and correction:
+5.3 initially left README version text behind and placed the current-session chip in a way that could crowd the layout. I kicked that back, and 5.3 moved the chip into the left column and updated the version documentation.
+
+Result:
+21.8 improved the app's motion language and made gestures feel less binary and more responsive.
+
+APK:
+- Repository: releases\the-top-flow-21.8.apk
+- Desktop: C:\Users\blowb\Desktop\TopFlowUIalphabuilds\the-top-flow-21.8.apk
+- temp.sh: https://temp.sh/oLOrt/the-top-flow-21.8.apk
+- SHA256: 56BE0C61514EA2D858B681CAB8628ACD734558F1D9F0A3B7F29DAA8043058126
+
+21.9 summary
+Focus:
+- Added a subtle swipe rail affordance.
+- Shared the workflow interpolator across panel and dock motion.
+- Tightened saved-session rows with better single-line handling and cleaner empty-state copy.
+
+Review and correction:
+5.3 initially had a bad color reference and a velocity tracker cleanup gap on an early abandoned gesture path. I kicked those back and confirmed the corrected build.
+
+Result:
+21.9 made the gesture system more discoverable and reduced layout risk in recent/saved session rows.
+
+APK:
+- Repository: releases\the-top-flow-21.9.apk
+- Desktop: C:\Users\blowb\Desktop\TopFlowUIalphabuilds\the-top-flow-21.9.apk
+- temp.sh: https://temp.sh/atGMH/the-top-flow-21.9.apk
+- SHA256: 26EC48EDDDC8793763DF3FFC7452B1B72D9F424151ACE476A94993E352431582
+
+22.0 summary
+Focus:
+- Overhauled the Main Menu sheet into a cleaner OLED command surface with compact recent-session previews.
+- Deferred command execution until after the menu dismiss animation so actions do not visually collide with the sheet transition.
+- Unified more sheet, backdrop, dock, and tap motion under the shared workflow interpolator with hardware-layer animation.
+
+Review and correction:
+5.3 initially used a bad color reference in the new recent-session row and the preview collection logic could skip the current note when the note list was already at the preview limit. I kicked those back. 5.3 corrected the color reference and changed the preview order so the current note is pinned first, then the remaining recent notes fill the list.
+
+Result:
+22.0 is the strongest step in this run toward Dave's main-menu direction. The menu now feels more like a high-resolution command surface instead of a simple option stack, and it gives the user immediate recent-note context without adding heavy visual noise.
+
+APK:
+- Repository: releases\the-top-flow-22.0.apk
+- Desktop: C:\Users\blowb\Desktop\TopFlowUIalphabuilds\the-top-flow-22.0.apk
+- temp.sh: https://temp.sh/xXCOu/the-top-flow-22.0.apk
+- SHA256: CC14E8FBBB5566A52C6CE112F70C96BC3401CE89893D92727B97CD95ABFF09AF
+
+Verification completed
+- 21.6 through 22.0 release APKs were copied to the Desktop build folder.
+- 21.6 through 22.0 release APKs were stored in the repository releases folder.
+- 21.6 through 22.0 release APKs were uploaded to temp.sh.
+- Rhyme quality checks passed during the run.
+- The final 22.0 release build completed successfully with versionCode 46 and versionName 22.0.
+- appcast.json and releases\appcast.json were checked and left unchanged.
+
+How close 22.0 is to the target vision
+22.0 is meaningfully closer to the requested OLED neon, high-resolution, gesture-forward UI. The app now has cleaner menu surfaces, blur-backed sheet behavior, more consistent animation timing, recent-note context in the main menu, stronger edge gestures, and fewer low-resolution-feeling surfaces.
+
+Remaining work after 22.0
+The app still needs deeper visual QA on-device at high refresh rates, broader menu redesign beyond the first recent-session preview pass, richer physics for gesture continuation, more complete background blur/effect coverage across every menu item, and a future decision on whether a Compose or hybrid UI layer would be worth introducing for the highest quality long-term animation and transition system.

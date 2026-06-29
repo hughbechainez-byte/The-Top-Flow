@@ -1,12 +1,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="@dimen/topflow_radius_xl" />
-    <gradient
-        android:angle="90"
-        android:startColor="@color/topflow_surface_sheet"
-        android:centerColor="@color/topflow_surface_high"
-        android:endColor="@color/topflow_surface" />
+    <solid android:color="#070A0F" />
     <stroke
         android:width="@dimen/topflow_stroke_hairline"
-        android:color="@color/topflow_surface_stroke" />
+        android:color="#2F78E6FF" />
 </shape>

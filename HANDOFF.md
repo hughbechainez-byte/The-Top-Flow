@@ -12,6 +12,12 @@ Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose
 
 21.4 focuses on fluid OLED polish: it removes the dark-blue middle background layer, keeps the app shell true black, adds a real note-card halo behind the editor, makes bottom-sheet swipe dismissal forgiving across the upper sheet area, dims/scales the background while sheets are open, adds more offline font choices, and prewarms common rhyme caches during the startup screen.
 
+21.5 is a focused UI continuation: long bottom-sheet content now scrolls under a fixed handle/header, bottom dock buttons show the active sheet/state, and the currently open note has clearer selected feedback when returning to the Notes list. This build is packaged for temp-host validation only; JSONBlob/appcast manifests were intentionally left unchanged.
+
+21.6 through 22.0 continue the UI-alpha run with blur-backed sheets, solid OLED panels, bidirectional editor/Notes edge gestures, velocity-aware swipe completion, swipe rail affordances, compact recent-session previews, and a cleaner Main Menu command surface. These builds were packaged and temp-hosted only; JSONBlob/appcast manifests were intentionally left unchanged.
+
+The active milestone is now 22.1 to 23.0: a premium UI transformation. The chosen architecture is a staged Compose-led shell migration rather than a one-shot rewrite. Preserve Java note storage, `RhymeEngine`, recording/playback, and install/update behavior while moving visible UI surfaces into richer Compose or Compose-hosted layers.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -23,7 +29,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 21.4 / versionCode 40 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.0 / versionCode 46 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -45,13 +51,15 @@ Latest verified build: 21.4 / versionCode 40 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Validate 21.4 on Pixel 10 Pro, especially OLED background/glow appearance, bottom-sheet swipe-down forgiveness, tap-outside dismissal, keyboard show/hide, rapid typing, and `rhyme_trace` preload/first-query timing output.
+Implement 22.1 multi-version update discovery and chooser UI, then publish future 22.x/23.0 builds to the 22.0 JSONBlob/appcast line so 22.0 users can choose among available newer versions.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
+- Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
+- Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
 - Version 21.4 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
 - Version 21.3 APK was published at `https://temp.sh/SZvCg/the-top-flow-21.3.apk`.
@@ -77,4 +85,7 @@ Validate 21.4 on Pixel 10 Pro, especially OLED background/glow appearance, botto
 - 21.2 addresses rhyme latency and UX issues from device logs without changing notes, recording, playback, storage, or rhyme-quality rules.
 - 21.3 addresses the UI-thread lag path left after 21.2; Pixel was not visible to WSL ADB during release, so fresh on-device `rhyme_trace` logs are still needed.
 - 21.4 addresses OLED UI fluidity, bottom-sheet usability, and startup rhyme preload without changing rhyme scoring quality.
+- 21.5 addresses sheet scroll safety, active dock feedback, and selected-note feedback without changing rhyme scoring quality or live update manifests.
+- 21.6 through 22.0 address continued OLED UI polish, gesture discoverability, velocity-aware swipes, Main Menu recent-session context, and shared motion polish without publishing update manifests.
+- 22.1 must convert update handling to support multiple available versions while preserving legacy single-version manifest compatibility.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

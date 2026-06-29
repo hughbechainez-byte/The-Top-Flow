@@ -1,6 +1,7 @@
 package com.davehq.thetopflow;
 
 import android.Manifest;
+import android.animation.TimeInterpolator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
@@ -12,6 +13,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Canvas;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
@@ -30,6 +33,7 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Layout;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.TypedValue;
@@ -39,6 +43,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.VelocityTracker;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.textclassifier.TextClassifier;
@@ -130,8 +135,30 @@ public class MainActivity extends Activity {
     private static final int SPLASH_MAX_MS = 1800;
     private static final int SHEET_DISMISS_DISTANCE_DP = 56;
     private static final int SHEET_DISMISS_VELOCITY = 720;
+    private static final int SHEET_BLUR_RADIUS_DP = 24;
     private static final int RHYME_PRELOAD_COMMON_LIMIT = 64;
     private static final int RHYME_PRELOAD_EXPANDED_LIMIT = 12;
+    private static final int DOCK_STATE_NONE = 0;
+    private static final int DOCK_STATE_NOTES = 1;
+    private static final int DOCK_STATE_RHYME = 2;
+    private static final int DOCK_STATE_STYLE = 3;
+    private static final int DOCK_STATE_SETTINGS = 4;
+    private static final int EDITOR_BACK_SWIPE_EDGE_DP = 64;
+    private static final int EDITOR_BACK_SWIPE_TRIGGER_DP = 170;
+    private static final int EDITOR_BACK_SWIPE_VELOCITY_PX = 1650;
+    private static final int WORKFLOW_SWIPE_COMPLETE_MS = 120;
+    private static final int WORKFLOW_SWIPE_RESTORE_MS = 150;
+    private static final int WORKFLOW_SWIPE_RAIL_WIDTH_DP = 4;
+    private static final int SHEET_DISMISS_MS = 170;
+    private static final int SHEET_RESTORE_MS = 130;
+    private static final int SHEET_MENU_PREVIEW_LIMIT = 4;
+    private static final TimeInterpolator WORKFLOW_INTERPOLATOR = new DecelerateInterpolator();
+    private static final int SHEET_SCROLL_CAP_ATTEMPTS = 3;
+    private static final float DOCK_ACTIVE_SCALE = 1.03f;
+    private static final float DOCK_INACTIVE_SCALE = 1f;
+    private static final float DOCK_ACTIVE_ALPHA = 1f;
+    private static final float DOCK_INACTIVE_ALPHA = 0.68f;
+    private static final int DOCK_STATE_ELEVATION_DP = 12;
     private static final boolean RHYME_TRACE = true;
     private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df";
     private static final String PREF_RHYME_STRICTNESS = "rhymeStrictness";
@@ -166,12 +193,23 @@ public class MainActivity extends Activity {
     private FrameLayout root;
     private LinearLayout shell;
     private FrameLayout contentHost;
+    private View editorSwipeRail;
+    private View notesSwipeRail;
     private LinearLayout menuPanel;
     private LinearLayout editorPanel;
+    private ScrollView editorScroll;
     private View sheetOverlay;
     private LinearLayout sheetCard;
     private TextView sheetTitle;
     private LinearLayout sheetBody;
+    private ScrollView sheetBodyScroll;
+    private View sheetDragHandle;
+    private View sheetHeader;
+    private Button dockNotesButton;
+    private Button dockRhymeButton;
+    private Button dockStyleButton;
+    private Button dockSettingsButton;
+    private int activeDockState = DOCK_STATE_NONE;
     private LinearLayout noteList;
     private LinearLayout editor;
     private FrameLayout editorGlowFrame;
@@ -372,6 +410,11 @@ public class MainActivity extends Activity {
         contentHost = new FrameLayout(this);
         shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
 
+        editorSwipeRail = createSwipeRail(false);
+        notesSwipeRail = createSwipeRail(true);
+        contentHost.addView(editorSwipeRail, swipeRailLayoutParams(false));
+        contentHost.addView(notesSwipeRail, swipeRailLayoutParams(true));
+
         LinearLayout dock = buildStudioDock();
         LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-1, -2);
         dockLp.topMargin = dimen(R.dimen.topflow_space_md);
@@ -400,13 +443,15 @@ public class MainActivity extends Activity {
         editorPanel.setClipToPadding(false);
         contentHost.addView(editorPanel, new FrameLayout.LayoutParams(-1, -1));
 
-        ScrollView editorScroll = new ScrollView(this);
+        editorScroll = new ScrollView(this);
         editorScroll.setFillViewport(true);
         editor = new LinearLayout(this);
         editor.setOrientation(LinearLayout.VERTICAL);
         editor.setPadding(0, 0, 0, 0);
         editorScroll.addView(editor);
         editorPanel.addView(editorScroll, new LinearLayout.LayoutParams(-1, -1, 1));
+        attachEditorBackSwipe(editorScroll);
+        attachNotesBackSwipe(listScroll);
 
         editorGlowFrame = new FrameLayout(this);
         editorGlowFrame.setClipToPadding(false);
@@ -584,8 +629,10 @@ public class MainActivity extends Activity {
         dock.setBackgroundResource(R.drawable.bg21_bottom_dock);
         TopFlowUiKit.applyFloating(dock, 10);
         Button notes = button("Notes");
+        dockNotesButton = notes;
         notes.setOnClickListener(v -> showMenuScreen());
         Button rhymes = button("Rhyme");
+        dockRhymeButton = rhymes;
         rhymes.setOnClickListener(v -> {
             if (current == null) {
                 Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
@@ -594,6 +641,7 @@ public class MainActivity extends Activity {
             showExpandedRhymes();
         });
         Button style = button("Style");
+        dockStyleButton = style;
         style.setOnClickListener(v -> {
             if (current == null) {
                 Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
@@ -602,6 +650,7 @@ public class MainActivity extends Activity {
             showStyleMenu();
         });
         Button settings = button("Set");
+        dockSettingsButton = settings;
         settings.setOnClickListener(v -> showRhymeSettingsMenu());
         dock.addView(notes, dockButtonLp(0));
         dock.addView(rhymes, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
@@ -696,31 +745,17 @@ public class MainActivity extends Activity {
 
     private void renderNoteList() {
         noteList.removeAllViews();
-        TextView head = label("Notes");
-        textStyle(head, R.style.TextAppearance_TopFlow21_Caption);
-        head.setTextColor(TopFlowUiKit.MINT);
-        head.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        head.setPadding(dp(2), 0, dp(2), dimen(R.dimen.topflow_space_xs));
-        noteList.addView(head);
-        Button add = button("+ Note");
-        styleButton(add, C_GREEN);
-        add.setOnClickListener(v -> {
-            Note n = Note.create("Untitled");
-            notes.add(0, n);
-            saveNotes();
-            renderNoteList();
-            openNote(n);
-        });
-        add.setMinHeight(dp(52));
-        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(-1, -2);
-        addLp.bottomMargin = dimen(R.dimen.topflow_space_md);
-        noteList.addView(add, addLp);
+        LinearLayout header = buildNotesCommandHeader();
+        LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(-1, -2);
+        headerLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        noteList.addView(header, headerLp);
         if (notes.isEmpty()) {
             noteList.addView(buildEmptyNotesState(), new LinearLayout.LayoutParams(-1, -2));
             return;
         }
         for (int i = 0; i < notes.size(); i++) {
-            View row = buildNoteRow(notes.get(i));
+            Note note = notes.get(i);
+            View row = buildNoteRow(note, note == current);
             row.setAlpha(0f);
             row.setTranslationY(dimen(R.dimen.topflow_space_sm));
             LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
@@ -735,6 +770,158 @@ public class MainActivity extends Activity {
         }
     }
 
+    private LinearLayout buildNotesCommandHeader() {
+        LinearLayout shell = new LinearLayout(this);
+        shell.setOrientation(LinearLayout.HORIZONTAL);
+        shell.setGravity(Gravity.CENTER_VERTICAL);
+        shell.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        shell.setBackground(TopFlowUiKit.floatingPanel(this, 22));
+        TopFlowUiKit.applyFloating(shell, 8);
+
+        LinearLayout left = new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        left.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        TextView title = label("Recent writing sessions");
+        title.setTextColor(TopFlowUiKit.TEXT);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        left.addView(title);
+        int noteCount = notes.size();
+        String currentTitle = current != null && current.title != null && !current.title.isEmpty() ? current.title : (current == null ? "No note open" : "Untitled");
+        String status = noteCount == 0 ? "No notes yet" : noteCount + (noteCount == 1 ? " note · " : " notes · ") + currentTitle;
+        TextView sub = label(status);
+        sub.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        sub.setIncludeFontPadding(false);
+        sub.setMaxLines(1);
+        sub.setEllipsize(TextUtils.TruncateAt.END);
+        left.addView(sub);
+        if (current != null) {
+            String openTitle = current.title == null || current.title.isEmpty() ? "Untitled" : current.title;
+            TextView session = new TextView(this);
+            session.setText("Open · " + openTitle);
+            textStyle(session, R.style.TextAppearance_TopFlow21_Caption);
+            session.setBackgroundResource(R.drawable.bg_chip);
+            session.setTextColor(TopFlowUiKit.TEXT);
+            session.setIncludeFontPadding(false);
+            session.setLetterSpacing(0f);
+            session.setSingleLine(true);
+            session.setEllipsize(TextUtils.TruncateAt.END);
+            session.setMaxLines(1);
+            session.setMaxWidth(dp(260));
+            session.setPadding(dp(10), dp(4), dp(10), dp(4));
+            LinearLayout.LayoutParams sessionLp = new LinearLayout.LayoutParams(-2, -2);
+            sessionLp.topMargin = dp(6);
+            left.addView(session, sessionLp);
+        }
+        shell.addView(left);
+        Button add = button("+ Note");
+        add.setOnClickListener(v -> {
+            Note n = Note.create("Untitled");
+            notes.add(0, n);
+            saveNotes();
+            renderNoteList();
+            openNote(n);
+        });
+        add.setBackgroundResource(R.drawable.bg21_mint_control);
+        add.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        add.setMinHeight(dp(46));
+        add.setLetterSpacing(0f);
+        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(dp(120), -2);
+        shell.addView(add, addLp);
+        return shell;
+    }
+
+    private View buildRecentSessionPreview() {
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        ArrayList<Note> recentNotes = collectRecentSessionPreviewNotes();
+        if (recentNotes.isEmpty()) {
+            TextView empty = label("No recent sessions");
+            empty.setTextColor(C_TEXT_MUTED);
+            empty.setMaxLines(1);
+            empty.setEllipsize(TextUtils.TruncateAt.END);
+            empty.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
+            list.addView(empty);
+            return list;
+        }
+        for (int i = 0; i < recentNotes.size(); i++) {
+            Note note = recentNotes.get(i);
+            LinearLayout row = buildRecentSessionRow(note, note == current);
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+            if (i + 1 < recentNotes.size()) rowLp.bottomMargin = dimen(R.dimen.topflow_space_xs);
+            list.addView(row, rowLp);
+        }
+        return list;
+    }
+
+    private ArrayList<Note> collectRecentSessionPreviewNotes() {
+        ArrayList<Note> recentNotes = new ArrayList<>();
+        if (notes == null || notes.isEmpty()) return recentNotes;
+        int limit = Math.max(1, SHEET_MENU_PREVIEW_LIMIT);
+        if (current != null) recentNotes.add(current);
+        for (int i = 0; i < notes.size() && recentNotes.size() < limit; i++) {
+            Note note = notes.get(i);
+            if (note == null) continue;
+            if (current != null && note == current) continue;
+            recentNotes.add(note);
+        }
+        return recentNotes;
+    }
+
+    private LinearLayout buildRecentSessionRow(Note note, boolean isCurrent) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 16));
+        TopFlowUiKit.applyFloating(row, isCurrent ? 10 : 6);
+        row.setForeground(TopFlowUiKit.ripple(isCurrent ? TopFlowUiKit.MINT : C_CYAN));
+        row.setClickable(true);
+        row.setFocusable(true);
+        attachTapAnimation(row);
+
+        TextView title = new TextView(this);
+        title.setText(note == null || note.title == null || note.title.isEmpty() ? "Untitled" : note.title);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextColor(isCurrent ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT);
+        title.setIncludeFontPadding(false);
+        title.setLetterSpacing(0f);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+
+        TextView meta = new TextView(this);
+        meta.setText(noteMetadataLine(note));
+        meta.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        meta.setIncludeFontPadding(false);
+        meta.setLetterSpacing(0f);
+        meta.setSingleLine(true);
+        meta.setEllipsize(TextUtils.TruncateAt.END);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+
+        if (isCurrent) {
+            TextView tag = new TextView(this);
+            tag.setText("Current");
+            tag.setTextColor(C_CYAN);
+            tag.setTextSize(10);
+            tag.setPadding(dp(8), dp(3), dp(8), dp(3));
+            tag.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            tag.setBackgroundResource(R.drawable.bg_chip);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.leftMargin = dp(6);
+            header.addView(tag, lp);
+        }
+
+        row.addView(header);
+        row.addView(meta);
+        if (note == null) return row;
+        row.setOnClickListener(v -> runSelectionAnimation(row, () -> runAfterMenuDismiss(() -> openNote(note))));
+        return row;
+    }
+
     private View buildEmptyNotesState() {
         LinearLayout empty = new LinearLayout(this);
         empty.setOrientation(LinearLayout.VERTICAL);
@@ -744,30 +931,32 @@ public class MainActivity extends Activity {
         TextView title = label("No notes yet");
         textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        TextView body = label("Tap + Note to start a writing session.");
+        TextView body = label("No saved sessions");
         textStyle(body, R.style.TextAppearance_TopFlow21_Caption);
         body.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
+        body.setSingleLine(true);
+        body.setEllipsize(TextUtils.TruncateAt.END);
         empty.addView(title);
         empty.addView(body);
         return empty;
     }
 
-    private View buildNoteRow(Note note) {
+    private View buildNoteRow(Note note, boolean selected) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
         row.setMinimumHeight(dp(68));
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 18));
-        TopFlowUiKit.applyFloating(row, 6);
+        row.setBackground(noteRowBackground(note, selected));
+        TopFlowUiKit.applyFloating(row, selected ? DOCK_STATE_ELEVATION_DP : 6);
         row.setForeground(TopFlowUiKit.ripple(note.accentColor));
         row.setClickable(true);
         row.setFocusable(true);
         attachTapAnimation(row);
 
         View edge = new View(this);
-        edge.setBackgroundColor(note.accentColor);
-        LinearLayout.LayoutParams edgeLp = new LinearLayout.LayoutParams(dp(4), -1);
+        edge.setBackgroundColor(selected ? TopFlowUiKit.MINT : note.accentColor);
+        LinearLayout.LayoutParams edgeLp = new LinearLayout.LayoutParams(selected ? dp(6) : dp(4), -1);
         edgeLp.rightMargin = dp(12);
         row.addView(edge, edgeLp);
 
@@ -776,21 +965,53 @@ public class MainActivity extends Activity {
         box.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
         TextView title = new TextView(this);
         title.setText(note.title == null || note.title.isEmpty() ? "Untitled" : note.title);
-        title.setTextColor(note.textColor);
+        title.setTextColor(selected ? TopFlowUiKit.MINT : note.textColor);
         textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setIncludeFontPadding(false);
+        title.setLetterSpacing(0f);
         title.setMaxLines(1);
+        title.setEllipsize(TextUtils.TruncateAt.END);
         TextView preview = new TextView(this);
         preview.setText(compactPreview(note.body));
         textStyle(preview, R.style.TextAppearance_TopFlow21_Caption);
-        preview.setMaxLines(2);
+        preview.setIncludeFontPadding(false);
+        preview.setLetterSpacing(0f);
+        preview.setSingleLine(true);
+        preview.setEllipsize(TextUtils.TruncateAt.END);
+        preview.setMaxLines(1);
         preview.setPadding(0, dp(3), 0, 0);
+        TextView meta = new TextView(this);
+        textStyle(meta, R.style.TextAppearance_TopFlow21_Caption);
+        meta.setText(noteMetadataLine(note));
+        meta.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        meta.setIncludeFontPadding(false);
+        meta.setLetterSpacing(0f);
+        meta.setMaxLines(1);
+        meta.setEllipsize(TextUtils.TruncateAt.END);
+        meta.setPadding(0, dp(2), 0, 0);
         box.addView(title);
+        box.addView(meta);
         box.addView(preview);
         row.addView(box);
 
         row.setOnClickListener(v -> openNote(note));
         return row;
+    }
+
+    private Drawable noteRowBackground(Note note, boolean selected) {
+        if (!selected) return TopFlowUiKit.floatingPanel(this, 18);
+        int neon = TopFlowUiKit.MINT;
+        GradientDrawable drawable = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        blendColor(neon, Color.BLACK, 0.16f),
+                        blendColor(note.accentColor, Color.BLACK, 0.90f),
+                        blendColor(note.accentColor, Color.BLACK, 0.98f)
+                });
+        drawable.setCornerRadius(dp(18));
+        drawable.setStroke(dp(1), Color.argb(168, Color.red(neon), Color.green(neon), Color.blue(neon)));
+        return drawable;
     }
 
     private void renderRecordings() {
@@ -964,6 +1185,7 @@ public class MainActivity extends Activity {
         if (voiceCard != null) voiceCard.setVisibility(View.VISIBLE);
         animatePanel(menuPanel, true);
         animatePanel(editorPanel, false);
+        setActiveDockState(DOCK_STATE_NOTES);
         renderNoteList();
     }
 
@@ -972,10 +1194,12 @@ public class MainActivity extends Activity {
         if (voiceCard != null) voiceCard.setVisibility(View.GONE);
         animatePanel(editorPanel, true);
         animatePanel(menuPanel, false);
+        setActiveDockState(DOCK_STATE_NONE);
     }
 
     private void animatePanel(View panel, boolean show) {
         if (panel == null) return;
+        panel.animate().cancel();
         if (show) {
             panel.setVisibility(View.VISIBLE);
             panel.setAlpha(0f);
@@ -983,22 +1207,77 @@ public class MainActivity extends Activity {
             panel.setScaleY(0.98f);
             panel.setTranslationY(dp(14));
             panel.animate()
+                    .setInterpolator(WORKFLOW_INTERPOLATOR)
                     .alpha(1f)
                     .scaleX(1f)
                     .scaleY(1f)
                     .translationY(0f)
+                    .withLayer()
                     .setDuration(180)
                     .start();
         } else {
             panel.animate()
+                    .setInterpolator(WORKFLOW_INTERPOLATOR)
                     .alpha(0f)
                     .scaleX(0.985f)
                     .scaleY(0.985f)
                     .translationY(dp(-10))
+                    .withLayer()
                     .setDuration(130)
-                    .withEndAction(() -> panel.setVisibility(View.GONE))
+                    .withEndAction(() -> {
+                        panel.setVisibility(View.GONE);
+                        resetSwipePanelState(panel);
+                    })
                     .start();
         }
+    }
+
+    private void resetSwipePanelState(View panel) {
+        if (panel == null) return;
+        panel.setTranslationX(0f);
+        panel.setTranslationY(0f);
+        panel.setScaleX(1f);
+        panel.setScaleY(1f);
+        panel.setAlpha(1f);
+        hideSwipeAffordanceForPanel(panel);
+    }
+
+    private void settleSwipePanel(View panel) {
+        if (panel == null) return;
+        panel.animate().cancel();
+        panel.animate()
+                .setInterpolator(WORKFLOW_INTERPOLATOR)
+                .translationX(0f)
+                .translationY(0f)
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .withLayer()
+                .setDuration(WORKFLOW_SWIPE_RESTORE_MS)
+                .withEndAction(() -> resetSwipePanelState(panel))
+                .start();
+    }
+
+    private void completeSwipePanel(View panel, boolean toRight, Runnable onComplete) {
+        if (panel == null) return;
+        int width = panel.getWidth();
+        if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
+        float delta = toRight ? width : -width;
+        panel.animate().cancel();
+        panel.animate()
+                .setInterpolator(WORKFLOW_INTERPOLATOR)
+                .translationX(delta)
+                .alpha(0f)
+                .scaleX(0.94f)
+                .scaleY(0.95f)
+                .withLayer()
+                .setDuration(WORKFLOW_SWIPE_COMPLETE_MS)
+                .withEndAction(() -> {
+                    hideSwipeAffordanceForPanel(panel);
+                    resetSwipePanelState(panel);
+                    if (onComplete != null) onComplete.run();
+                })
+                .start();
     }
 
     private void animateScreenSwap(View firstVisible, float emphasis) {
@@ -1008,12 +1287,72 @@ public class MainActivity extends Activity {
         firstVisible.setScaleX(0.985f);
         firstVisible.setScaleY(0.985f);
         firstVisible.animate()
+                .setInterpolator(WORKFLOW_INTERPOLATOR)
                 .alpha(1f)
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
+                .withLayer()
                 .setDuration((long) (220 * emphasis))
                 .start();
+    }
+
+    private FrameLayout.LayoutParams swipeRailLayoutParams(boolean rightAligned) {
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(WORKFLOW_SWIPE_RAIL_WIDTH_DP), -1);
+        lp.gravity = rightAligned ? (Gravity.END | Gravity.TOP) : (Gravity.START | Gravity.TOP);
+        return lp;
+    }
+
+    private View createSwipeRail(boolean rightAligned) {
+        View rail = new View(this);
+        GradientDrawable glow = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        TopFlowUiKit.MINT,
+                        Color.argb(150, Color.red(C_CYAN), Color.green(C_CYAN), Color.blue(C_CYAN)),
+                        C_CYAN
+                });
+        glow.setCornerRadius(dp(2));
+        rail.setBackground(glow);
+        rail.setAlpha(0f);
+        rail.setScaleY(0.15f);
+        rail.setVisibility(View.GONE);
+        rail.setRotationY(rightAligned ? 180f : 0f);
+        return rail;
+    }
+
+    private void updateSwipeAffordance(View rail, float progress) {
+        if (rail == null) return;
+        float clamped = Math.max(0f, Math.min(1f, progress));
+        if (clamped <= 0f) {
+            rail.setVisibility(View.GONE);
+            rail.setAlpha(0f);
+            rail.setScaleY(0.15f);
+            return;
+        }
+        rail.setVisibility(View.VISIBLE);
+        rail.setAlpha(0.2f + (0.8f * clamped));
+        rail.setScaleY(Math.max(0.15f, clamped));
+    }
+
+    private void hideSwipeAffordance(View rail) {
+        if (rail == null) return;
+        rail.animate().cancel();
+        rail.setVisibility(View.GONE);
+        rail.setAlpha(0f);
+        rail.setScaleY(0.15f);
+    }
+
+    private void hideSwipeAffordanceForPanel(View panel) {
+        if (panel == null) return;
+        if (panel == editorPanel) {
+            hideSwipeAffordance(editorSwipeRail);
+        } else if (panel == menuPanel) {
+            hideSwipeAffordance(notesSwipeRail);
+        } else {
+            hideSwipeAffordance(editorSwipeRail);
+            hideSwipeAffordance(notesSwipeRail);
+        }
     }
 
     private void applyStyle() {
@@ -2718,29 +3057,31 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(0, 0, 0, 0);
-        TextView desc = label("Notes");
+        TextView desc = label("Menu");
         desc.setTextColor(C_TEXT_MUTED);
         box.addView(desc);
+        box.addView(buildRecentSessionPreview());
+        TextView actions = label("Actions");
+        actions.setTextColor(C_TEXT_MUTED);
+        actions.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_xs));
+        box.addView(actions);
         Button notes = button("Notes");
-        notes.setOnClickListener(v -> {
-            dismissSheet();
-            showMenuScreen();
-        });
+        notes.setOnClickListener(v -> runAfterMenuDismiss(this::showMenuScreen));
         box.addView(notes);
         Button noteStyle = button("Note Style");
-        noteStyle.setOnClickListener(v -> showStyleMenu());
+        noteStyle.setOnClickListener(v -> runAfterMenuDismiss(() -> showStyleMenu()));
         box.addView(noteStyle);
         Button expandedRhymes = button("Expanded Rhymes");
-        expandedRhymes.setOnClickListener(v -> showExpandedRhymes());
+        expandedRhymes.setOnClickListener(v -> runAfterMenuDismiss(() -> showExpandedRhymes()));
         box.addView(expandedRhymes);
         Button rhymeSettings = button("Rhyme Settings");
-        rhymeSettings.setOnClickListener(v -> showRhymeSettingsMenu());
+        rhymeSettings.setOnClickListener(v -> runAfterMenuDismiss(() -> showRhymeSettingsMenu()));
         box.addView(rhymeSettings);
         Button deleted = button("Deleted Rhymes");
-        deleted.setOnClickListener(v -> showDeletedRhymesMenu());
+        deleted.setOnClickListener(v -> runAfterMenuDismiss(() -> showDeletedRhymesMenu()));
         box.addView(deleted);
         Button updates = button("Check for updates");
-        updates.setOnClickListener(v -> checkForUpdates(true));
+        updates.setOnClickListener(v -> runAfterMenuDismiss(() -> checkForUpdates(true)));
         box.addView(updates);
         TextView updateInfo = label("Installed v" + BuildConfig.VERSION_NAME + ". Updates use the online appcast.");
         updateInfo.setTextColor(C_TEXT_MUTED);
@@ -2752,7 +3093,18 @@ public class MainActivity extends Activity {
         showSheet("Main Menu", box);
     }
 
+    private void runAfterMenuDismiss(Runnable action) {
+        if (action == null) return;
+        if (sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) {
+            action.run();
+            return;
+        }
+        dismissSheet();
+        editHandler.postDelayed(action, SHEET_DISMISS_MS + 12L);
+    }
+
     private void showStyleMenu() {
+        setActiveDockState(DOCK_STATE_STYLE);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         String[] names = {"Note Color", "Text Color", "Accent Color", "Font", "Font Size", "Note Glow"};
@@ -2957,6 +3309,7 @@ public class MainActivity extends Activity {
     }
 
     private void showExpandedRhymes() {
+        setActiveDockState(DOCK_STATE_RHYME);
         long started = System.currentTimeMillis();
         String word = focusedRhymeWord();
         int cursor = safeEditorCursor();
@@ -3070,6 +3423,7 @@ public class MainActivity extends Activity {
     }
 
     private void showRhymeSettingsMenu() {
+        setActiveDockState(DOCK_STATE_SETTINGS);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         TextView status = label("Strictness: " + strictnessName() + "  Max: " + configuredMaxSuggestions());
@@ -3181,6 +3535,7 @@ public class MainActivity extends Activity {
         overlay.addView(sheetCard, lp);
 
         FrameLayout handleHitbox = new FrameLayout(this);
+        sheetDragHandle = handleHitbox;
         handleHitbox.setPadding(0, dp(12), 0, dp(12));
         View handle = new View(this);
         handle.setBackground(dragHandleDrawable());
@@ -3193,6 +3548,7 @@ public class MainActivity extends Activity {
         attachSheetDragDismiss(handleHitbox);
 
         LinearLayout header = new LinearLayout(this);
+        sheetHeader = header;
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
         sheetTitle = new TextView(this);
@@ -3208,7 +3564,13 @@ public class MainActivity extends Activity {
         sheetBody = new LinearLayout(this);
         sheetBody.setOrientation(LinearLayout.VERTICAL);
         sheetBody.setPadding(0, dimen(R.dimen.topflow_space_md), 0, 0);
-        sheetCard.addView(sheetBody);
+        sheetBodyScroll = new ScrollView(this);
+        sheetBodyScroll.setFillViewport(true);
+        sheetBodyScroll.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+        sheetBodyScroll.setVerticalScrollBarEnabled(true);
+        sheetBodyScroll.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        sheetBodyScroll.addView(sheetBody);
+        sheetCard.addView(sheetBodyScroll);
         return overlay;
     }
 
@@ -3273,6 +3635,216 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void attachEditorBackSwipe(ScrollView target) {
+        if (target == null) return;
+        final float[] downX = {0f};
+        final float[] downY = {0f};
+        final float[] deltaX = {0f};
+        final float[] deltaY = {0f};
+        final float[] velocityX = {0f};
+        final float[] velocityY = {0f};
+        final VelocityTracker[] tracker = {null};
+        final boolean[] tracking = {false};
+        final boolean[] horizontal = {false};
+        target.setOnTouchListener((v, event) -> {
+            if (editorPanel == null || editorPanel.getVisibility() != View.VISIBLE) return false;
+            if (sheetOverlay != null && sheetOverlay.getVisibility() == View.VISIBLE) return false;
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) {
+                if ((bodyInput != null && bodyInput.hasFocus()) || (titleInput != null && titleInput.hasFocus())) return false;
+                if (event.getX() > dp(EDITOR_BACK_SWIPE_EDGE_DP)) return false;
+                downX[0] = event.getRawX();
+                downY[0] = event.getRawY();
+                deltaX[0] = 0f;
+                deltaY[0] = 0f;
+                velocityX[0] = 0f;
+                velocityY[0] = 0f;
+                tracking[0] = true;
+                horizontal[0] = false;
+                tracker[0] = VelocityTracker.obtain();
+                tracker[0].addMovement(event);
+                return false;
+            }
+            if (!tracking[0]) return false;
+            if (action == MotionEvent.ACTION_MOVE) {
+                if (tracker[0] != null) tracker[0].addMovement(event);
+                deltaX[0] = event.getRawX() - downX[0];
+                deltaY[0] = Math.abs(event.getRawY() - downY[0]);
+                if (!horizontal[0]) {
+                    if (deltaX[0] <= 0f) {
+                        tracking[0] = false;
+                        horizontal[0] = false;
+                        if (tracker[0] != null) {
+                            tracker[0].recycle();
+                            tracker[0] = null;
+                        }
+                        hideSwipeAffordance(editorSwipeRail);
+                        return false;
+                    }
+                    if (deltaX[0] > dp(12) && deltaX[0] > deltaY[0] * 1.6f) {
+                        horizontal[0] = true;
+                    } else if (deltaY[0] > Math.max(dp(20), deltaX[0] * 1.4f)) {
+                        tracking[0] = false;
+                        horizontal[0] = false;
+                        if (tracker[0] != null) {
+                            tracker[0].recycle();
+                            tracker[0] = null;
+                        }
+                        hideSwipeAffordance(editorSwipeRail);
+                        return false;
+                    }
+                }
+                if (!horizontal[0]) return false;
+                float max = dp(EDITOR_BACK_SWIPE_TRIGGER_DP);
+                float progress = Math.min(1f, deltaX[0] / Math.max(1f, max));
+                updateSwipeAffordance(editorSwipeRail, progress);
+                float translation = Math.min(deltaX[0], max);
+                editorPanel.setTranslationX(translation);
+                editorPanel.setAlpha(1f - (0.28f * progress));
+                editorPanel.setScaleX(1f - (0.05f * progress));
+                editorPanel.setScaleY(1f - (0.02f * progress));
+                target.requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (tracker[0] != null) {
+                    tracker[0].addMovement(event);
+                    tracker[0].computeCurrentVelocity(1000);
+                    velocityX[0] = tracker[0].getXVelocity();
+                    velocityY[0] = tracker[0].getYVelocity();
+                    tracker[0].recycle();
+                    tracker[0] = null;
+                }
+                float absVx = Math.abs(velocityX[0]);
+                float absVy = Math.abs(velocityY[0]);
+                boolean enoughDistance = deltaX[0] >= dp(EDITOR_BACK_SWIPE_TRIGGER_DP) * 0.5f;
+                boolean isFlick = velocityX[0] > EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * 1.5f;
+                boolean trigger = (enoughDistance && deltaY[0] < deltaX[0] * 1.8f) || isFlick;
+                if (trigger) {
+                    completeSwipePanel(editorPanel, true, () -> showMenuScreen());
+                } else {
+                    settleSwipePanel(editorPanel);
+                }
+                hideSwipeAffordance(editorSwipeRail);
+                tracking[0] = false;
+                horizontal[0] = false;
+                if (tracker[0] != null) {
+                    tracker[0].recycle();
+                    tracker[0] = null;
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void attachNotesBackSwipe(ScrollView target) {
+        if (target == null) return;
+        final float[] downX = {0f};
+        final float[] downY = {0f};
+        final float[] deltaX = {0f};
+        final float[] deltaY = {0f};
+        final float[] velocityX = {0f};
+        final float[] velocityY = {0f};
+        final VelocityTracker[] tracker = {null};
+        final boolean[] tracking = {false};
+        final boolean[] horizontal = {false};
+        target.setOnTouchListener((v, event) -> {
+            if (menuPanel == null || menuPanel.getVisibility() != View.VISIBLE) return false;
+            if (current == null) return false;
+            if (sheetOverlay != null && sheetOverlay.getVisibility() == View.VISIBLE) return false;
+            if (editorPanel != null && editorPanel.getVisibility() == View.VISIBLE) return false;
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) {
+                if (target.getWidth() <= 0) return false;
+                if (event.getX() < target.getWidth() - dp(EDITOR_BACK_SWIPE_EDGE_DP)) return false;
+                downX[0] = event.getRawX();
+                downY[0] = event.getRawY();
+                deltaX[0] = 0f;
+                deltaY[0] = 0f;
+                velocityX[0] = 0f;
+                velocityY[0] = 0f;
+                tracking[0] = true;
+                horizontal[0] = false;
+                tracker[0] = VelocityTracker.obtain();
+                tracker[0].addMovement(event);
+                return false;
+            }
+            if (!tracking[0]) return false;
+            if (action == MotionEvent.ACTION_MOVE) {
+                if (tracker[0] != null) tracker[0].addMovement(event);
+                deltaX[0] = downX[0] - event.getRawX();
+                deltaY[0] = Math.abs(event.getRawY() - downY[0]);
+                if (!horizontal[0]) {
+                    if (deltaX[0] <= 0f) {
+                        tracking[0] = false;
+                        horizontal[0] = false;
+                        if (tracker[0] != null) {
+                            tracker[0].recycle();
+                            tracker[0] = null;
+                        }
+                        hideSwipeAffordance(notesSwipeRail);
+                        return false;
+                    }
+                    if (deltaX[0] > dp(12) && deltaX[0] > deltaY[0] * 1.6f) {
+                        horizontal[0] = true;
+                    } else if (deltaY[0] > Math.max(dp(20), deltaX[0] * 1.4f)) {
+                        tracking[0] = false;
+                        horizontal[0] = false;
+                        if (tracker[0] != null) {
+                            tracker[0].recycle();
+                            tracker[0] = null;
+                        }
+                        hideSwipeAffordance(notesSwipeRail);
+                        return false;
+                    }
+                }
+                if (!horizontal[0]) return false;
+                float max = dp(EDITOR_BACK_SWIPE_TRIGGER_DP);
+                float progress = Math.min(1f, deltaX[0] / Math.max(1f, max));
+                updateSwipeAffordance(notesSwipeRail, progress);
+                float translation = -Math.min(deltaX[0], max);
+                menuPanel.setTranslationX(translation);
+                menuPanel.setAlpha(1f - (0.28f * progress));
+                menuPanel.setScaleX(1f - (0.05f * progress));
+                menuPanel.setScaleY(1f - (0.02f * progress));
+                target.requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (tracker[0] != null) {
+                    tracker[0].addMovement(event);
+                    tracker[0].computeCurrentVelocity(1000);
+                    velocityX[0] = tracker[0].getXVelocity();
+                    velocityY[0] = tracker[0].getYVelocity();
+                    tracker[0].recycle();
+                    tracker[0] = null;
+                }
+                float absVx = Math.abs(velocityX[0]);
+                float absVy = Math.abs(velocityY[0]);
+                boolean enoughDistance = deltaX[0] >= dp(EDITOR_BACK_SWIPE_TRIGGER_DP) * 0.5f;
+                boolean isFlick = velocityX[0] < -EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * 1.5f;
+                boolean trigger = (enoughDistance && deltaY[0] < deltaX[0] * 1.8f) || isFlick;
+                if (trigger) {
+                    completeSwipePanel(menuPanel, false, () -> {
+                        if (current != null) openNote(current);
+                    });
+                } else {
+                    settleSwipePanel(menuPanel);
+                }
+                hideSwipeAffordance(notesSwipeRail);
+                tracking[0] = false;
+                horizontal[0] = false;
+                if (tracker[0] != null) {
+                    tracker[0].recycle();
+                    tracker[0] = null;
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
     private boolean canStartSheetDrag(View target, MotionEvent event) {
         if (target != sheetCard) return true;
         float y = event.getY();
@@ -3281,30 +3853,55 @@ public class MainActivity extends Activity {
     }
 
     private void settleSheetOpen() {
-        if (sheetOverlay != null) sheetOverlay.animate().alpha(1f).setDuration(130).start();
-        if (sheetCard != null) sheetCard.animate().translationY(0f).alpha(1f).setDuration(165).start();
-        animateSheetBackdrop(true);
+        if (sheetOverlay != null) {
+            sheetOverlay.animate().cancel();
+            withWorkflowMotion(sheetOverlay)
+                    .alpha(1f)
+                    .setDuration(SHEET_RESTORE_MS)
+                    .start();
+        }
+        if (sheetCard != null) {
+            sheetCard.animate().cancel();
+            withWorkflowMotion(sheetCard)
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(SHEET_DISMISS_MS)
+                    .start();
+        }
+        setSheetBackdropEnabled(true);
     }
 
     private void showSheet(String title, View content) {
         if (sheetOverlay == null || sheetCard == null || sheetBody == null || sheetTitle == null) return;
+        if (sheetBodyScroll != null) {
+            ViewGroup.LayoutParams lp = sheetBodyScroll.getLayoutParams();
+            if (lp != null) {
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                sheetBodyScroll.setLayoutParams(lp);
+            }
+        }
         sheetTitle.setText(title);
         sheetBody.removeAllViews();
         sheetBody.addView(content);
         boolean alreadyVisible = sheetOverlay.getVisibility() == View.VISIBLE;
         sheetOverlay.setVisibility(View.VISIBLE);
+        sheetCard.post(() -> capSheetBodyHeight(0));
         if (!alreadyVisible) {
             sheetOverlay.setAlpha(0f);
-            sheetOverlay.animate().alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
         } else {
-            sheetOverlay.animate().alpha(1f).setDuration(90).start();
+            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(90).start();
         }
-        animateSheetBackdrop(true);
+        setSheetBackdropEnabled(true);
         sheetCard.animate().cancel();
         if (!alreadyVisible) {
             sheetCard.setTranslationY(dp(24));
             sheetCard.setAlpha(0f);
-            sheetCard.animate().translationY(0f).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+            withWorkflowMotion(sheetCard)
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(PANEL_TRANSITION_MS)
+                    .start();
         } else {
             sheetCard.setTranslationY(0f);
             sheetCard.setAlpha(1f);
@@ -3314,21 +3911,121 @@ public class MainActivity extends Activity {
     private void dismissSheet() {
         if (sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) return;
         int travel = sheetCard != null && sheetCard.getHeight() > 0 ? sheetCard.getHeight() + dp(48) : dp(260);
-        animateSheetBackdrop(false);
-        sheetCard.animate().translationY(travel).alpha(0f).setDuration(170).start();
-        sheetOverlay.animate().alpha(0f).setDuration(170).withEndAction(() -> {
-            sheetOverlay.setVisibility(View.GONE);
-            if (sheetBody != null) sheetBody.removeAllViews();
-        }).start();
+        setSheetBackdropEnabled(false);
+        if (sheetCard != null) {
+            sheetCard.animate().cancel();
+            withWorkflowMotion(sheetCard)
+                    .translationY(travel)
+                    .alpha(0f)
+                    .setDuration(SHEET_DISMISS_MS)
+                    .start();
+        }
+        if (sheetOverlay != null) {
+            sheetOverlay.animate().cancel();
+            withWorkflowMotion(sheetOverlay).alpha(0f).setDuration(SHEET_DISMISS_MS).withEndAction(() -> {
+                sheetOverlay.setVisibility(View.GONE);
+                if (sheetBody != null) sheetBody.removeAllViews();
+                if (sheetBodyScroll != null) {
+                    ViewGroup.LayoutParams lp = sheetBodyScroll.getLayoutParams();
+                    if (lp != null) {
+                        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        sheetBodyScroll.setLayoutParams(lp);
+                    }
+                }
+                restoreDockStateAfterSheetDismiss();
+            }).start();
+        } else {
+            restoreDockStateAfterSheetDismiss();
+        }
+    }
+
+    private void restoreDockStateAfterSheetDismiss() {
+        if (menuPanel != null && menuPanel.getVisibility() == View.VISIBLE) {
+            setActiveDockState(DOCK_STATE_NOTES);
+        } else {
+            setActiveDockState(DOCK_STATE_NONE);
+        }
+    }
+
+    private android.view.ViewPropertyAnimator withWorkflowMotion(View view) {
+        if (view == null) return null;
+        return view.animate()
+                .setInterpolator(WORKFLOW_INTERPOLATOR)
+                .withLayer();
+    }
+
+    private void capSheetBodyHeight(int attempt) {
+        if (sheetCard == null || sheetBodyScroll == null || sheetDragHandle == null || sheetHeader == null) return;
+        if (attempt > SHEET_SCROLL_CAP_ATTEMPTS) return;
+        if (sheetCard.getHeight() <= 0 || sheetDragHandle.getHeight() <= 0 || sheetHeader.getHeight() <= 0) {
+            sheetCard.post(() -> capSheetBodyHeight(attempt + 1));
+            return;
+        }
+        int maxHeight = (int) (getResources().getDisplayMetrics().heightPixels * 0.86f);
+        if (sheetCard.getHeight() <= maxHeight) return;
+        int available = maxHeight
+                - sheetDragHandle.getHeight()
+                - sheetHeader.getHeight()
+                - sheetCard.getPaddingTop()
+                - sheetCard.getPaddingBottom()
+                - dimen(R.dimen.topflow_space_sm);
+        if (available <= dp(180)) return;
+        ViewGroup.LayoutParams lp = sheetBodyScroll.getLayoutParams();
+        if (lp == null) return;
+        lp.height = Math.max(dp(180), available);
+        sheetBodyScroll.setLayoutParams(lp);
+    }
+
+    private void setActiveDockState(int state) {
+        if (activeDockState == state) return;
+        activeDockState = state;
+        applyDockButtonState(dockNotesButton, state == DOCK_STATE_NOTES);
+        applyDockButtonState(dockRhymeButton, state == DOCK_STATE_RHYME);
+        applyDockButtonState(dockStyleButton, state == DOCK_STATE_STYLE);
+        applyDockButtonState(dockSettingsButton, state == DOCK_STATE_SETTINGS);
+    }
+
+    private void applyDockButtonState(Button button, boolean active) {
+        if (button == null) return;
+        button.animate().cancel();
+        button.animate()
+                .setInterpolator(WORKFLOW_INTERPOLATOR)
+                .alpha(active ? DOCK_ACTIVE_ALPHA : DOCK_INACTIVE_ALPHA)
+                .scaleX(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
+                .scaleY(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
+                .translationY(active ? -dp(2) : 0)
+                .withLayer()
+                .setDuration(120)
+                .start();
+    }
+
+    private void setSheetBackdropEnabled(boolean active) {
+        applySheetBlur(active);
+        animateSheetBackdrop(active);
+    }
+
+    private void applySheetBlur(boolean active) {
+        if (shell == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (active) {
+                shell.setRenderEffect(RenderEffect.createBlurEffect(
+                        getResources().getDisplayMetrics().density * SHEET_BLUR_RADIUS_DP,
+                        getResources().getDisplayMetrics().density * SHEET_BLUR_RADIUS_DP,
+                        Shader.TileMode.CLAMP));
+            } else {
+                shell.setRenderEffect(null);
+            }
+        }
     }
 
     private void animateSheetBackdrop(boolean active) {
         if (shell == null) return;
-        shell.animate()
+        boolean legacy = Build.VERSION.SDK_INT < Build.VERSION_CODES.S;
+        withWorkflowMotion(shell)
                 .alpha(active ? 0.82f : 1f)
-                .scaleX(active ? 0.985f : 1f)
-                .scaleY(active ? 0.985f : 1f)
-                .setDuration(active ? PANEL_TRANSITION_MS : 170)
+                .scaleX(active ? (legacy ? 0.985f : 1f) : 1f)
+                .scaleY(active ? (legacy ? 0.985f : 1f) : 1f)
+                .setDuration(active ? PANEL_TRANSITION_MS : SHEET_DISMISS_MS)
                 .start();
     }
 
@@ -3564,6 +4261,7 @@ public class MainActivity extends Activity {
         textStyle(v, R.style.TextAppearance_TopFlow_Section);
         v.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_xs));
         v.setIncludeFontPadding(false);
+        v.setLetterSpacing(0f);
         return v;
     }
 
@@ -3572,6 +4270,7 @@ public class MainActivity extends Activity {
         v.setText(text);
         textStyle(v, R.style.TextAppearance_TopFlow21_Caption);
         TopFlowUiKit.applyQuietText(v);
+        v.setLetterSpacing(0f);
         v.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_xs));
         return v;
     }
@@ -3598,6 +4297,7 @@ public class MainActivity extends Activity {
         TopFlowUiKit.applyFloating(b, 3);
         b.setStateListAnimator(null);
         b.setIncludeFontPadding(false);
+        b.setLetterSpacing(0f);
         b.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         b.setForeground(TopFlowUiKit.ripple(accent));
     }
@@ -3621,6 +4321,7 @@ public class MainActivity extends Activity {
         TopFlowUiKit.applyFloating(chip, 4);
         chip.setStateListAnimator(null);
         chip.setIncludeFontPadding(false);
+        chip.setLetterSpacing(0f);
         chip.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xs));
         chip.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
         chip.setForeground(TopFlowUiKit.ripple(accent));
@@ -3632,6 +4333,10 @@ public class MainActivity extends Activity {
         if (icon == 0) return;
         button.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
         button.setCompoundDrawablePadding(dimen(R.dimen.topflow_space_xs));
+        Drawable[] drawables = button.getCompoundDrawablesRelative();
+        if (drawables != null && drawables[0] != null) {
+            drawables[0].setTintList(ColorStateList.valueOf(button.getCurrentTextColor()));
+        }
     }
 
     private int iconForButton(String text) {
@@ -3645,9 +4350,11 @@ public class MainActivity extends Activity {
         if (label.contains("record voice")) return R.drawable.ic_mic_24;
         if (label.equals("stop")) return R.drawable.ic_stop_24;
         if (label.contains("note style") || label.contains("font") || label.equals("style")) return R.drawable.ic_style_24;
+        if (label.equals("rhyme")) return R.drawable.ic_rhyme_24;
         if (label.contains("expanded rhymes") || label.equals("rhymes")) return R.drawable.ic_rhyme_24;
-        if (label.contains("rhyme settings") || label.equals("settings")) return R.drawable.ic_settings_24;
+        if (label.contains("rhyme settings") || label.equals("settings") || label.startsWith("set")) return R.drawable.ic_settings_24;
         if (label.contains("check for updates")) return R.drawable.ic_update_24;
+        if (label.contains("deleted rhymes")) return R.drawable.ic_restore_24;
         if (label.contains("restore")) return R.drawable.ic_restore_24;
         if (label.equals("save")) return R.drawable.ic_save_24;
         return 0;
@@ -3674,9 +4381,46 @@ public class MainActivity extends Activity {
         label.setTextColor(TopFlowUiKit.TEXT);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         label.setIncludeFontPadding(false);
+        label.setLetterSpacing(0f);
         label.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
         card.addView(label);
         return card;
+    }
+
+    private int lyricLineCount(String body) {
+        if (body == null || body.isEmpty()) return 0;
+        int lines = 1;
+        for (int i = 0; i < body.length(); i++) {
+            if (body.charAt(i) == '\n') lines++;
+        }
+        return lines;
+    }
+
+    private int lyricWordCount(String body) {
+        if (body == null) return 0;
+        String text = body.trim();
+        if (text.isEmpty()) return 0;
+        int words = 0;
+        boolean inWord = false;
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isWhitespace(text.charAt(i))) {
+                if (inWord) {
+                    words++;
+                    inWord = false;
+                }
+            } else {
+                inWord = true;
+            }
+        }
+        if (inWord) words++;
+        return words;
+    }
+
+    private String noteMetadataLine(Note note) {
+        if (note == null) return "0 lines · 0 words";
+        int lines = lyricLineCount(note.body);
+        int words = lyricWordCount(note.body);
+        return lines + " line" + (lines == 1 ? "" : "s") + " · " + words + " word" + (words == 1 ? "" : "s");
     }
 
     private LinearLayout horizontalCardButtons(View... buttons) {
@@ -3772,14 +4516,14 @@ public class MainActivity extends Activity {
             return;
         }
         view.animate().cancel();
-        view.animate()
+        withWorkflowMotion(view)
                 .scaleX(1.035f)
                 .scaleY(1.035f)
                 .alpha(0.92f)
                 .setDuration(70)
                 .withEndAction(() -> {
                     if (action != null) action.run();
-                    view.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(90).start();
+                    withWorkflowMotion(view).scaleX(1f).scaleY(1f).alpha(1f).setDuration(90).start();
                 })
                 .start();
     }
@@ -3787,9 +4531,19 @@ public class MainActivity extends Activity {
     private void attachTapAnimation(View v) {
         v.setOnTouchListener((view, e) -> {
             if (e.getAction() == MotionEvent.ACTION_DOWN) {
-                view.animate().scaleX(0.985f).scaleY(0.985f).translationY(dp(1)).setDuration(BUTTON_PRESS_MS).start();
+                withWorkflowMotion(view)
+                        .scaleX(0.985f)
+                        .scaleY(0.985f)
+                        .translationY(dp(1))
+                        .setDuration(BUTTON_PRESS_MS)
+                        .start();
             } else if (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL) {
-                view.animate().scaleX(1f).scaleY(1f).translationY(0f).setDuration(BUTTON_PRESS_MS).start();
+                withWorkflowMotion(view)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .translationY(0f)
+                        .setDuration(BUTTON_PRESS_MS)
+                        .start();
             }
             return false;
         });

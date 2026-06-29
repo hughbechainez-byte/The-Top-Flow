@@ -2,6 +2,12 @@
 
 ## 2026-06-29
 
+- Released 22.0 with a cleaner OLED Main Menu command surface, compact recent-session previews, deferred menu actions after dismiss motion, and shared workflow animation polish. APK was temp-hosted only; appcast/update manifests were not changed.
+- Released 21.9 with swipe rail affordance polish, shared workflow motion across dock/panel interactions, tighter saved-session rows, cleaner empty-state copy, and gesture cleanup fixes. APK was temp-hosted only; appcast/update manifests were not changed.
+- Released 21.8 with velocity-aware editor/Notes swipes, shared settle/complete gesture helpers, and current-session context in the Notes header. APK was temp-hosted only; appcast/update manifests were not changed.
+- Released 21.7 with a cleaner Notes command header, metadata rows, and right-edge gesture return to the editor. APK was temp-hosted only; appcast/update manifests were not changed.
+- Released 21.6 with blur-backed bottom sheets, editor left-edge swipe back to Notes, and solid OLED panel drawables to avoid grainy surface effects. APK was temp-hosted only; appcast/update manifests were not changed.
+- Released 21.5 with scroll-safe bottom-sheet content, persistent sheet handle/header visibility, active bottom-dock feedback, and selected-note list feedback. The APK is temp-hosted only; appcast/update manifests were not changed.
 - Released 21.4 with OLED UI polish, true black main panels, visible note-card halo glow, forgiving bottom-sheet swipe dismissal, dimmed sheet backdrop, expanded offline editor fonts, lightweight selection/menu animations, and startup rhyme cache prewarming with preload/first-query logs.
 
 ## 2026-06-28
