@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build The Top Flow's shipped default fast-rhyme hot cache.
+"""Build The Top Flow's shipped default rhyme hot caches.
 
-The cache stores real ranked rhyme suggestions for the safe default fast path:
+The caches store real ranked rhyme suggestions for safe default paths:
 Balanced strictness, exactOnly=false, includeSlang=true, no removed words, and
-maxCandidates=360. Each row stores the top six results; runtime serves prefixes
-for limits 4, 5, and 6 only.
+maxCandidates matching the runtime fast/expanded request. Fast rows store the
+top six results; expanded rows store the top twelve.
 """
 
 from pathlib import Path
@@ -17,11 +17,16 @@ import rhyme_quality_check as rq
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_PATH = ROOT / "app" / "src" / "main" / "assets" / "rhyme_index.tsv"
-OUT_PATH = ROOT / "app" / "src" / "main" / "assets" / "rhyme_hot_cache.tfcache"
+FAST_OUT_PATH = ROOT / "app" / "src" / "main" / "assets" / "rhyme_hot_cache.tfcache"
+EXPANDED_OUT_PATH = ROOT / "app" / "src" / "main" / "assets" / "rhyme_expanded_hot_cache.tfcache"
 
-HOT_CACHE_LIMIT = 6
-HOT_CACHE_MAX_CANDIDATES = 360
-DEFAULT_TARGET_ROWS = 30000
+INDEX_WORD_LIMIT = 360
+FAST_CACHE_LIMIT = 6
+FAST_CACHE_MAX_CANDIDATES = 360
+EXPANDED_CACHE_LIMIT = 12
+EXPANDED_CACHE_MAX_CANDIDATES = 720
+DEFAULT_FAST_TARGET_ROWS = 30000
+DEFAULT_EXPANDED_TARGET_ROWS = 20000
 
 WORD_FIRST_SEEN = {}
 WORD_SYLLABLES = {}
@@ -113,7 +118,7 @@ def add_index(index, key, word):
     if not key:
         return
     words = index.setdefault(key, [])
-    if len(words) < HOT_CACHE_MAX_CANDIDATES and word not in words:
+    if len(words) < INDEX_WORD_LIMIT and word not in words:
         words.append(word)
 
 
@@ -209,7 +214,7 @@ def candidate_pool_for(base, base_infos):
     return pool
 
 
-def score_fast(base, candidate, bucket, base_infos):
+def score_default(base, candidate, bucket, base_infos):
     rhyme_word = rq.candidate_rhyme_word(candidate)
     if not rhyme_word or rhyme_word == base:
         return 0
@@ -225,7 +230,7 @@ def score_fast(base, candidate, bucket, base_infos):
     return 0
 
 
-def suggest_fast(base):
+def suggest_default(base, limit, max_candidates):
     base = rq.normalize_word(base)
     if not base:
         return []
@@ -242,10 +247,10 @@ def suggest_fast(base):
         rhyme_word = rq.candidate_rhyme_word(candidate)
         if rhyme_word == base:
             continue
-        if scored >= HOT_CACHE_MAX_CANDIDATES:
+        if scored >= max_candidates:
             break
         scored += 1
-        value = score_fast(base, candidate, bucket, base_infos)
+        value = score_default(base, candidate, bucket, base_infos)
         if value > 0:
             matches.append((candidate, value, bucket, rq.common_rhyme_bias(candidate)))
 
@@ -254,7 +259,7 @@ def suggest_fast(base):
     for word, _, _, _ in matches:
         if word not in out:
             out.append(word)
-        if len(out) >= HOT_CACHE_LIMIT:
+        if len(out) >= limit:
             break
     return out
 
@@ -300,10 +305,10 @@ def candidate_base_words():
     return unique
 
 
-def build_cache(target_rows):
+def build_cache(target_rows, limit, max_candidates):
     rows = []
     for word in candidate_base_words():
-        suggestions = suggest_fast(word)
+        suggestions = suggest_default(word, limit, max_candidates)
         if len(suggestions) < 4:
             continue
         rows.append((word, suggestions))
@@ -312,38 +317,62 @@ def build_cache(target_rows):
     return rows
 
 
-def write_cache(rows, output_path):
+def write_cache(rows, output_path, header, limit, max_candidates):
     header = (
-        "# topflow-rhyme-hot-cache-v1\t"
+        f"# {header}\t"
         "strictness=Balanced\texactOnly=false\tincludeSlang=true\t"
-        f"maxCandidates={HOT_CACHE_MAX_CANDIDATES}\tlimit={HOT_CACHE_LIMIT}\n"
+        f"maxCandidates={max_candidates}\tlimit={limit}\n"
     )
     with output_path.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(header)
         for word, suggestions in rows:
             handle.write(word)
-            for suggestion in suggestions[:HOT_CACHE_LIMIT]:
+            for suggestion in suggestions[:limit]:
                 handle.write("\t")
                 handle.write(suggestion)
             handle.write("\n")
 
 
+def build_and_write(label, output_path, target_rows, limit, max_candidates, header):
+    rows = build_cache(max(1, target_rows), limit, max_candidates)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    write_cache(rows, output_path, header, limit, max_candidates)
+    size = os.path.getsize(output_path)
+    examples = {word: suggest_default(word, limit, max_candidates) for word in ["my", "out", "yours", "moving", "running"]}
+    print(f"wrote {label} {output_path}")
+    print(f"{label} rows={len(rows)} bytes={size}")
+    for word, suggestions in examples.items():
+        print(f"{label} {word}: {suggestions}")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target-rows", type=int, default=DEFAULT_TARGET_ROWS)
-    parser.add_argument("--output", type=Path, default=OUT_PATH)
+    parser.add_argument("--mode", choices=["fast", "expanded", "both"], default="both")
+    parser.add_argument("--target-rows", type=int, default=DEFAULT_FAST_TARGET_ROWS)
+    parser.add_argument("--expanded-target-rows", type=int, default=DEFAULT_EXPANDED_TARGET_ROWS)
+    parser.add_argument("--output", type=Path, default=FAST_OUT_PATH)
+    parser.add_argument("--expanded-output", type=Path, default=EXPANDED_OUT_PATH)
     args = parser.parse_args(argv)
 
     load_prepared_index()
-    rows = build_cache(max(1, args.target_rows))
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    write_cache(rows, args.output)
-    size = os.path.getsize(args.output)
-    examples = {word: suggest_fast(word) for word in ["my", "out", "yours", "moving", "running"]}
-    print(f"wrote {args.output}")
-    print(f"rows={len(rows)} bytes={size}")
-    for word, suggestions in examples.items():
-        print(f"{word}: {suggestions}")
+    if args.mode in ("fast", "both"):
+        build_and_write(
+            "fast",
+            args.output,
+            args.target_rows,
+            FAST_CACHE_LIMIT,
+            FAST_CACHE_MAX_CANDIDATES,
+            "topflow-rhyme-hot-cache-v1",
+        )
+    if args.mode in ("expanded", "both"):
+        build_and_write(
+            "expanded",
+            args.expanded_output,
+            args.expanded_target_rows,
+            EXPANDED_CACHE_LIMIT,
+            EXPANDED_CACHE_MAX_CANDIDATES,
+            "topflow-rhyme-expanded-hot-cache-v1",
+        )
     return 0
 
 

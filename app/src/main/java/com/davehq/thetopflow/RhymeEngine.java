@@ -19,10 +19,15 @@ import java.util.Set;
 final class RhymeEngine {
     private static final String TAG = "TopFlow";
     private static final int CACHE_LIMIT = 192;
-    private static final String HOT_CACHE_ASSET = "rhyme_hot_cache.tfcache";
-    private static final String HOT_CACHE_HEADER = "# topflow-rhyme-hot-cache-v1";
-    private static final int HOT_CACHE_MAX_CANDIDATES = 360;
-    private static final int HOT_CACHE_LIMIT = 6;
+    private static final String[] PREPARED_INDEX_ASSETS = {"rhyme_index_accel.tfindex", "rhyme_index.tsv"};
+    private static final String FAST_HOT_CACHE_ASSET = "rhyme_hot_cache.tfcache";
+    private static final String FAST_HOT_CACHE_HEADER = "# topflow-rhyme-hot-cache-v1";
+    private static final int FAST_HOT_CACHE_MAX_CANDIDATES = 360;
+    private static final int FAST_HOT_CACHE_LIMIT = 6;
+    private static final String EXPANDED_HOT_CACHE_ASSET = "rhyme_expanded_hot_cache.tfcache";
+    private static final String EXPANDED_HOT_CACHE_HEADER = "# topflow-rhyme-expanded-hot-cache-v1";
+    private static final int EXPANDED_HOT_CACHE_MAX_CANDIDATES = 720;
+    private static final int EXPANDED_HOT_CACHE_LIMIT = 12;
     private static final int BUCKET_EXACT = 0;
     private static final int BUCKET_NEAR = 1;
     private static final int BUCKET_SLANT = 2;
@@ -55,7 +60,8 @@ final class RhymeEngine {
     private final Map<String, ArrayList<String>> exactIndex = new HashMap<>();
     private final Map<String, ArrayList<String>> familyIndex = new HashMap<>();
     private final HashSet<String> dictionaryWords = new HashSet<>();
-    private final Map<String, String[]> hotCache = new HashMap<>();
+    private final Map<String, String[]> fastHotCache = new HashMap<>();
+    private final Map<String, String[]> expandedHotCache = new HashMap<>();
     private final Object cacheLock = new Object();
     private final LinkedHashMap<String, ArrayList<String>> resultCache = new LinkedHashMap<String, ArrayList<String>>(CACHE_LIMIT, 0.75f, true) {
         @Override
@@ -77,7 +83,8 @@ final class RhymeEngine {
     };
     private volatile boolean ready = false;
     private volatile boolean loading = false;
-    private volatile boolean hotCacheReady = false;
+    private volatile boolean fastHotCacheReady = false;
+    private volatile boolean expandedHotCacheReady = false;
     private volatile int generation = 0;
 
     RhymeEngine(Context context) {
@@ -101,7 +108,11 @@ final class RhymeEngine {
             ready = true;
             loading = false;
             clearCache();
-            Log.d(TAG, "rhyme engine ready words=" + phonesByWord.size() + " exactKeys=" + exactIndex.size() + " hotCache=" + hotCache.size() + " ms=" + (System.currentTimeMillis() - start));
+            Log.d(TAG, "rhyme engine ready words=" + phonesByWord.size()
+                    + " exactKeys=" + exactIndex.size()
+                    + " fastHotCache=" + fastHotCache.size()
+                    + " expandedHotCache=" + expandedHotCache.size()
+                    + " ms=" + (System.currentTimeMillis() - start));
             if (onReady != null) onReady.run();
         }, "TopFlowRhymeLoad").start();
     }
@@ -179,8 +190,10 @@ final class RhymeEngine {
         exactIndex.clear();
         familyIndex.clear();
         dictionaryWords.clear();
-        hotCache.clear();
-        hotCacheReady = false;
+        fastHotCache.clear();
+        expandedHotCache.clear();
+        fastHotCacheReady = false;
+        expandedHotCacheReady = false;
         if (!loadPreparedIndex()) loadCmuDictionary();
         addPronunciationOverrides();
         for (String word : COMMON_RHYME_WORDS) {
@@ -188,23 +201,25 @@ final class RhymeEngine {
             String phones = slangPhones(w, true);
             if (!w.isEmpty() && !phones.isEmpty() && !dictionaryWords.contains(w)) addEntry(w, phones, true);
         }
-        loadHotCache();
+        fastHotCacheReady = loadHotCache(FAST_HOT_CACHE_ASSET, FAST_HOT_CACHE_HEADER, FAST_HOT_CACHE_MAX_CANDIDATES, FAST_HOT_CACHE_LIMIT, fastHotCache);
+        expandedHotCacheReady = loadHotCache(EXPANDED_HOT_CACHE_ASSET, EXPANDED_HOT_CACHE_HEADER, EXPANDED_HOT_CACHE_MAX_CANDIDATES, EXPANDED_HOT_CACHE_LIMIT, expandedHotCache);
     }
 
-    private void loadHotCache() {
+    private boolean loadHotCache(String assetName, String expectedHeader, int expectedMaxCandidates, int expectedLimit, Map<String, String[]> target) {
         int rows = 0;
-        try (InputStream raw = context.getAssets().open(HOT_CACHE_ASSET);
+        target.clear();
+        try (InputStream raw = context.getAssets().open(assetName);
              BufferedReader reader = new BufferedReader(new InputStreamReader(raw, StandardCharsets.UTF_8))) {
             String header = reader.readLine();
             if (header == null
-                    || !header.startsWith(HOT_CACHE_HEADER)
+                    || !header.startsWith(expectedHeader)
                     || !header.contains("strictness=Balanced")
                     || !header.contains("exactOnly=false")
                     || !header.contains("includeSlang=true")
-                    || !header.contains("maxCandidates=" + HOT_CACHE_MAX_CANDIDATES)
-                    || !header.contains("limit=" + HOT_CACHE_LIMIT)) {
-                Log.d(TAG, "rhyme hot cache skipped invalid header");
-                return;
+                    || !header.contains("maxCandidates=" + expectedMaxCandidates)
+                    || !header.contains("limit=" + expectedLimit)) {
+                Log.d(TAG, "rhyme hot cache skipped invalid header asset=" + assetName);
+                return false;
             }
             String line;
             while ((line = reader.readLine()) != null) {
@@ -213,9 +228,9 @@ final class RhymeEngine {
                 if (parts.length < 5) continue;
                 String word = normalizeWord(parts[0]);
                 if (word.isEmpty()) continue;
-                String[] values = new String[Math.min(HOT_CACHE_LIMIT, parts.length - 1)];
+                String[] values = new String[Math.min(expectedLimit, parts.length - 1)];
                 int count = 0;
-                for (int i = 1; i < parts.length && count < HOT_CACHE_LIMIT; i++) {
+                for (int i = 1; i < parts.length && count < expectedLimit; i++) {
                     String suggestion = parts[i] == null ? "" : parts[i].trim();
                     if (suggestion.isEmpty()) continue;
                     values[count++] = suggestion;
@@ -223,38 +238,71 @@ final class RhymeEngine {
                 if (count < 4) continue;
                 String[] suggestions = new String[count];
                 System.arraycopy(values, 0, suggestions, 0, count);
-                hotCache.put(word, suggestions);
+                target.put(word, suggestions);
                 rows++;
             }
-            hotCacheReady = rows > 0;
-            Log.d(TAG, "rhyme hot cache loaded rows=" + rows);
+            Log.d(TAG, "rhyme hot cache loaded asset=" + assetName + " rows=" + rows);
+            return rows > 0;
         } catch (Exception e) {
-            hotCacheReady = false;
-            hotCache.clear();
-            Log.d(TAG, "rhyme hot cache unavailable");
+            target.clear();
+            Log.d(TAG, "rhyme hot cache unavailable asset=" + assetName);
+            return false;
         }
     }
 
     private ArrayList<String> hotCacheSuggestion(String base, int limit, int maxCandidates, Options options) {
-        if (!hotCacheReady || !isHotCacheEligible(limit, maxCandidates, options)) return null;
-        String[] cached = hotCache.get(base);
+        Map<String, String[]> source = null;
+        if (fastHotCacheReady && isFastHotCacheEligible(limit, maxCandidates, options)) {
+            source = fastHotCache;
+        } else if (expandedHotCacheReady && !isRegressionGuardedWord(base) && isExpandedHotCacheEligible(limit, maxCandidates, options)) {
+            source = expandedHotCache;
+        }
+        if (source == null) return null;
+        String[] cached = source.get(base);
         if (cached == null || cached.length < limit) return null;
         ArrayList<String> out = new ArrayList<>();
         for (int i = 0; i < limit; i++) out.add(cached[i]);
         return out;
     }
 
-    private boolean isHotCacheEligible(int limit, int maxCandidates, Options options) {
+    private boolean isFastHotCacheEligible(int limit, int maxCandidates, Options options) {
         if (options == null) return false;
-        if (maxCandidates != HOT_CACHE_MAX_CANDIDATES) return false;
-        if (limit < 4 || limit > HOT_CACHE_LIMIT) return false;
+        if (maxCandidates != FAST_HOT_CACHE_MAX_CANDIDATES) return false;
+        if (limit < 4 || limit > FAST_HOT_CACHE_LIMIT) return false;
         if (!"Balanced".equals(options.strictness)) return false;
         if (options.exactOnly || !options.includeSlang) return false;
         return options.removed == null || options.removed.isEmpty();
     }
 
+    private boolean isExpandedHotCacheEligible(int limit, int maxCandidates, Options options) {
+        if (options == null) return false;
+        if (maxCandidates != EXPANDED_HOT_CACHE_MAX_CANDIDATES) return false;
+        if (limit != EXPANDED_HOT_CACHE_LIMIT) return false;
+        if (!"Balanced".equals(options.strictness)) return false;
+        if (options.exactOnly || !options.includeSlang) return false;
+        return options.removed == null || options.removed.isEmpty();
+    }
+
+    private boolean isRegressionGuardedWord(String base) {
+        return in(base, "my", "try", "yours", "out", "hover", "lover", "cover", "near", "moving", "running", "time", "downtown", "eyesight", "rol");
+    }
+
     private boolean loadPreparedIndex() {
-        try (InputStream raw = context.getAssets().open("rhyme_index.tsv");
+        for (String assetName : PREPARED_INDEX_ASSETS) {
+            phonesByWord.clear();
+            exactIndex.clear();
+            familyIndex.clear();
+            dictionaryWords.clear();
+            if (loadPreparedIndexAsset(assetName)) {
+                Log.d(TAG, "rhyme prepared index loaded asset=" + assetName + " words=" + phonesByWord.size());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean loadPreparedIndexAsset(String assetName) {
+        try (InputStream raw = context.getAssets().open(assetName);
              BufferedReader reader = new BufferedReader(new InputStreamReader(raw, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {

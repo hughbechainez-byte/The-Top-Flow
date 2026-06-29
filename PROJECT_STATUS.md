@@ -44,6 +44,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 23.5 brings the editor into the pure-black command language with current-session title/meta chrome, a fixed accent rail/signal block, black editor/media surfaces, sharper rhyme popup/chips, expanded-rhyme context panels, and note-open selection motion.
 - 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger active neon feedback, accent-aware icon/stroke updates, refreshed swipe rails, and panel/dock continuity without changing gesture thresholds.
 - 23.7 adds a shipped offline rhyme hot-cache asset for default fast suggestions, loads it on the existing rhyme background thread, and serves it only for safe Balanced/default fast cases while all non-default settings and expanded/context paths fall back to the existing scorer.
+- 23.8 clears the functional APK-size gate with runtime-used rhyme acceleration data: an uncompressed prepared index tried before TSV fallback and a default expanded-rhyme hot cache, both loaded on the existing rhyme background path with scorer fallbacks preserved.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -62,8 +63,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-23.7 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.8 functional APK-size gate pass.
+23.8 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.9 acceptance polish and local QA planning pass.
 
 ## Next Milestone
 
-Next: implement 23.8 functional APK-size gate pass using runtime-used rhyme/index data or shipped UI assets so the 24.0 APK can reach the required 2x size without filler.
+Next: implement 23.9 acceptance polish and local QA planning without running emulator/device tests yet.

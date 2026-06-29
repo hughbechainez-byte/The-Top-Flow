@@ -2,8 +2,8 @@
 
 ## High
 
-- 23.8 functional APK-size gate pass
-  - Complexity: Medium-High
+- 23.9 acceptance polish and local QA planning
+  - Complexity: Medium
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium
 

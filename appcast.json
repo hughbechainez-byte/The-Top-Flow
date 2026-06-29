@@ -1,9 +1,15 @@
 {
-  "versionName": "23.7",
-  "notes": "Version 23.7 adds a shipped offline fast-rhyme hot cache with conservative default-only loader rules, keeping non-default settings on the existing scorer.",
-  "versionCode": 63,
-  "apkUrl": "https://temp.sh/ecCnm/the-top-flow-23.7.apk",
+  "versionName": "23.8",
+  "notes": "Version 23.8 clears the functional size gate with runtime-used rhyme acceleration data: an uncompressed prepared index and default expanded-rhyme hot cache with fallbacks.",
+  "versionCode": 64,
+  "apkUrl": "https://temp.sh/yYCIa/the-top-flow-23.8.apk",
   "versions": [
+    {
+      "versionName": "23.8",
+      "notes": "Version 23.8 clears the functional size gate with runtime-used rhyme acceleration data: an uncompressed prepared index and default expanded-rhyme hot cache with fallbacks.",
+      "versionCode": 64,
+      "apkUrl": "https://temp.sh/yYCIa/the-top-flow-23.8.apk"
+    },
     {
       "versionName": "23.7",
       "notes": "Version 23.7 adds a shipped offline fast-rhyme hot cache with conservative default-only loader rules, keeping non-default settings on the existing scorer.",

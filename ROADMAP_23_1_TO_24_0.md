@@ -172,29 +172,31 @@ Review:
 ### 23.8
 
 Purpose:
-Local visual asset/render layer or UI runtime polish that justifies additional shipped size if still needed.
+Functional APK-size gate with runtime-used rhyme acceleration data.
 
 Implementation:
-- Add local neon/glow assets or a lightweight runtime only if used in shipped UI.
-- Use assets for shell/sheet/editor active glow or crisp UI emphasis, not as a decorative background.
-- Keep assets black/OLED compatible.
+- Add uncompressed prepared rhyme/index data that `RhymeEngine` actually reads first.
+- Add expanded/default rhyme cache data where it can safely fall back to the scorer.
+- Keep TSV/scorer fallbacks intact.
 
 Review:
-- APK growth is from visible assets/systems.
-- Assets render crisp and do not create grainy background texture.
+- APK clears the 2x size target with useful shipped data.
+- Rhyme quality checks pass.
+- Larger assets remain runtime-used and explainable.
 
 ### 23.9
 
 Purpose:
-Final 24.0 candidate polish and APK-size gate.
+Final 24.0 candidate polish and local QA planning.
 
 Implementation:
 - Check whether the app is visually and technically upgraded enough.
-- Add final real UI/rhyme asset work if APK is still below 2x size.
+- Document how to run local crash, screenshot, and jank testing without Dave's Pixel.
 - Tighten docs and release records.
 
 Review:
-- APK must be at least 2x the 23.0 size by 24.0.
+- APK remains at least 2x the 23.0 size by 24.0.
+- Do not run emulator/device visual tests yet per Dave's instruction.
 - No useless bloat.
 
 ### 24.0
