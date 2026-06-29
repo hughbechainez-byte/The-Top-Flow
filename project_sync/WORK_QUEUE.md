@@ -2,7 +2,7 @@
 
 ## High
 
-- 23.3 OLED modal/menu surface polish
+- 23.4 Notes home high-fidelity surface polish
   - Complexity: Medium
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium

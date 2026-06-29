@@ -1,9 +1,15 @@
 {
-  "versionName": "23.2",
-  "notes": "Version 23.2 centralizes the motion foundation with grouped timing specs and smoother panel, sheet, dock, swipe, and startup transitions while keeping tap response quick.",
-  "versionCode": 58,
-  "apkUrl": "https://temp.sh/fIdqs/the-top-flow-23.2.apk",
+  "versionName": "23.3",
+  "notes": "Version 23.3 rebuilds modal and menu surfaces around pure-black OLED command panels, current-session context, accent rails, thin neon separators, and a darker black scrim.",
+  "versionCode": 59,
+  "apkUrl": "https://temp.sh/nDtdu/the-top-flow-23.3.apk",
   "versions": [
+    {
+      "versionName": "23.3",
+      "notes": "Version 23.3 rebuilds modal and menu surfaces around pure-black OLED command panels, current-session context, accent rails, thin neon separators, and a darker black scrim.",
+      "versionCode": 59,
+      "apkUrl": "https://temp.sh/nDtdu/the-top-flow-23.3.apk"
+    },
     {
       "versionName": "23.2",
       "notes": "Version 23.2 centralizes the motion foundation with grouped timing specs and smoother panel, sheet, dock, swipe, and startup transitions while keeping tap response quick.",

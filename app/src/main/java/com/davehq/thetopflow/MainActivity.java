@@ -1216,15 +1216,16 @@ public class MainActivity extends ComponentActivity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 16));
-        TopFlowUiKit.applyFloating(row, isCurrent ? 10 : 6);
+        int accent = note == null ? C_CYAN : note.accentColor;
+        row.setBackground(oledCommandSurface(14, accent, isCurrent));
+        TopFlowUiKit.applyFloating(row, isCurrent ? 8 : 3);
         row.setForeground(TopFlowUiKit.ripple(isCurrent ? TopFlowUiKit.MINT : C_CYAN));
         row.setClickable(true);
         row.setFocusable(true);
         attachTapAnimation(row);
 
         TextView title = new TextView(this);
-        title.setText(note == null || note.title == null || note.title.isEmpty() ? "Untitled" : note.title);
+        title.setText(noteTitleForDisplay(note));
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         title.setTextColor(isCurrent ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT);
         title.setIncludeFontPadding(false);
@@ -3527,20 +3528,12 @@ public class MainActivity extends ComponentActivity {
     private void showMainMenu() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        TextView title = sheetSectionTitle("Main Menu");
-        box.addView(title);
-        TextView desc = label("Session dashboard");
-        desc.setTextColor(TopFlowUiKit.TEXT_SOFT);
-        desc.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_lg));
-        box.addView(desc);
-        TextView recentHeader = sheetSectionTitle("Recent sessions");
-        recentHeader.setTextColor(TopFlowUiKit.TEXT_SOFT);
-        box.addView(recentHeader);
+        box.addView(buildMainMenuContextPanel());
+        box.addView(sheetDivider(current != null ? current.accentColor : C_CYAN));
+        box.addView(sheetSectionTitle("Recent sessions"));
         box.addView(buildRecentSessionPreview());
-        TextView actions = sheetSectionTitle("Actions");
-        actions.setTextColor(TopFlowUiKit.TEXT_SOFT);
-        actions.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_xs));
-        box.addView(actions);
+        box.addView(sheetDivider(current != null ? current.accentColor : C_CYAN));
+        box.addView(sheetSectionTitle("Commands"));
         box.addView(buildSheetMenuRow("Notes", "Session dashboard", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(this::showMenuScreen)));
         box.addView(buildSheetMenuRow("Note Style", "Palette · fonts · glow", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(this::showStyleMenu)));
         box.addView(buildSheetMenuRow("Expanded Rhymes", "Focused word", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(() -> showExpandedRhymes())));
@@ -3551,6 +3544,60 @@ public class MainActivity extends ComponentActivity {
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
         showSheet("Main Menu", box);
+    }
+
+    private View buildMainMenuContextPanel() {
+        int accent = current != null ? current.accentColor : C_CYAN;
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.HORIZONTAL);
+        panel.setGravity(Gravity.CENTER_VERTICAL);
+        panel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        panel.setBackground(oledCommandSurface(18, accent, current != null));
+        TopFlowUiKit.applyFloating(panel, current != null ? 9 : 5);
+
+        View rail = new View(this);
+        rail.setBackground(commandRailDrawable(accent));
+        LinearLayout.LayoutParams railLp = new LinearLayout.LayoutParams(dp(4), dp(48));
+        railLp.rightMargin = dimen(R.dimen.topflow_space_md);
+        panel.addView(rail, railLp);
+
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView label = sheetEyebrow(current != null ? "Current session" : "Session");
+        copy.addView(label);
+
+        TextView title = new TextView(this);
+        title.setText(current == null ? "No note open" : noteTitleForDisplay(current));
+        title.setTextColor(TopFlowUiKit.TEXT);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        title.setIncludeFontPadding(false);
+        title.setLetterSpacing(0f);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        copy.addView(title);
+
+        TextView meta = new TextView(this);
+        meta.setText(current == null ? sessionCountLine() : noteMetadataLine(current));
+        meta.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        meta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        meta.setIncludeFontPadding(false);
+        meta.setLetterSpacing(0f);
+        meta.setSingleLine(true);
+        meta.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams metaLp = new LinearLayout.LayoutParams(-1, -2);
+        metaLp.topMargin = dp(4);
+        copy.addView(meta, metaLp);
+
+        panel.addView(copy);
+        return panel;
+    }
+
+    private String sessionCountLine() {
+        int count = notes == null ? 0 : notes.size();
+        return count + " saved session" + (count == 1 ? "" : "s");
     }
 
     private void runAfterMenuDismiss(Runnable action) {
@@ -3755,14 +3802,14 @@ public class MainActivity extends ComponentActivity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
-        row.setForeground(TopFlowUiKit.ripple(TopFlowUiKit.MINT));
+        boolean selected = current != null && fontId.equals(current.font);
+        int accent = selected && current != null ? current.accentColor : C_CYAN;
+        row.setBackground(oledCommandSurface(16, accent, selected));
         row.setClickable(true);
         row.setFocusable(true);
         row.setMinimumHeight(dp(84));
-        boolean selected = current != null && fontId.equals(current.font);
-        TopFlowUiKit.applyFloating(row, selected ? 8 : 4);
-        row.setForeground(TopFlowUiKit.ripple(selected ? (current != null ? current.accentColor : C_CYAN) : TopFlowUiKit.MINT));
+        TopFlowUiKit.applyFloating(row, selected ? 7 : 3);
+        row.setForeground(TopFlowUiKit.ripple(selected ? accent : TopFlowUiKit.MINT));
         TextView name = new TextView(this);
         name.setText(fontLabel(fontId));
         textStyle(name, R.style.TextAppearance_TopFlow21_Caption);
@@ -3966,7 +4013,7 @@ public class MainActivity extends ComponentActivity {
     private void addStrictnessSlider(LinearLayout box, TextView status) {
         LinearLayout section = new LinearLayout(this);
         section.setOrientation(LinearLayout.VERTICAL);
-        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setBackground(oledCommandSurface(16, current != null ? current.accentColor : C_CYAN, false));
         section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         section.setLayoutParams(settingsSectionLayoutParams());
         TopFlowUiKit.applyFloating(section, 6);
@@ -4003,7 +4050,7 @@ public class MainActivity extends ComponentActivity {
     private void addMaxSuggestionSlider(LinearLayout box, TextView status) {
         LinearLayout section = new LinearLayout(this);
         section.setOrientation(LinearLayout.VERTICAL);
-        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setBackground(oledCommandSurface(16, current != null ? current.accentColor : C_CYAN, false));
         section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         section.setLayoutParams(settingsSectionLayoutParams());
         TopFlowUiKit.applyFloating(section, 6);
@@ -4042,7 +4089,7 @@ public class MainActivity extends ComponentActivity {
         final boolean[] state = {enabled};
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        row.setBackground(oledCommandSurface(16, current != null ? current.accentColor : C_CYAN, state[0]));
         row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
         row.setLayoutParams(settingsSectionLayoutParams());
         TopFlowUiKit.applyFloating(row, 6);
@@ -4059,6 +4106,7 @@ public class MainActivity extends ComponentActivity {
             runSelectionAnimation(v, () -> {
                 state[0] = !state[0];
                 stateView.setText(state[0] ? "On" : "Off");
+                row.setBackground(oledCommandSurface(16, current != null ? current.accentColor : C_CYAN, state[0]));
                 prefs.edit().putBoolean(key, state[0]).apply();
                 clearRhymeCache();
                 scheduleSuggestionUpdate();
@@ -4079,14 +4127,14 @@ public class MainActivity extends ComponentActivity {
     private View buildSheetOverlay() {
         FrameLayout overlay = new FrameLayout(this);
         overlay.setVisibility(View.GONE);
-        overlay.setBackgroundResource(R.drawable.bg21_blur_scrim);
+        overlay.setBackgroundColor(Color.argb(206, 0, 0, 0));
         overlay.setClickable(true);
         overlay.setOnClickListener(v -> dismissSheet());
 
         sheetCard = new LinearLayout(this);
         sheetCard.setOrientation(LinearLayout.VERTICAL);
         sheetCard.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
-        sheetCard.setBackground(TopFlowUiKit.floatingPanel(this, 26));
+        sheetCard.setBackground(oledSheetSurface(current != null ? current.accentColor : C_CYAN));
         TopFlowUiKit.applyFloating(sheetCard, 18);
         sheetCard.setClickable(true);
         sheetCard.setFocusable(false);
@@ -4101,8 +4149,8 @@ public class MainActivity extends ComponentActivity {
         sheetDragHandle = handleHitbox;
         handleHitbox.setPadding(0, dp(14), 0, dp(14));
         View handle = new View(this);
-        handle.setBackground(TopFlowUiKit.floatingPanel(this, 999));
-        FrameLayout.LayoutParams handleInnerLp = new FrameLayout.LayoutParams(dp(94), dp(8), Gravity.CENTER);
+        handle.setBackground(sheetHandleDrawable(current != null ? current.accentColor : C_CYAN));
+        FrameLayout.LayoutParams handleInnerLp = new FrameLayout.LayoutParams(dp(86), dp(5), Gravity.CENTER);
         handleHitbox.addView(handle, handleInnerLp);
         LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(-1, dp(34));
         handleLp.gravity = Gravity.CENTER_HORIZONTAL;
@@ -4119,12 +4167,18 @@ public class MainActivity extends ComponentActivity {
         textStyle(sheetTitle, R.style.TextAppearance_TopFlow21_Section);
         sheetTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         sheetTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        sheetTitle.setTextColor(TopFlowUiKit.TEXT);
+        sheetTitle.setIncludeFontPadding(false);
+        sheetTitle.setLetterSpacing(0f);
+        sheetTitle.setSingleLine(true);
+        sheetTitle.setEllipsize(TextUtils.TruncateAt.END);
         header.addView(sheetTitle, new LinearLayout.LayoutParams(0, -2, 1));
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
         header.addView(close);
         sheetCard.addView(header);
         attachSheetDragDismiss(header);
+        sheetCard.addView(sheetDivider(current != null ? current.accentColor : C_CYAN));
 
         sheetBody = new LinearLayout(this);
         sheetBody.setOrientation(LinearLayout.VERTICAL);
@@ -4440,6 +4494,7 @@ public class MainActivity extends ComponentActivity {
         sheetTitle.setText(title);
         sheetBody.removeAllViews();
         sheetBody.addView(content);
+        sheetCard.setBackground(oledSheetSurface(current != null ? current.accentColor : C_CYAN));
         boolean alreadyVisible = sheetOverlay.getVisibility() == View.VISIBLE;
         sheetOverlay.setVisibility(View.VISIBLE);
         sheetCard.post(() -> capSheetBodyHeight(0));
@@ -4490,6 +4545,60 @@ public class MainActivity extends ComponentActivity {
         return releaseDy > dp(SHEET_DISMISS_DISTANCE_DP) || velocityY > SHEET_DISMISS_VELOCITY;
     }
 
+    private Drawable oledSheetSurface(int accent) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.BLACK);
+        d.setCornerRadius(dp(26));
+        d.setStroke(dp(1), Color.argb(112, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable oledCommandSurface(int radiusDp, int accent, boolean active) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.BLACK);
+        int alpha = active ? 152 : 74;
+        d.setCornerRadius(dp(radiusDp));
+        d.setStroke(dp(1), Color.argb(alpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable sheetHandleDrawable(int accent) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.argb(188, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        d.setCornerRadius(dp(999));
+        return d;
+    }
+
+    private Drawable commandRailDrawable(int accent) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.argb(206, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        d.setCornerRadius(dp(999));
+        return d;
+    }
+
+    private View sheetDivider(int accent) {
+        View divider = new View(this);
+        divider.setBackgroundColor(Color.argb(58, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(1));
+        lp.topMargin = dimen(R.dimen.topflow_space_md);
+        lp.bottomMargin = dimen(R.dimen.topflow_space_md);
+        divider.setLayoutParams(lp);
+        return divider;
+    }
+
+    private TextView sheetEyebrow(String text) {
+        TextView t = new TextView(this);
+        t.setText(text == null ? "" : text);
+        t.setTextColor(TopFlowUiKit.MINT);
+        t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+        t.setIncludeFontPadding(false);
+        t.setLetterSpacing(0f);
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
+        return t;
+    }
+
     private TextView sheetSectionTitle(String text) {
         TextView t = new TextView(this);
         t.setText(text == null ? "" : text);
@@ -4508,13 +4617,19 @@ public class MainActivity extends ComponentActivity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        row.setBackground(oledCommandSurface(16, accent, false));
         row.setForeground(TopFlowUiKit.ripple(accent));
         row.setClickable(true);
         row.setFocusable(true);
         row.setMinimumHeight(dp(56));
-        TopFlowUiKit.applyFloating(row, 4);
+        TopFlowUiKit.applyFloating(row, 3);
         attachTapAnimation(row);
+
+        View rail = new View(this);
+        rail.setBackground(commandRailDrawable(accent));
+        LinearLayout.LayoutParams railLp = new LinearLayout.LayoutParams(dp(3), dp(34));
+        railLp.rightMargin = dimen(R.dimen.topflow_space_md);
+        row.addView(rail, railLp);
 
         LinearLayout copy = new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
@@ -4800,8 +4915,8 @@ public class MainActivity extends ComponentActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
-        card.setBackground(TopFlowUiKit.floatingPanel(this, 18));
-        TopFlowUiKit.applyFloating(card, 8);
+        card.setBackground(oledCommandSurface(18, C_CYAN, true));
+        TopFlowUiKit.applyFloating(card, 6);
         card.setMinimumHeight(dp(132));
 
         TextView title = new TextView(this);
@@ -5031,12 +5146,13 @@ public class MainActivity extends ComponentActivity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
-        row.setBackground(TopFlowUiKit.floatingPanel(this, 18));
+        int accent = current != null ? current.accentColor : C_CYAN;
+        row.setBackground(oledCommandSurface(16, accent, false));
         row.setForeground(TopFlowUiKit.ripple(current != null ? current.accentColor : C_CYAN));
         row.setClickable(true);
         row.setFocusable(true);
         row.setMinimumHeight(dp(72));
-        TopFlowUiKit.applyFloating(row, 6);
+        TopFlowUiKit.applyFloating(row, 3);
         attachTapAnimation(row);
         LinearLayout copy = new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
@@ -5051,7 +5167,7 @@ public class MainActivity extends ComponentActivity {
             LinearLayout previewHost = new LinearLayout(this);
             previewHost.setPadding(0, 0, 0, 0);
             previewHost.setGravity(Gravity.CENTER);
-            previewHost.setBackground(TopFlowUiKit.floatingPanel(this, 10));
+            previewHost.setBackground(oledCommandSurface(10, accent, false));
             previewHost.setMinimumWidth(dp(102));
             previewHost.setMinimumHeight(dp(46));
             previewHost.setLayoutParams(new LinearLayout.LayoutParams(dp(102), dp(46)));
@@ -5095,7 +5211,7 @@ public class MainActivity extends ComponentActivity {
     private View buildSliderRow(String sliderLabel, SeekBar bar) {
         LinearLayout section = new LinearLayout(this);
         section.setOrientation(LinearLayout.VERTICAL);
-        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setBackground(oledCommandSurface(16, current != null ? current.accentColor : C_CYAN, false));
         section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         section.setLayoutParams(settingsSectionLayoutParams());
         TopFlowUiKit.applyFloating(section, 6);
@@ -5387,6 +5503,11 @@ public class MainActivity extends ComponentActivity {
         int lines = lyricLineCount(note.body);
         int words = lyricWordCount(note.body);
         return lines + " line" + (lines == 1 ? "" : "s") + " · " + words + " word" + (words == 1 ? "" : "s");
+    }
+
+    private String noteTitleForDisplay(Note note) {
+        if (note == null || note.title == null || note.title.trim().isEmpty()) return "Untitled";
+        return note.title.trim();
     }
 
     private LinearLayout horizontalCardButtons(View... buttons) {
