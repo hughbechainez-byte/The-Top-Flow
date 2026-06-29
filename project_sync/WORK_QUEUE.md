@@ -2,7 +2,7 @@
 
 ## High
 
-- 22.8 settings/personalization and 22.9 splash/preload visual identity
+- 22.9 splash/preload visual identity
   - Complexity: Medium
   - Recommended model: GPT-5.3
   - Recommended reasoning level: Medium

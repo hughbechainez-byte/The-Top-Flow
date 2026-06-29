@@ -1,10 +1,9 @@
 # Session Summary
 
-- 21.3 moves expanded Rhyme button lookup off the UI thread.
-- Full-note body copying is deferred to draft save instead of every keystroke.
-- Caret popup reuses measurements and chip views; popup is configured not to interact with IME.
-- Editor disables suggestions/autofill/TextClassifier where safe.
-- Added `rhyme_trace` logs for button, fast row, popup, chips, cache, note length, cursor, IME, and thread.
+- Current milestone: 22.1 to 23.0 premium UI transformation.
+- Latest completed build: 22.8 / versionCode 54.
+- 22.8 upgraded settings and personalization with preview-first color, font, font-size, glow, and rhyme-setting sheets.
+- Codex review fixed preview contrast and spacing issues before packaging.
 - Validation: `tools\rhyme_quality_check.py` passed; `assembleRelease` passed locally.
-- Release: 21.3 APK uploaded to `https://temp.sh/SZvCg/the-top-flow-21.3.apk`; live appcast updated.
-- Pixel was not visible to WSL ADB during release, so on-device trace review is the next task.
+- Release: 22.8 APK copied into `releases/` and `Desktop/TopFlowUIalphabuilds`, temp-hosted, and added to the multi-version appcast line.
+- Next task: 22.9 splash, preload, and visual identity.

@@ -3063,9 +3063,11 @@ public class MainActivity extends Activity {
         ColorWheelView wheel = new ColorWheelView(this);
         wheel.setColor(startColor);
         TextView preview = label(" ");
-        preview.setMinHeight(dp(72));
-        preview.setBackgroundColor(startColor);
-        TextView hex = label(String.format(Locale.US, "#%06X", 0xFFFFFF & startColor));
+        preview.setMinHeight(dp(96));
+        preview.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        preview.setBackground(buildColorPanelDrawable(startColor));
+        TextView hex = settingsValuePill(String.format(Locale.US, "#%06X", 0xFFFFFF & startColor));
+        hex.setPadding(dimen(R.dimen.topflow_space_md), 0, 0, dimen(R.dimen.topflow_space_xs));
         SeekBar sat = new SeekBar(this);
         sat.setMax(100);
         SeekBar val = new SeekBar(this);
@@ -3079,7 +3081,7 @@ public class MainActivity extends Activity {
             if (updating[0]) return;
             updating[0] = true;
             int refined = Color.HSVToColor(new float[]{wheel.getHue(), sat.getProgress() / 100f, val.getProgress() / 100f});
-            preview.setBackgroundColor(refined);
+            preview.setBackground(buildColorPanelDrawable(refined));
             hex.setText(String.format(Locale.US, "#%06X", 0xFFFFFF & refined));
             wheel.setColor(refined);
             updating[0] = false;
@@ -3099,12 +3101,16 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(0, 0, 0, 0);
         box.addView(wheel, new LinearLayout.LayoutParams(-1, dp(260)));
-        box.addView(preview, new LinearLayout.LayoutParams(-1, dp(72)));
-        box.addView(hex);
-        box.addView(label("Saturation"));
-        box.addView(sat);
-        box.addView(label("Brightness"));
-        box.addView(val);
+        LinearLayout previewCard = new LinearLayout(this);
+        previewCard.setOrientation(LinearLayout.VERTICAL);
+        previewCard.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_sm));
+        previewCard.addView(preview, new LinearLayout.LayoutParams(-1, -2));
+        previewCard.addView(hex);
+        box.addView(previewCard);
+        box.addView(buildSliderRow("Saturation", sat));
+        sat.setProgress((int) (hsv[1] * 100f));
+        box.addView(buildSliderRow("Brightness", val));
+        val.setProgress((int) (hsv[2] * 100f));
         Button apply = button("Apply");
         apply.setOnClickListener(v -> {
             int picked = Color.HSVToColor(new float[]{wheel.getHue(), sat.getProgress() / 100f, val.getProgress() / 100f});
@@ -3311,33 +3317,63 @@ public class MainActivity extends Activity {
         TextView heading = sheetSectionTitle("Note Style");
         heading.setTextColor(TopFlowUiKit.TEXT_SOFT);
         box.addView(heading);
-        box.addView(buildSheetMenuRow("Note Color", "Workspace frame", C_TEXT_MUTED, C_CYAN, () -> {
-            if (current == null) return;
-            selectedColorTarget = 0;
-            showColorEditor(current.noteColor);
-        }));
-        box.addView(buildSheetMenuRow("Text Color", "Lyric text", C_TEXT_MUTED, current != null ? current.accentColor : TopFlowUiKit.MINT, () -> {
-            if (current == null) return;
-            selectedColorTarget = 1;
-            showColorEditor(current.textColor);
-        }));
-        box.addView(buildSheetMenuRow("Accent Color", "Signals · commands", C_TEXT_MUTED, C_CYAN, () -> {
-            if (current == null) return;
-            selectedColorTarget = 2;
-            showColorEditor(current.accentColor);
-        }));
-        box.addView(buildSheetMenuRow("Font", current == null ? "--" : fontLabel(current.font), C_TEXT_MUTED, C_CYAN, () -> {
-            if (current == null) return;
-            showFontMenu();
-        }));
-        box.addView(buildSheetMenuRow("Font Size", "Editor size: " + (current == null ? "--" : (current.fontSizeSp + "sp")), C_TEXT_MUTED, C_CYAN, () -> {
-            if (current == null) return;
-            showFontSizeMenu();
-        }));
-        box.addView(buildSheetMenuRow("Note Glow", "Glow: " + (current == null ? "--" : (current.noteGlow ? "On" : "Off")) + "  Strength: " + (current == null ? "0" : current.glowStrength), C_TEXT_MUTED, C_CYAN, () -> {
-            if (current == null) return;
-            showGlowMenu();
-        }));
+        box.addView(buildStyleHubRow(
+                "Note Color",
+                current == null ? "--" : formatColor(current.noteColor),
+                buildColorSample(current == null ? DEFAULT_NOTE_COLOR : current.noteColor),
+                () -> {
+                    if (current == null) return;
+                    selectedColorTarget = 0;
+                    showColorEditor(current.noteColor);
+                }
+        ));
+        box.addView(buildStyleHubRow(
+                "Text Color",
+                current == null ? "--" : formatColor(current.textColor),
+                buildColorSample(current == null ? C_TEXT : current.textColor),
+                () -> {
+                    if (current == null) return;
+                    selectedColorTarget = 1;
+                    showColorEditor(current.textColor);
+                }
+        ));
+        box.addView(buildStyleHubRow(
+                "Accent Color",
+                current == null ? "--" : formatColor(current.accentColor),
+                buildColorSample(current == null ? C_CYAN : current.accentColor),
+                () -> {
+                    if (current == null) return;
+                    selectedColorTarget = 2;
+                    showColorEditor(current.accentColor);
+                }
+        ));
+        box.addView(buildStyleHubRow(
+                "Font",
+                current == null ? "--" : fontLabel(current.font),
+                buildFontMiniPreview(current == null ? "sans" : current.font),
+                () -> {
+                    if (current == null) return;
+                    showFontMenu();
+                }
+        ));
+        box.addView(buildStyleHubRow(
+                "Font Size",
+                current == null ? "--" : (current.fontSizeSp + "sp"),
+                buildTextSizePreview(current == null ? DEFAULT_EDITOR_FONT_SIZE_SP : current.fontSizeSp),
+                () -> {
+                    if (current == null) return;
+                    showFontSizeMenu();
+                }
+        ));
+        box.addView(buildStyleHubRow(
+                "Note Glow",
+                current == null ? "--" : (current.noteGlow ? "On" : "Off") + "  •  " + current.glowStrength,
+                buildGlowPreview(current == null ? C_CYAN : current.accentColor),
+                () -> {
+                    if (current == null) return;
+                    showGlowMenu();
+                }
+        ));
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
@@ -3349,9 +3385,10 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.addView(sheetSectionTitle("Font Size"));
-        TextView value = label("Editor font size: " + current.fontSizeSp + "sp");
-        value.setTextColor(C_TEXT_MUTED);
-        value.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_md));
+        View preview = buildLiveTextPreview("whisper my name", current.font, current.fontSizeSp, current.textColor);
+        box.addView(preview);
+        TextView value = settingsValuePill(current.fontSizeSp + "sp");
+        value.setPadding(dimen(R.dimen.topflow_space_md), 0, 0, dimen(R.dimen.topflow_space_md));
         box.addView(value);
         SeekBar bar = new SeekBar(this);
         bar.setMax(MAX_EDITOR_FONT_SIZE_SP - MIN_EDITOR_FONT_SIZE_SP);
@@ -3362,7 +3399,8 @@ public class MainActivity extends Activity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser || current == null) return;
                 current.fontSizeSp = MIN_EDITOR_FONT_SIZE_SP + progress;
-                value.setText("Editor font size: " + current.fontSizeSp + "sp");
+                value.setText(current.fontSizeSp + "sp");
+                updateTextPreview(preview, current.fontSizeSp, current.font, current.textColor);
                 applyStyle();
                 saveNotes();
             }
@@ -3380,8 +3418,11 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.addView(sheetSectionTitle("Note Glow"));
-        TextView status = label(glowStatus());
-        status.setTextColor(C_TEXT_MUTED);
+        LinearLayout glowPreview = new LinearLayout(this);
+        glowPreview.setOrientation(LinearLayout.VERTICAL);
+        glowPreview.addView(buildGlowDemoPanel(current.accentColor, current.noteGlow, current.glowStrength), new LinearLayout.LayoutParams(-1, -2));
+        box.addView(glowPreview);
+        TextView status = settingsValuePill(glowStatus());
         status.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_md));
         box.addView(status);
         Button toggle = button("Glow: " + (current.noteGlow ? "On" : "Off"));
@@ -3393,10 +3434,11 @@ public class MainActivity extends Activity {
             applyButtonIcon(toggle, toggle.getText().toString());
             saveNotes();
             applyStyle();
+            glowPreview.removeAllViews();
+            glowPreview.addView(buildGlowDemoPanel(current.accentColor, current.noteGlow, current.glowStrength), new LinearLayout.LayoutParams(-1, -2));
         });
         box.addView(toggle);
-        TextView strength = label("Strength: " + current.glowStrength);
-        strength.setTextColor(C_TEXT_MUTED);
+        TextView strength = settingsValuePill("Strength " + current.glowStrength);
         box.addView(strength);
         SeekBar bar = new SeekBar(this);
         bar.setMax(4);
@@ -3407,12 +3449,14 @@ public class MainActivity extends Activity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser || current == null) return;
                 current.glowStrength = progress;
-                strength.setText("Strength: " + progress);
+                strength.setText("Strength " + progress);
                 if (progress > 0) current.noteGlow = true;
                 status.setText(glowStatus());
                 toggle.setText("Glow: " + (current.noteGlow ? "On" : "Off"));
                 saveNotes();
                 applyStyle();
+                glowPreview.removeAllViews();
+                glowPreview.addView(buildGlowDemoPanel(current.accentColor, current.noteGlow, current.glowStrength), new LinearLayout.LayoutParams(-1, -2));
             }
             public void onStartTrackingTouch(SeekBar seekBar) {}
             public void onStopTrackingTouch(SeekBar seekBar) {}
@@ -3455,18 +3499,21 @@ public class MainActivity extends Activity {
 
     private View buildFontPreviewRow(String fontId) {
         LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
         row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
         row.setForeground(TopFlowUiKit.ripple(TopFlowUiKit.MINT));
         row.setClickable(true);
         row.setFocusable(true);
         row.setMinimumHeight(dp(84));
-        TopFlowUiKit.applyFloating(row, current != null && fontId.equals(current.font) ? 8 : 4);
+        boolean selected = current != null && fontId.equals(current.font);
+        TopFlowUiKit.applyFloating(row, selected ? 8 : 4);
+        row.setForeground(TopFlowUiKit.ripple(selected ? (current != null ? current.accentColor : C_CYAN) : TopFlowUiKit.MINT));
         TextView name = new TextView(this);
-        name.setText(fontLabel(fontId) + (current != null && fontId.equals(current.font) ? "  Selected" : ""));
+        name.setText(fontLabel(fontId));
         textStyle(name, R.style.TextAppearance_TopFlow21_Caption);
-        name.setTextColor(current != null && fontId.equals(current.font) ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT_SOFT);
+        name.setTextColor(selected ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT_SOFT);
         name.setSingleLine(true);
         name.setEllipsize(TextUtils.TruncateAt.END);
         TextView preview = new TextView(this);
@@ -3477,8 +3524,13 @@ public class MainActivity extends Activity {
         preview.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
         preview.setSingleLine(true);
         preview.setEllipsize(TextUtils.TruncateAt.END);
-        row.addView(name);
-        row.addView(preview);
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        copy.addView(name);
+        copy.addView(preview);
+        row.addView(copy);
+        row.addView(settingsValuePill(selected ? "Active" : "Use"));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
         row.setLayoutParams(lp);
@@ -3645,9 +3697,10 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         TextView status = label("Strictness: " + strictnessName() + "  Max: " + configuredMaxSuggestions());
         status.setTextColor(C_TEXT_MUTED);
+        status.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
         box.addView(status);
-        addStrictnessSlider(box);
-        addMaxSuggestionSlider(box);
+        addStrictnessSlider(box, status);
+        addMaxSuggestionSlider(box, status);
         addToggleButton(box, "Show rhyme row", PREF_SHOW_RHYME_ROW, true);
         addToggleButton(box, "Show exact only", PREF_EXACT_ONLY, false);
         addToggleButton(box, "Include slang overrides", PREF_INCLUDE_SLANG, true);
@@ -3657,68 +3710,108 @@ public class MainActivity extends Activity {
         showSheet("Rhyme Settings", box);
     }
 
-    private void addStrictnessSlider(LinearLayout box) {
+    private void addStrictnessSlider(LinearLayout box, TextView status) {
+        LinearLayout section = new LinearLayout(this);
+        section.setOrientation(LinearLayout.VERTICAL);
+        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        section.setLayoutParams(settingsSectionLayoutParams());
+        TopFlowUiKit.applyFloating(section, 6);
         TextView label = label("Rhyme strictness");
         label.setTextColor(C_TEXT);
-        box.addView(label);
+        section.addView(label);
         SeekBar bar = new SeekBar(this);
         bar.setMax(2);
         bar.setProgress(strictnessIndex());
         styleSeekBar(bar, current != null ? current.accentColor : C_CYAN);
-        TextView value = label(strictnessName());
-        value.setTextColor(C_TEXT_MUTED);
-        box.addView(bar, new LinearLayout.LayoutParams(-1, -2));
-        box.addView(value);
+        TextView value = settingsValuePill(strictnessName());
+        value.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_sm));
+        section.addView(value);
+        section.addView(bar, new LinearLayout.LayoutParams(-1, -2));
+        box.addView(section);
+        TextView finalValue = value;
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser) return;
                 String next = progress == 0 ? "Strict" : progress == 1 ? "Balanced" : "Loose";
                 prefs.edit().putString(PREF_RHYME_STRICTNESS, next).apply();
-                value.setText(next);
+                finalValue.setText(next);
                 clearRhymeCache();
                 scheduleSuggestionUpdate();
+                if (status != null) {
+                    status.setText("Strictness: " + strictnessName() + "  Max: " + configuredMaxSuggestions());
+                }
             }
             public void onStartTrackingTouch(SeekBar seekBar) {}
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
     }
 
-    private void addMaxSuggestionSlider(LinearLayout box) {
+    private void addMaxSuggestionSlider(LinearLayout box, TextView status) {
+        LinearLayout section = new LinearLayout(this);
+        section.setOrientation(LinearLayout.VERTICAL);
+        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        section.setLayoutParams(settingsSectionLayoutParams());
+        TopFlowUiKit.applyFloating(section, 6);
         TextView label = label("Max suggestions");
         label.setTextColor(C_TEXT);
-        box.addView(label);
+        section.addView(label);
         SeekBar bar = new SeekBar(this);
         bar.setMax(8);
         bar.setProgress(configuredMaxSuggestions() - 4);
         styleSeekBar(bar, current != null ? current.accentColor : C_CYAN);
-        TextView value = label(String.valueOf(configuredMaxSuggestions()));
-        value.setTextColor(C_TEXT_MUTED);
-        box.addView(bar, new LinearLayout.LayoutParams(-1, -2));
-        box.addView(value);
+        TextView value = settingsValuePill(String.valueOf(configuredMaxSuggestions()));
+        value.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_sm));
+        section.addView(value);
+        section.addView(bar, new LinearLayout.LayoutParams(-1, -2));
+        TextView finalValue = value;
+        box.addView(section);
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser) return;
                 int max = progress + 4;
                 prefs.edit().putInt(PREF_MAX_SUGGESTIONS, max).apply();
-                value.setText(String.valueOf(max));
+                finalValue.setText(String.valueOf(max));
                 clearRhymeCache();
                 scheduleSuggestionUpdate();
+                if (status != null) {
+                    status.setText("Strictness: " + strictnessName() + "  Max: " + configuredMaxSuggestions());
+                }
             }
             public void onStartTrackingTouch(SeekBar seekBar) {}
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
     }
 
-    private void addToggleButton(LinearLayout box, String label, String key, boolean defaultValue) {
+    private void addToggleButton(LinearLayout box, String labelText, String key, boolean defaultValue) {
         boolean enabled = prefs.getBoolean(key, defaultValue);
-        Button b = button(label + ": " + (enabled ? "On" : "Off"));
-        b.setOnClickListener(v -> {
-            prefs.edit().putBoolean(key, !enabled).apply();
-            clearRhymeCache();
-            scheduleSuggestionUpdate();
-            showRhymeSettingsMenu();
+        final boolean[] state = {enabled};
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        row.setLayoutParams(settingsSectionLayoutParams());
+        TopFlowUiKit.applyFloating(row, 6);
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setForeground(TopFlowUiKit.ripple(C_CYAN));
+        TextView title = label(labelText);
+        title.setTextColor(C_TEXT);
+        row.addView(title);
+        TextView stateView = settingsValuePill(state[0] ? "On" : "Off");
+        stateView.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
+        row.addView(stateView);
+        row.setOnClickListener(v -> {
+            runSelectionAnimation(v, () -> {
+                state[0] = !state[0];
+                stateView.setText(state[0] ? "On" : "Off");
+                prefs.edit().putBoolean(key, state[0]).apply();
+                clearRhymeCache();
+                scheduleSuggestionUpdate();
+            });
         });
-        box.addView(b);
+        box.addView(row);
     }
 
     private String focusedRhymeWord() {
@@ -4678,6 +4771,201 @@ public class MainActivity extends Activity {
             public void onTextChanged(CharSequence s, int start, int before, int count) { changed.run(); }
             public void afterTextChanged(Editable s) {}
         };
+    }
+
+    private View buildStyleHubRow(String title, String value, View preview, Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 18));
+        row.setForeground(TopFlowUiKit.ripple(current != null ? current.accentColor : C_CYAN));
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setMinimumHeight(dp(72));
+        TopFlowUiKit.applyFloating(row, 6);
+        attachTapAnimation(row);
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        TextView titleView = label(title);
+        titleView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        titleView.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_xs));
+        copy.addView(titleView);
+        copy.addView(settingsValuePill(value == null ? "" : value));
+        row.addView(copy);
+        if (preview != null) {
+            LinearLayout previewHost = new LinearLayout(this);
+            previewHost.setPadding(0, 0, 0, 0);
+            previewHost.setGravity(Gravity.CENTER);
+            previewHost.setBackground(TopFlowUiKit.floatingPanel(this, 10));
+            previewHost.setMinimumWidth(dp(102));
+            previewHost.setMinimumHeight(dp(46));
+            previewHost.setLayoutParams(new LinearLayout.LayoutParams(dp(102), dp(46)));
+            TopFlowUiKit.applyFloating(previewHost, 4);
+            LinearLayout.LayoutParams inner = new LinearLayout.LayoutParams(dp(90), dp(36));
+            previewHost.addView(preview, inner);
+            row.addView(previewHost);
+        }
+        if (action != null) row.setOnClickListener(v -> runSelectionAnimation(v, action));
+        row.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) row.getLayoutParams();
+        lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        return row;
+    }
+
+    private String formatColor(int color) {
+        return String.format(Locale.US, "#%06X", 0xFFFFFF & color);
+    }
+
+    private View buildColorSample(int color) {
+        View sample = new View(this);
+        sample.setMinimumWidth(dp(80));
+        sample.setMinimumHeight(dp(32));
+        sample.setBackground(buildColorPanelDrawable(color));
+        return sample;
+    }
+
+    private Drawable buildColorPanelDrawable(int color) {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        blendColor(color, Color.WHITE, 0.12f),
+                        color,
+                        blendColor(color, Color.BLACK, 0.22f)
+                });
+        d.setCornerRadius(dp(10));
+        d.setStroke(dp(1), Color.argb(150, Color.red(color), Color.green(color), Color.blue(color)));
+        return d;
+    }
+
+    private View buildSliderRow(String sliderLabel, SeekBar bar) {
+        LinearLayout section = new LinearLayout(this);
+        section.setOrientation(LinearLayout.VERTICAL);
+        section.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        section.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
+        section.setLayoutParams(settingsSectionLayoutParams());
+        TopFlowUiKit.applyFloating(section, 6);
+        TextView title = label(sliderLabel);
+        title.setTextColor(TopFlowUiKit.TEXT);
+        title.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_xs));
+        section.addView(title);
+        if (bar != null) {
+            styleSeekBar(bar, current != null ? current.accentColor : C_CYAN);
+            section.addView(bar, new LinearLayout.LayoutParams(-1, -2));
+        }
+        return section;
+    }
+
+    private View buildFontMiniPreview(String fontId) {
+        TextView t = new TextView(this);
+        t.setText("Aa");
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        t.setTypeface(TopFlowUiKit.fontForPreview(this, fontId));
+        t.setTextColor(C_TEXT);
+        t.setGravity(Gravity.CENTER);
+        t.setIncludeFontPadding(false);
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
+        return t;
+    }
+
+    private View buildTextSizePreview(int sizeSp) {
+        TextView t = new TextView(this);
+        t.setText("Aa");
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(12f, Math.min(32f, sizeSp)));
+        t.setTypeface(TopFlowUiKit.fontForPreview(this, current == null ? "sans" : current.font));
+        t.setTextColor(C_TEXT);
+        t.setGravity(Gravity.CENTER);
+        t.setIncludeFontPadding(false);
+        return t;
+    }
+
+    private View buildGlowPreview(int accent) {
+        LinearLayout glow = new LinearLayout(this);
+        glow.setOrientation(LinearLayout.HORIZONTAL);
+        glow.setGravity(Gravity.CENTER);
+        glow.setPadding(dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_xs));
+        glow.setBackground(TopFlowUiKit.oledSurface(this, 10, Color.rgb(6, 8, 12), Color.argb(130, Color.red(accent), Color.green(accent), Color.blue(accent))));
+        View marker = new View(this);
+        marker.setBackground(glowDrawable(accent, true, 3));
+        glow.addView(marker, new LinearLayout.LayoutParams(dp(54), dp(18)));
+        return glow;
+    }
+
+    private View buildGlowDemoPanel(int accent, boolean enabled, int strength) {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        panel.setBackground(TopFlowUiKit.floatingPanel(this, 12));
+        panel.setMinimumHeight(dp(120));
+        TextView sample = new TextView(this);
+        sample.setText("Glow preview");
+        sample.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        sample.setTextColor(Color.argb(230, Color.red(C_TEXT), Color.green(C_TEXT), Color.blue(C_TEXT)));
+        sample.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        sample.setIncludeFontPadding(false);
+        panel.addView(sample);
+        View glowBand = new View(this);
+        glowBand.setBackground(glowDrawable(accent, enabled, strength));
+        LinearLayout.LayoutParams bandLp = new LinearLayout.LayoutParams(-1, dp(42));
+        bandLp.topMargin = dimen(R.dimen.topflow_space_sm);
+        panel.addView(glowBand, bandLp);
+        return panel;
+    }
+
+    private Drawable glowDrawable(int accent, boolean enabled, int strength) {
+        if (!enabled || strength <= 0) {
+            return TopFlowUiKit.oledSurface(this, 10);
+        }
+        return new NeonGlowDrawable(accent, true, strength, dp(10), dp(8));
+    }
+
+    private View buildLiveTextPreview(String sample, String fontId, int textSizeSp, int textColor) {
+        TextView preview = new TextView(this);
+        preview.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        preview.setText(sample == null ? "" : sample);
+        preview.setTypeface(TopFlowUiKit.fontForPreview(this, fontId));
+        preview.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+        preview.setTextColor(textColor);
+        int previewFill = current == null ? Color.rgb(7, 9, 13) : current.noteColor;
+        int previewStroke = Color.argb(145, Color.red(textColor), Color.green(textColor), Color.blue(textColor));
+        preview.setBackground(TopFlowUiKit.oledSurface(this, 14, previewFill, previewStroke));
+        preview.setIncludeFontPadding(false);
+        preview.setSingleLine(false);
+        preview.setEllipsize(TextUtils.TruncateAt.END);
+        preview.setMaxLines(1);
+        preview.setLineSpacing(0f, 1.05f);
+        return preview;
+    }
+
+    private void updateTextPreview(View preview, int textSizeSp, String fontId, int textColor) {
+        if (!(preview instanceof TextView)) return;
+        TextView label = (TextView) preview;
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+        label.setTypeface(TopFlowUiKit.fontForPreview(this, fontId));
+        label.setTextColor(textColor);
+    }
+
+    private TextView settingsValuePill(String text) {
+        TextView pill = new TextView(this);
+        pill.setText(text == null ? "" : text);
+        pill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        pill.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        pill.setTextColor(TopFlowUiKit.TEXT);
+        pill.setBackground(chipDrawable(current != null ? current.accentColor : C_CYAN));
+        pill.setPadding(dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs));
+        pill.setIncludeFontPadding(false);
+        pill.setLetterSpacing(0f);
+        pill.setSingleLine(true);
+        pill.setEllipsize(TextUtils.TruncateAt.END);
+        return pill;
+    }
+
+    private LinearLayout.LayoutParams settingsSectionLayoutParams() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        return lp;
     }
 
     private TextView label(String text) {

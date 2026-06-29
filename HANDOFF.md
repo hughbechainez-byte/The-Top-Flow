@@ -32,6 +32,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 22.7 tunes gesture and motion behavior. It increases edge swipe hitboxes, centralizes swipe completion/abort checks, quickens sheet/dock/tap feedback, and routes more motion through the shared workflow animator. Editor swipe remains disabled while title/body inputs are focused, and sheet dismissal safety remains preserved.
 
+22.8 upgrades settings and personalization. Style, color, font, font-size, glow, and rhyme settings now use preview-first OLED/neon cards, live preview surfaces, larger touch targets, and clearer current-value treatments. Persistence keys, note style storage, rhyme settings, and update behavior remain unchanged.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -43,7 +45,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 22.7 / versionCode 53 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.8 / versionCode 54 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -65,7 +67,7 @@ Latest verified build: 22.7 / versionCode 53 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Implement 22.8 settings and personalization overhaul. Preserve note persistence, rhyme options, and existing settings behavior.
+Implement 22.9 splash, preload, and visual identity overhaul. Preserve startup reliability, rhyme preload behavior, note storage, and update behavior.
 
 ## Assumptions
 
@@ -79,6 +81,7 @@ Implement 22.8 settings and personalization overhaul. Preserve note persistence,
 - Version 22.5 adds bundled OFL font assets and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.6 upgrades sheets/menus and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.7 upgrades gesture/motion behavior and should remain in the multi-version appcast list after later 22.x releases.
+- Version 22.8 upgrades settings/personalization and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -116,4 +119,5 @@ Implement 22.8 settings and personalization overhaul. Preserve note persistence,
 - 22.6 should rebuild the sheet/menu presentation without changing command behavior.
 - 22.7 should centralize and improve gesture/motion behavior without disturbing input hot paths.
 - 22.8 should make settings/personalization feel preview-first while preserving existing option persistence.
+- 22.9 should make startup, preload, and visual identity feel premium without blocking app entry or changing rhyme scoring.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

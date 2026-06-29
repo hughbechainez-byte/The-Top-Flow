@@ -1,9 +1,15 @@
 {
-  "versionName": "22.7",
-  "notes": "Version 22.7 tunes gestures and motion with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap feedback, and consistent workflow animation paths.",
-  "versionCode": 53,
-  "apkUrl": "https://temp.sh/Eehmr/the-top-flow-22.7.apk",
+  "versionName": "22.8",
+  "notes": "Version 22.8 upgrades settings and personalization with preview-first color, font, glow, and rhyme-setting controls, clearer live previews, and tighter premium sheet spacing.",
+  "versionCode": 54,
+  "apkUrl": "https://temp.sh/Lscyd/the-top-flow-22.8.apk",
   "versions": [
+    {
+      "versionName": "22.8",
+      "notes": "Version 22.8 upgrades settings and personalization with preview-first color, font, glow, and rhyme-setting controls, clearer live previews, and tighter premium sheet spacing.",
+      "versionCode": 54,
+      "apkUrl": "https://temp.sh/Lscyd/the-top-flow-22.8.apk"
+    },
     {
       "versionName": "22.7",
       "notes": "Version 22.7 tunes gestures and motion with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap feedback, and consistent workflow animation paths.",
