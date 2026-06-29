@@ -46,6 +46,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.4 carries that language into the Notes home/dashboard. The header now mirrors current-session context from the Main Menu, note cards are flatter pure-black OLED surfaces with thin accent rails and fixed signal slots, and long titles/previews use stable ellipsizing to reduce layout jump.
 
+23.5 carries the same language into the editor. Editor chrome now shows the active note title and compact draft metadata with a fixed accent rail/signal block, editor/media surfaces are pure black with accent strokes, rhyme popup/chips are sharper OLED command surfaces, expanded-rhyme sheets get a focused-word context panel, and opening note cards uses selection motion for continuity.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -57,7 +59,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.4 / versionCode 60 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest published build: 23.5 / versionCode 61 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -79,7 +81,7 @@ Latest published build: 23.4 / versionCode 60 passed `tools\rhyme_quality_check.
 
 ## Current Next Task
 
-Next: implement 23.5 editor high-fidelity surface polish. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
+Next: implement 23.6 dock/gesture fluidity polish. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -100,6 +102,7 @@ Next: implement 23.5 editor high-fidelity surface polish. Preserve note storage,
 - Version 23.2 adds the shared motion foundation. Keep the timing constants grouped and avoid changing gesture thresholds unless a future build has visual/test evidence.
 - Version 23.3 unifies menu/modal sheets around pure-black OLED command surfaces. Keep modal backgrounds black; neon belongs on active rails, strokes, and text emphasis.
 - Version 23.4 unifies the Notes dashboard with the menu/modal language. Keep note-card support elements fixed-width/fixed-height to avoid jumpy lists.
+- Version 23.5 unifies editor/rhyme surfaces with the same language. Do not add body-text watcher work or per-keystroke scans when polishing editor UI.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.

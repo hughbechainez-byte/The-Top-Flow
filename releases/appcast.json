@@ -1,9 +1,15 @@
 {
-  "versionName": "23.4",
-  "notes": "Version 23.4 sharpens the Notes dashboard with pure-black current-session chrome, flatter note cards, fixed signal slots, thin accent rails, and safer long-title handling.",
-  "versionCode": 60,
-  "apkUrl": "https://temp.sh/kfrPv/the-top-flow-23.4.apk",
+  "versionName": "23.5",
+  "notes": "Version 23.5 unifies editor and rhyme surfaces with pure-black active-session chrome, black media/editor panels, sharper rhyme chips, and focused expanded-rhyme context.",
+  "versionCode": 61,
+  "apkUrl": "https://temp.sh/kPNNb/the-top-flow-23.5.apk",
   "versions": [
+    {
+      "versionName": "23.5",
+      "notes": "Version 23.5 unifies editor and rhyme surfaces with pure-black active-session chrome, black media/editor panels, sharper rhyme chips, and focused expanded-rhyme context.",
+      "versionCode": 61,
+      "apkUrl": "https://temp.sh/kPNNb/the-top-flow-23.5.apk"
+    },
     {
       "versionName": "23.4",
       "notes": "Version 23.4 sharpens the Notes dashboard with pure-black current-session chrome, flatter note cards, fixed signal slots, thin accent rails, and safer long-title handling.",

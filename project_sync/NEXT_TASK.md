@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 23.5 editor high-fidelity surface polish with pure-black chrome, stronger active writing context, and safer smooth transitions around rhyme suggestions.
+Implement 23.6 dock/gesture fluidity polish with stronger active feedback, stable touch targets, and Pixel-grade transition continuity.

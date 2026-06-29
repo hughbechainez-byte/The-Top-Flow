@@ -530,24 +530,24 @@ public class MainActivity extends ComponentActivity {
 
         editorGlowFrame = new FrameLayout(this);
         editorGlowFrame.setClipToPadding(false);
-        editorGlowFrame.setPadding(dp(16), dp(14), dp(16), dp(14));
+        editorGlowFrame.setPadding(dp(12), dp(10), dp(12), dp(12));
         LinearLayout.LayoutParams editorCardLp = new LinearLayout.LayoutParams(-1, -2);
         editorCardLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         editor.addView(editorGlowFrame, editorCardLp);
 
         editorCard = createCardSurface();
-        editorCard.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        editorCard.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
         editorGlowFrame.addView(editorCard, new FrameLayout.LayoutParams(-1, -2));
 
         editorChrome = new LinearLayout(this);
         editorChrome.setOrientation(LinearLayout.HORIZONTAL);
         editorChrome.setGravity(Gravity.CENTER_VERTICAL);
-        editorChrome.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
+        editorChrome.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_md));
         editorChrome.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
         editorCard.addView(editorChrome);
 
         editorSignalRail = new View(this);
-        editorSignalRail.setLayoutParams(new LinearLayout.LayoutParams(dp(5), dp(28)));
+        editorSignalRail.setLayoutParams(new LinearLayout.LayoutParams(dp(4), dp(48)));
         editorChrome.addView(editorSignalRail);
 
         View railGap = new View(this);
@@ -560,9 +560,10 @@ public class MainActivity extends ComponentActivity {
         editorChrome.addView(headerCopy);
 
         editorHeaderTitle = new TextView(this);
-        editorHeaderTitle.setText("Draft Studio");
+        editorHeaderTitle.setText("Current session");
         editorHeaderTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        editorHeaderTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        editorHeaderTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        editorHeaderTitle.setTextColor(TopFlowUiKit.TEXT);
         editorHeaderTitle.setIncludeFontPadding(false);
         editorHeaderTitle.setLetterSpacing(0f);
         editorHeaderTitle.setMaxLines(1);
@@ -570,17 +571,18 @@ public class MainActivity extends ComponentActivity {
         headerCopy.addView(editorHeaderTitle);
 
         editorHeaderMeta = new TextView(this);
-        editorHeaderMeta.setText("Draft session");
+        editorHeaderMeta.setText("Draft body");
         editorHeaderMeta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        editorHeaderMeta.setTextColor(TopFlowUiKit.TEXT_SOFT);
         editorHeaderMeta.setIncludeFontPadding(false);
         editorHeaderMeta.setLetterSpacing(0f);
         editorHeaderMeta.setMaxLines(1);
         editorHeaderMeta.setEllipsize(TextUtils.TruncateAt.END);
         headerCopy.addView(editorHeaderMeta);
 
-        editorMiniSignal = buildSessionMiniSignal(C_CYAN, 14, true);
+        editorMiniSignal = buildSessionMiniSignal(C_CYAN, 7, true);
         if (editorMiniSignal != null) {
-            LinearLayout.LayoutParams signalLp = new LinearLayout.LayoutParams(-2, -2);
+            LinearLayout.LayoutParams signalLp = new LinearLayout.LayoutParams(dp(42), dp(34));
             signalLp.leftMargin = dp(8);
             editorChrome.addView(editorMiniSignal, signalLp);
         }
@@ -603,7 +605,7 @@ public class MainActivity extends ComponentActivity {
         bodyInput.setHint("Start writing...");
         textStyle(bodyInput, R.style.TextAppearance_TopFlow21_Body);
         bodyInput.setLineSpacing(dp(2), 1.06f);
-        bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl));
+        bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl));
         bodyInput.setIncludeFontPadding(false);
         configureEditorInput(bodyInput);
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -708,6 +710,9 @@ public class MainActivity extends ComponentActivity {
             if (!suppressSave && current != null) {
                 current.title = titleInput.getText().toString();
                 saveAndRenderList();
+            }
+            if (editorHeaderTitle != null && current != null) {
+                editorHeaderTitle.setText(noteTitleForDisplay(current));
             }
             updateShellStatus();
         }));
@@ -1403,7 +1408,7 @@ public class MainActivity extends ComponentActivity {
             row.addView(signal, signalLp);
         }
 
-        row.setOnClickListener(v -> openNote(note));
+        row.setOnClickListener(v -> runSelectionAnimation(row, () -> openNote(note)));
         return row;
     }
 
@@ -1803,17 +1808,17 @@ public class MainActivity extends ComponentActivity {
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
         if (editorSignalRail != null) {
-            editorSignalRail.setBackground(editorRailDrawable(current.accentColor));
+            editorSignalRail.setBackground(commandRailDrawable(current.accentColor));
         }
         if (editorHeaderTitle != null) {
-            editorHeaderTitle.setText("Draft Studio");
+            editorHeaderTitle.setText(noteTitleForDisplay(current));
             editorHeaderTitle.setTextColor(TopFlowUiKit.TEXT);
             editorHeaderTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
             editorHeaderTitle.setLetterSpacing(0f);
             editorHeaderTitle.setIncludeFontPadding(false);
         }
         if (editorHeaderMeta != null) {
-            String meta = (current.title == null || current.title.isEmpty() ? "Draft session" : "Draft: " + current.title) + " · " + noteMetadataLine(current);
+            String meta = "Draft body  -  " + noteMetadataLine(current);
             editorHeaderMeta.setText(meta);
             editorHeaderMeta.setTextColor(TopFlowUiKit.TEXT_SOFT);
             editorHeaderMeta.setIncludeFontPadding(false);
@@ -1823,9 +1828,9 @@ public class MainActivity extends ComponentActivity {
             editorChrome.removeView(editorMiniSignal);
         }
         if (editorChrome != null) {
-            editorMiniSignal = buildSessionMiniSignal(current.accentColor, 14, true);
+            editorMiniSignal = buildSessionMiniSignal(current.accentColor, 7, true);
             if (editorMiniSignal != null) {
-                LinearLayout.LayoutParams miniLp = new LinearLayout.LayoutParams(-2, -2);
+                LinearLayout.LayoutParams miniLp = new LinearLayout.LayoutParams(dp(42), dp(34));
                 miniLp.leftMargin = dp(8);
                 editorChrome.addView(editorMiniSignal, miniLp);
             }
@@ -1835,7 +1840,7 @@ public class MainActivity extends ComponentActivity {
         }
         if (editorCard != null) {
             editorCard.setBackground(noteShellDrawable(current.accentColor, current.noteGlow, current.glowStrength));
-            int elevation = current.noteGlow ? 14 + Math.max(0, current.glowStrength) * 5 : 8;
+            int elevation = current.noteGlow ? 10 + Math.max(0, current.glowStrength) * 3 : 4;
             TopFlowUiKit.applyFloating(editorCard, elevation);
             if (Build.VERSION.SDK_INT >= 28) {
                 int shadow = current.noteGlow ? Color.argb(180, Color.red(current.accentColor), Color.green(current.accentColor), Color.blue(current.accentColor)) : Color.BLACK;
@@ -1843,8 +1848,9 @@ public class MainActivity extends ComponentActivity {
                 editorCard.setOutlineSpotShadowColor(shadow);
             }
         }
-        if (songCard != null) songCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
-        if (voiceCard != null) voiceCard.setBackground(TopFlowUiKit.floatingPanel(this, 20));
+        if (suggestionPanel != null) suggestionPanel.setBackground(oledCommandSurface(18, current.accentColor, true));
+        if (songCard != null) songCard.setBackground(oledCommandSurface(18, current.accentColor, false));
+        if (voiceCard != null) voiceCard.setBackground(oledCommandSurface(18, current.accentColor, false));
         if (colorPreview != null) colorPreview.setBackgroundColor(current.noteColor);
         if (playbackStatus != null) playbackStatus.setTextColor(current.accentColor);
         if (songStatus != null) songStatus.setTextColor(TopFlowUiKit.TEXT_SOFT);
@@ -2002,16 +2008,30 @@ public class MainActivity extends ComponentActivity {
     private LinearLayout buildSuggestionRow(String title) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
-        wrap.setPadding(dimen(R.dimen.topflow21_space_panel), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow21_space_panel), dimen(R.dimen.topflow21_space_panel));
-        wrap.setBackground(TopFlowUiKit.floatingPanel(this, 22));
-        TopFlowUiKit.applyFloating(wrap, 14);
+        wrap.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
+        wrap.setBackground(oledCommandSurface(18, C_CYAN, true));
+        TopFlowUiKit.applyFloating(wrap, 10);
+        LinearLayout heading = new LinearLayout(this);
+        heading.setOrientation(LinearLayout.HORIZONTAL);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+        View rail = new View(this);
+        rail.setBackground(commandRailDrawable(C_CYAN));
+        LinearLayout.LayoutParams railLp = new LinearLayout.LayoutParams(dp(3), dp(18));
+        railLp.rightMargin = dimen(R.dimen.topflow_space_sm);
+        heading.addView(rail, railLp);
         TextView label = new TextView(this);
-        label.setText("RHYME ENGINE");
+        label.setText(title == null || title.trim().isEmpty() ? "Rhymes" : title);
         textStyle(label, R.style.TextAppearance_TopFlow21_Caption);
         label.setTextColor(TopFlowUiKit.MINT);
         label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        label.setPadding(2, 0, 2, dimen(R.dimen.topflow_space_xs));
-        wrap.addView(label);
+        label.setIncludeFontPadding(false);
+        label.setLetterSpacing(0f);
+        label.setSingleLine(true);
+        label.setEllipsize(TextUtils.TruncateAt.END);
+        heading.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
+        LinearLayout.LayoutParams headingLp = new LinearLayout.LayoutParams(-1, -2);
+        headingLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        wrap.addView(heading, headingLp);
         HorizontalScrollView scroll = new HorizontalScrollView(this);
         scroll.setHorizontalScrollBarEnabled(false);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -3889,9 +3909,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         if (word.isEmpty()) {
-            TextView empty = label("Place the cursor on a word to see expanded rhymes.");
-            empty.setTextColor(C_TEXT_MUTED);
-            box.addView(empty);
+            box.addView(buildRhymeContextPanel("No word selected", "Place the cursor on a word", C_CYAN));
             Button close = button("Close");
             close.setOnClickListener(v -> dismissSheet());
             box.addView(close);
@@ -3899,12 +3917,7 @@ public class MainActivity extends ComponentActivity {
             logRhymeTrace("expanded_tap_empty", started, "noteLen=" + noteLen + " cursor=" + cursor);
             return;
         } else {
-            TextView title = label("For: " + word);
-            title.setTextColor(C_TEXT_MUTED);
-            box.addView(title);
-            TextView loading = label(rhymeEngine.isReady() ? "Finding rhymes..." : "Loading rhyme index...");
-            loading.setTextColor(C_TEXT_MUTED);
-            box.addView(loading);
+            box.addView(buildRhymeContextPanel(word, rhymeEngine.isReady() ? "Finding rhymes" : "Loading rhyme index", current != null ? current.accentColor : C_CYAN));
         }
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
@@ -3912,6 +3925,55 @@ public class MainActivity extends ComponentActivity {
         showSheet("Expanded Rhymes", box);
         logRhymeTrace("expanded_sheet_visible", started, "word=" + word + " request=" + requestId + " noteLen=" + noteLen + " cursor=" + cursor + " ready=" + rhymeEngine.isReady());
         startExpandedRhymeJob(requestId, word, box, started, noteLen, cursor);
+    }
+
+    private View buildRhymeContextPanel(String titleText, String metaText, int accent) {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.HORIZONTAL);
+        panel.setGravity(Gravity.CENTER_VERTICAL);
+        panel.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        panel.setBackground(oledCommandSurface(18, accent, true));
+        TopFlowUiKit.applyFloating(panel, 5);
+
+        View rail = new View(this);
+        rail.setBackground(commandRailDrawable(accent));
+        LinearLayout.LayoutParams railLp = new LinearLayout.LayoutParams(dp(4), dp(46));
+        railLp.rightMargin = dimen(R.dimen.topflow_space_md);
+        panel.addView(rail, railLp);
+
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        copy.addView(sheetEyebrow("Focused word"));
+
+        TextView title = new TextView(this);
+        title.setText(titleText == null ? "" : titleText);
+        title.setTextColor(TopFlowUiKit.TEXT);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        title.setIncludeFontPadding(false);
+        title.setLetterSpacing(0f);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        copy.addView(title);
+
+        TextView meta = new TextView(this);
+        meta.setText(metaText == null ? "" : metaText);
+        meta.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        meta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        meta.setIncludeFontPadding(false);
+        meta.setLetterSpacing(0f);
+        meta.setSingleLine(true);
+        meta.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams metaLp = new LinearLayout.LayoutParams(-1, -2);
+        metaLp.topMargin = dp(4);
+        copy.addView(meta, metaLp);
+
+        panel.addView(copy);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        panel.setLayoutParams(lp);
+        return panel;
     }
 
     private void startExpandedRhymeJob(int requestId, String word, LinearLayout box, long requestStartedAt, int noteLen, int cursor) {
@@ -3950,9 +4012,7 @@ public class MainActivity extends ComponentActivity {
         long uiStarted = System.currentTimeMillis();
         if (requestId != expandedRhymeRequestId || sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) return;
         box.removeAllViews();
-        TextView title = label("For: " + word);
-        title.setTextColor(C_TEXT_MUTED);
-        box.addView(title);
+        box.addView(buildRhymeContextPanel(word, words.isEmpty() ? "No matches" : words.size() + " matches", current != null ? current.accentColor : C_CYAN));
         int created = 0;
         if (words.isEmpty()) {
             TextView empty = label("No rhymes found with current settings.");
@@ -5393,13 +5453,13 @@ public class MainActivity extends ComponentActivity {
     }
 
     private void styleRhymeChip(Button chip, int accent) {
-        chip.setBackgroundResource(R.drawable.bg21_quiet_control);
+        chip.setBackground(oledCommandSurface(999, accent, true));
         chip.setTextColor(TopFlowUiKit.TEXT);
         textSize(chip, R.dimen.topflow21_text_label);
         chip.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         chip.setMinHeight(dimen(R.dimen.topflow_chip_height));
         chip.setMinWidth(dp(62));
-        TopFlowUiKit.applyFloating(chip, 4);
+        TopFlowUiKit.applyFloating(chip, 2);
         chip.setStateListAnimator(null);
         chip.setIncludeFontPadding(false);
         chip.setLetterSpacing(0f);
@@ -5524,10 +5584,8 @@ public class MainActivity extends ComponentActivity {
 
     private Drawable noteShellDrawable(int accent, boolean glow, int strength) {
         int strokeAlpha = glow ? Math.min(230, 96 + Math.max(0, strength) * 36) : 58;
-        GradientDrawable d = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.rgb(7, 8, 11), Color.rgb(0, 0, 0)}
-        );
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.BLACK);
         d.setCornerRadius(dp(26));
         d.setStroke(dp(1), Color.argb(strokeAlpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
         return d;
