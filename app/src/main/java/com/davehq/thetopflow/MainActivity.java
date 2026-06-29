@@ -68,6 +68,8 @@ import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.davehq.thetopflow.ui.TopFlowUiBackdropBridge;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -354,6 +356,9 @@ public class MainActivity extends Activity {
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
         setContentView(root);
+
+        View premiumBackdrop = TopFlowUiBackdropBridge.createPremiumBackdrop(this);
+        root.addView(premiumBackdrop, 0, new FrameLayout.LayoutParams(-1, -1));
 
         shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.VERTICAL);

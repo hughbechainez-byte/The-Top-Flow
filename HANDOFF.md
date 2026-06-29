@@ -20,6 +20,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 22.1 adds multi-version update discovery. The app now accepts both the legacy single-update appcast shape and a new `versions[]` shape. When multiple newer versions are available, it shows an OLED bottom-sheet chooser. Appcasts should keep top-level latest-version fields for older 22.0 clients and include `versions[]` for 22.1+ clients.
 
+22.2 begins the Compose-led shell migration. A Java-callable Compose bridge now mounts a true-black premium studio backdrop behind the existing Java UI, with crisp neon rails, waveform marks, and fine grid details. Existing note, editor, rhyme, recording/playback, gesture, and update behavior remain preserved.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -31,7 +33,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 22.1 / versionCode 47 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.2 / versionCode 48 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -53,7 +55,7 @@ Latest verified build: 22.1 / versionCode 47 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Implement 22.2 Compose-led shell foundation without changing note storage, rhyme logic, recording/playback, or install behavior.
+Implement 22.3 premium Notes home without changing note storage, editor behavior, rhyme logic, recording/playback, or install behavior.
 
 ## Assumptions
 
@@ -61,6 +63,7 @@ Implement 22.2 Compose-led shell foundation without changing note storage, rhyme
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
 - Version 22.1 is the first build published to the 22.0 JSONBlob/appcast line and should be represented in both top-level latest fields and the `versions[]` list.
+- Version 22.2 adds the first live Compose-backed UI layer and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -92,4 +95,5 @@ Implement 22.2 Compose-led shell foundation without changing note storage, rhyme
 - 21.6 through 22.0 address continued OLED UI polish, gesture discoverability, velocity-aware swipes, Main Menu recent-session context, and shared motion polish without publishing update manifests.
 - 22.1 must convert update handling to support multiple available versions while preserving legacy single-version manifest compatibility.
 - 22.2 should begin the visible Compose-led premium shell foundation while keeping the Java workflows intact.
+- 22.3 should make the Notes home materially more premium while keeping note persistence unchanged.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

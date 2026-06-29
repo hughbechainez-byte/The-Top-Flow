@@ -1,9 +1,15 @@
 {
-  "versionName": "22.1",
-  "notes": "Version 22.1 adds multi-version update discovery, keeps legacy appcast compatibility, and shows a premium OLED chooser when several newer builds are available.",
-  "versionCode": 47,
-  "apkUrl": "https://temp.sh/bqCQA/the-top-flow-22.1.apk",
+  "versionName": "22.2",
+  "notes": "Version 22.2 begins the Compose-led premium shell with a true-black OLED studio backdrop, crisp neon rails, waveform marks, and fine grid detail behind the existing app workflows.",
+  "versionCode": 48,
+  "apkUrl": "https://temp.sh/LOUQV/the-top-flow-22.2.apk",
   "versions": [
+    {
+      "versionName": "22.2",
+      "notes": "Version 22.2 begins the Compose-led premium shell with a true-black OLED studio backdrop, crisp neon rails, waveform marks, and fine grid detail behind the existing app workflows.",
+      "versionCode": 48,
+      "apkUrl": "https://temp.sh/LOUQV/the-top-flow-22.2.apk"
+    },
     {
       "versionName": "22.1",
       "notes": "Version 22.1 adds multi-version update discovery, keeps legacy appcast compatibility, and shows a premium OLED chooser when several newer builds are available.",

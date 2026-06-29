@@ -28,6 +28,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 21.5 keeps bottom-sheet handles/headers visible while long sheet content scrolls, adds active feedback to the bottom dock, and makes the currently open note visibly selected in the Notes list.
 - 21.6 through 22.0 continue the UI-alpha run with blur-backed sheets, solid OLED surfaces, bidirectional editor/Notes edge gestures, velocity-aware swipe completion, swipe rail affordances, compact recent-note context, and a cleaner Main Menu command surface.
 - 22.1 adds multi-version update discovery with legacy appcast fallback support and an OLED chooser sheet when several newer APKs are available.
+- 22.2 begins the Compose-led premium shell foundation with a Java-callable Compose backdrop layer behind the existing workflows, using true OLED black plus crisp neon studio linework instead of blurred or grainy effects.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -45,8 +46,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.1 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, starting with the 22.2 Compose-led shell foundation.
+22.2 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.3 premium Notes home.
 
 ## Next Milestone
 
-Next: implement 22.2 Compose-led shell foundation while preserving Java note, rhyme, recording, playback, and install behavior.
+Next: implement 22.3 premium Notes home while preserving note storage and editor behavior.

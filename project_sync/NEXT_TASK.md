@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 22.2 Compose-led shell foundation. Preserve Java note storage, rhyme suggestions, recording/playback, and update install behavior.
+Implement 22.3 premium Notes home. Preserve note storage, editor behavior, rhyme suggestions, recording/playback, and update install behavior.
