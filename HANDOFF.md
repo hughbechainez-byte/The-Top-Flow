@@ -50,6 +50,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.6 polishes the bottom dock and gesture affordances. The dock is now a fixed-height pure-black/neon control surface with accent-aware active strokes, icon tinting, type weight, and shared 23.2 dock motion. Edge-swipe rails now use the same neon rail language with alpha/scale feedback only; thresholds and gesture start rules are unchanged.
 
+23.7 adds a real shipped offline rhyme hot cache. `RhymeEngine` loads `rhyme_hot_cache.tfcache` on the existing background load thread and serves it only for safe default fast suggestions: Balanced strictness, exactOnly false, includeSlang true, no removed rhymes, fast maxCandidates 360, and limits 4 through 6. Expanded rhymes, removed-suggestion cases, context-heavy paths, and non-default settings still use the existing scorer. The `.tfcache` asset is no-compressed in release packaging so APK growth comes from runtime-used data.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -61,7 +63,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.6 / versionCode 62 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest published build: 23.7 / versionCode 63 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -83,7 +85,7 @@ Latest published build: 23.6 / versionCode 62 passed `tools\rhyme_quality_check.
 
 ## Current Next Task
 
-Next: implement 23.7 offline rhyme hot-cache asset and loader. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
+Next: implement 23.8 functional APK-size gate pass. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -106,6 +108,7 @@ Next: implement 23.7 offline rhyme hot-cache asset and loader. Preserve note sto
 - Version 23.4 unifies the Notes dashboard with the menu/modal language. Keep note-card support elements fixed-width/fixed-height to avoid jumpy lists.
 - Version 23.5 unifies editor/rhyme surfaces with the same language. Do not add body-text watcher work or per-keystroke scans when polishing editor UI.
 - Version 23.6 unifies dock and swipe affordances with the pure-black neon rail language. Do not change gesture thresholds without explicit evidence.
+- Version 23.7 adds the default fast-rhyme hot cache. Keep hot-cache eligibility conservative; fall back to the scorer whenever settings, removals, or request shape differ.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.

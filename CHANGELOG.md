@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 23.7 with a shipped offline default fast-rhyme hot cache, conservative `RhymeEngine` loader/fallback rules, and no-compress packaging so APK growth comes from runtime-used rhyme data.
 - Released 23.6 with a fixed-height pure-black bottom dock, stronger active neon feedback, accent-aware dock icon/stroke updates, refreshed swipe rails, and safer panel/dock visual continuity without changing gesture thresholds.
 - Released 23.5 with pure-black editor chrome, current-session title/meta continuity, flatter editor and media surfaces, sharper rhyme popup/chips, expanded-rhyme context panels, and note-open selection motion.
 - Released 23.4 with a sharper pure-black Notes dashboard, current-session header continuity, flatter note cards, fixed signal slots, thin accent rails, and safer long-title/preview handling.

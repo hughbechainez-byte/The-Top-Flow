@@ -19,6 +19,10 @@ import java.util.Set;
 final class RhymeEngine {
     private static final String TAG = "TopFlow";
     private static final int CACHE_LIMIT = 192;
+    private static final String HOT_CACHE_ASSET = "rhyme_hot_cache.tfcache";
+    private static final String HOT_CACHE_HEADER = "# topflow-rhyme-hot-cache-v1";
+    private static final int HOT_CACHE_MAX_CANDIDATES = 360;
+    private static final int HOT_CACHE_LIMIT = 6;
     private static final int BUCKET_EXACT = 0;
     private static final int BUCKET_NEAR = 1;
     private static final int BUCKET_SLANT = 2;
@@ -51,6 +55,7 @@ final class RhymeEngine {
     private final Map<String, ArrayList<String>> exactIndex = new HashMap<>();
     private final Map<String, ArrayList<String>> familyIndex = new HashMap<>();
     private final HashSet<String> dictionaryWords = new HashSet<>();
+    private final Map<String, String[]> hotCache = new HashMap<>();
     private final Object cacheLock = new Object();
     private final LinkedHashMap<String, ArrayList<String>> resultCache = new LinkedHashMap<String, ArrayList<String>>(CACHE_LIMIT, 0.75f, true) {
         @Override
@@ -72,6 +77,7 @@ final class RhymeEngine {
     };
     private volatile boolean ready = false;
     private volatile boolean loading = false;
+    private volatile boolean hotCacheReady = false;
     private volatile int generation = 0;
 
     RhymeEngine(Context context) {
@@ -95,7 +101,7 @@ final class RhymeEngine {
             ready = true;
             loading = false;
             clearCache();
-            Log.d(TAG, "rhyme engine ready words=" + phonesByWord.size() + " exactKeys=" + exactIndex.size() + " ms=" + (System.currentTimeMillis() - start));
+            Log.d(TAG, "rhyme engine ready words=" + phonesByWord.size() + " exactKeys=" + exactIndex.size() + " hotCache=" + hotCache.size() + " ms=" + (System.currentTimeMillis() - start));
             if (onReady != null) onReady.run();
         }, "TopFlowRhymeLoad").start();
     }
@@ -108,6 +114,13 @@ final class RhymeEngine {
         synchronized (cacheLock) {
             ArrayList<String> cached = resultCache.get(cacheKey);
             if (cached != null) return new ArrayList<>(cached);
+        }
+        ArrayList<String> hot = hotCacheSuggestion(base, limit, maxCandidates, options);
+        if (hot != null) {
+            synchronized (cacheLock) {
+                resultCache.put(cacheKey, new ArrayList<>(hot));
+            }
+            return hot;
         }
         ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
         Map<String, Integer> contextHits = maxCandidates > 0 ? Collections.emptyMap() : contextFamilyHits(base, options);
@@ -166,6 +179,8 @@ final class RhymeEngine {
         exactIndex.clear();
         familyIndex.clear();
         dictionaryWords.clear();
+        hotCache.clear();
+        hotCacheReady = false;
         if (!loadPreparedIndex()) loadCmuDictionary();
         addPronunciationOverrides();
         for (String word : COMMON_RHYME_WORDS) {
@@ -173,6 +188,69 @@ final class RhymeEngine {
             String phones = slangPhones(w, true);
             if (!w.isEmpty() && !phones.isEmpty() && !dictionaryWords.contains(w)) addEntry(w, phones, true);
         }
+        loadHotCache();
+    }
+
+    private void loadHotCache() {
+        int rows = 0;
+        try (InputStream raw = context.getAssets().open(HOT_CACHE_ASSET);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(raw, StandardCharsets.UTF_8))) {
+            String header = reader.readLine();
+            if (header == null
+                    || !header.startsWith(HOT_CACHE_HEADER)
+                    || !header.contains("strictness=Balanced")
+                    || !header.contains("exactOnly=false")
+                    || !header.contains("includeSlang=true")
+                    || !header.contains("maxCandidates=" + HOT_CACHE_MAX_CANDIDATES)
+                    || !header.contains("limit=" + HOT_CACHE_LIMIT)) {
+                Log.d(TAG, "rhyme hot cache skipped invalid header");
+                return;
+            }
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty() || line.charAt(0) == '#') continue;
+                String[] parts = line.split("\t", -1);
+                if (parts.length < 5) continue;
+                String word = normalizeWord(parts[0]);
+                if (word.isEmpty()) continue;
+                String[] values = new String[Math.min(HOT_CACHE_LIMIT, parts.length - 1)];
+                int count = 0;
+                for (int i = 1; i < parts.length && count < HOT_CACHE_LIMIT; i++) {
+                    String suggestion = parts[i] == null ? "" : parts[i].trim();
+                    if (suggestion.isEmpty()) continue;
+                    values[count++] = suggestion;
+                }
+                if (count < 4) continue;
+                String[] suggestions = new String[count];
+                System.arraycopy(values, 0, suggestions, 0, count);
+                hotCache.put(word, suggestions);
+                rows++;
+            }
+            hotCacheReady = rows > 0;
+            Log.d(TAG, "rhyme hot cache loaded rows=" + rows);
+        } catch (Exception e) {
+            hotCacheReady = false;
+            hotCache.clear();
+            Log.d(TAG, "rhyme hot cache unavailable");
+        }
+    }
+
+    private ArrayList<String> hotCacheSuggestion(String base, int limit, int maxCandidates, Options options) {
+        if (!hotCacheReady || !isHotCacheEligible(limit, maxCandidates, options)) return null;
+        String[] cached = hotCache.get(base);
+        if (cached == null || cached.length < limit) return null;
+        ArrayList<String> out = new ArrayList<>();
+        for (int i = 0; i < limit; i++) out.add(cached[i]);
+        return out;
+    }
+
+    private boolean isHotCacheEligible(int limit, int maxCandidates, Options options) {
+        if (options == null) return false;
+        if (maxCandidates != HOT_CACHE_MAX_CANDIDATES) return false;
+        if (limit < 4 || limit > HOT_CACHE_LIMIT) return false;
+        if (!"Balanced".equals(options.strictness)) return false;
+        if (options.exactOnly || !options.includeSlang) return false;
+        return options.removed == null || options.removed.isEmpty();
     }
 
     private boolean loadPreparedIndex() {

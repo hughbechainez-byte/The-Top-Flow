@@ -2,8 +2,8 @@
 
 ## High
 
-- 23.7 offline rhyme hot-cache asset and loader
-  - Complexity: Medium
+- 23.8 functional APK-size gate pass
+  - Complexity: Medium-High
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium
 

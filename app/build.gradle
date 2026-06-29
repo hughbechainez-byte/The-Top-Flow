@@ -4,8 +4,8 @@ plugins {
     id "org.jetbrains.kotlin.plugin.compose"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "62").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "23.6").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "63").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "23.7").toString()
 
 android {
     namespace "com.davehq.thetopflow"
@@ -14,6 +14,10 @@ android {
     buildFeatures {
         buildConfig true
         compose true
+    }
+
+    androidResources {
+        noCompress += ["tfcache"]
     }
 
     compileOptions {

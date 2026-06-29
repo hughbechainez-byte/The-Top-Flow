@@ -1,9 +1,15 @@
 {
-  "versionName": "23.6",
-  "notes": "Version 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger neon active feedback, accent-aware icons/strokes, and refreshed swipe rails.",
-  "versionCode": 62,
-  "apkUrl": "https://temp.sh/YbCuZ/the-top-flow-23.6.apk",
+  "versionName": "23.7",
+  "notes": "Version 23.7 adds a shipped offline fast-rhyme hot cache with conservative default-only loader rules, keeping non-default settings on the existing scorer.",
+  "versionCode": 63,
+  "apkUrl": "https://temp.sh/ecCnm/the-top-flow-23.7.apk",
   "versions": [
+    {
+      "versionName": "23.7",
+      "notes": "Version 23.7 adds a shipped offline fast-rhyme hot cache with conservative default-only loader rules, keeping non-default settings on the existing scorer.",
+      "versionCode": 63,
+      "apkUrl": "https://temp.sh/ecCnm/the-top-flow-23.7.apk"
+    },
     {
       "versionName": "23.6",
       "notes": "Version 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger neon active feedback, accent-aware icons/strokes, and refreshed swipe rails.",

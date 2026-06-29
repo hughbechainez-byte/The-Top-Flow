@@ -43,6 +43,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 23.4 rebuilds the Notes dashboard around the same pure-black OLED command language with a current-session header, flatter note cards, fixed signal slots, thin accent rails, and stable long-title/preview ellipsizing.
 - 23.5 brings the editor into the pure-black command language with current-session title/meta chrome, a fixed accent rail/signal block, black editor/media surfaces, sharper rhyme popup/chips, expanded-rhyme context panels, and note-open selection motion.
 - 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger active neon feedback, accent-aware icon/stroke updates, refreshed swipe rails, and panel/dock continuity without changing gesture thresholds.
+- 23.7 adds a shipped offline rhyme hot-cache asset for default fast suggestions, loads it on the existing rhyme background thread, and serves it only for safe Balanced/default fast cases while all non-default settings and expanded/context paths fall back to the existing scorer.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -61,8 +62,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-23.6 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.7 offline rhyme hot-cache asset and loader.
+23.7 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.8 functional APK-size gate pass.
 
 ## Next Milestone
 
-Next: implement 23.7 offline rhyme hot-cache asset and loader so common default suggestions can return from shipped data and the APK growth is functional.
+Next: implement 23.8 functional APK-size gate pass using runtime-used rhyme/index data or shipped UI assets so the 24.0 APK can reach the required 2x size without filler.
