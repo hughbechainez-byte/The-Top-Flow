@@ -2,7 +2,6 @@ package com.davehq.thetopflow;
 
 import android.Manifest;
 import android.animation.TimeInterpolator;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -62,11 +61,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.PopupWindow;
 
+import androidx.activity.ComponentActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewTreeLifecycleOwner;
+import androidx.lifecycle.ViewTreeViewModelStoreOwner;
+import androidx.savedstate.ViewTreeSavedStateRegistryOwner;
 
 import com.davehq.thetopflow.ui.TopFlowUiBackdropBridge;
 
@@ -98,7 +101,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ComponentActivity {
     private static final String TAG = "TopFlow";
     private static final int REQ_SONG = 10;
     private static final int REQ_AUDIO = 11;
@@ -381,6 +384,7 @@ public class MainActivity extends Activity {
     private void buildUi() {
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
+        attachActivityViewTreeOwners(root, "activity_root", "compose_owner_attached");
         setContentView(root);
 
         View premiumBackdrop = TopFlowUiBackdropBridge.createPremiumBackdrop(this);
@@ -593,6 +597,8 @@ public class MainActivity extends Activity {
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
 
         suggestionPanel = buildSuggestionRow("Rhymes");
+        Log.d(TAG, "popup_host_created host=suggestion_popup content=native_rhyme_row");
+        attachActivityViewTreeOwners(suggestionPanel, "suggestion_popup", "popup_owner_attached");
         suggestionPanel.setVisibility(View.GONE);
         suggestionPopup = new PopupWindow(suggestionPanel, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
         suggestionPopup.setTouchable(true);
@@ -600,6 +606,7 @@ public class MainActivity extends Activity {
         suggestionPopup.setClippingEnabled(true);
         suggestionPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
         suggestionPopup.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+        Log.d(TAG, "popup_content_set host=suggestion_popup compose=false");
         logRhymeTrace("popup_created", 0L, "focusable=false inputMethod=not_needed softInput=adjust_nothing reuse=single_instance");
 
         playbackStatus = label("");
@@ -722,6 +729,13 @@ public class MainActivity extends Activity {
         styleActionButtonPalette(C_GREEN);
         applyInsetsNow();
         animateScreenSwap(menuPanel, 1f);
+    }
+
+    private void attachActivityViewTreeOwners(View view, String host, String event) {
+        ViewTreeLifecycleOwner.set(view, this);
+        ViewTreeSavedStateRegistryOwner.set(view, this);
+        ViewTreeViewModelStoreOwner.set(view, this);
+        Log.d(TAG, event + " host=" + host + " lifecycle=true savedState=true viewModel=true");
     }
 
     private LinearLayout buildStudioDock() {
@@ -2798,6 +2812,7 @@ public class MainActivity extends Activity {
         long preloadStarted = System.currentTimeMillis();
         rhymePreloadComplete = false;
         firstQueryAfterPreloadLogged = false;
+        Log.d(TAG, "preload_start source=rhyme_engine commonLimit=" + RHYME_PRELOAD_COMMON_LIMIT);
         logRhymeTrace("preload_start", preloadStarted, "commonLimit=" + RHYME_PRELOAD_COMMON_LIMIT);
         updateSplashStatus("Loading rhyme index");
         rhymeEngine.loadAsync(() -> {
@@ -2807,6 +2822,10 @@ public class MainActivity extends Activity {
             int warmed = prewarmRhymeCaches(preloadStarted);
             rhymePreloadCompletedAtMs = System.currentTimeMillis();
             rhymePreloadComplete = true;
+            Log.d(TAG, "preload_end source=rhyme_engine ms=" + (rhymePreloadCompletedAtMs - preloadStarted)
+                    + " indexMs=" + indexMs
+                    + " warmed=" + warmed
+                    + " generation=" + rhymeEngine.generation());
             Log.d(TAG, "rhyme_trace stage=preload_complete ms=" + (rhymePreloadCompletedAtMs - preloadStarted)
                     + " thread=bg indexMs=" + indexMs
                     + " warmed=" + warmed

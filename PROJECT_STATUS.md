@@ -37,6 +37,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.8 upgrades settings and personalization into preview-first OLED sheets with richer color, font, font-size, glow, and rhyme-setting controls while preserving saved settings behavior.
 - 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined preload status treatment, and unchanged rhyme preload behavior.
 - 23.0 completes the milestone with cohesive global chrome, live context status for Notes/Editor, a refreshed header signal rail, and final dock polish while preserving app behavior.
+- 23.1 fix candidate makes the Compose backdrop lifecycle-safe by moving `MainActivity` to `ComponentActivity`, explicitly attaching view-tree owners to manual hosts, and using lifecycle-based Compose disposal. This is built locally but not published until device validation passes.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -51,11 +52,12 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - In-app update metadata points to the current JSONBlob appcast, but install flow still needs device verification on Pixel 10 Pro.
 - JSONBlob/temp.sh are temporary hosts; durable update hosting is still needed.
 - Rebuild B is still a Java-runtime bridge; the live app is not fully Compose yet.
+- Published 23.0 / versionCode 56 crashes on startup from `ViewTreeLifecycleOwner not found`; the fix candidate passes local checks, but live device validation is still required before 23.1 release/appcast publication.
 
 ## Current Development Priority
 
-23.0 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is post-23.0 device QA, durable hosting, and any user-directed update-manifest follow-up.
+23.1 Compose lifecycle crash fix is implemented as a local release-build candidate. Current priority is device validation on Pixel 10 Pro, then version bump, APK upload, appcast/JSONBlob update, release docs, and commit of final release metadata.
 
 ## Next Milestone
 
-Next: validate 23.0 on device, review screenshots/logs, and decide durable update hosting.
+Next: install the fixed build on device, confirm launch/editor/keyboard/rhyme popup/bottom menus/update checks, then publish 23.1 if validation passes.

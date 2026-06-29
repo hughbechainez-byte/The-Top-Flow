@@ -2,6 +2,11 @@
 
 ## High
 
+- Device validation for the 23.1 Compose lifecycle crash fix candidate
+  - Complexity: Medium
+  - Recommended model: GPT-5.5
+  - Recommended reasoning level: High
+
 - Device QA for 23.0 UI, gestures, sheets, and startup
   - Complexity: Medium
   - Recommended model: GPT-5.5 review with GPT-5.3 targeted fixes if needed

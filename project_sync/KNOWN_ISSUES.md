@@ -2,6 +2,7 @@
 
 ## Confirmed Bugs
 
+- 23.0 / versionCode 56 has a blocker startup crash from the Compose backdrop path: `ViewTreeLifecycleOwner not found from android.widget.FrameLayout`. See `V23_CRASH_LOG.md`. A lifecycle-safe Compose host fix candidate is implemented and release-builds locally, but needs live device validation before 23.1 is published.
 - Prior 21.1 device logs showed 5-16s rhyme generation and main-thread jank symptoms before the 21.2 performance pass.
 - 21.2 still lagged on Pixel 10 Pro; automated rhyme timing did not cover the UI-thread Rhyme button and editor hot paths.
 
