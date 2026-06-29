@@ -2,14 +2,14 @@
 
 ## High
 
-- 23.2 shared motion foundation
+- 23.3 OLED modal/menu surface polish
   - Complexity: Medium
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium
 
 ## Medium
 
-- Device QA for 23.1+ UI, gestures, sheets, and startup
+- Device/emulator QA plan for 24.0 UI, gestures, sheets, and startup
   - Complexity: Medium
   - Recommended model: GPT-5.5 review with GPT-5.3 targeted fixes if needed
   - Recommended reasoning level: Medium

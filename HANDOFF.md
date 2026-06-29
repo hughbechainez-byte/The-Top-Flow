@@ -40,6 +40,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.1 addresses the 23.0 startup crash recorded in `V23_CRASH_LOG.md` and begins the 23.1 to 24.0 pure-black motion foundation. `MainActivity` now extends `ComponentActivity`, manual root/popup hosts receive view-tree lifecycle/saved-state/ViewModel owners, and the Compose backdrop attaches owners before `setContent` with `DisposeOnViewTreeLifecycleDestroyed`. The old blue radar/grid/waveform backdrop has been removed; the Compose backdrop now renders pure black behind active UI surfaces. The original JSONBlob manifest disappeared with 404, so 23.1+ uses replacement JSONBlob `019f13c7-dc3f-7cf2-bf88-038a846852bd` until durable hosting is available.
 
+23.2 adds the first motion-foundation pass for the 23.1 to 24.0 milestone. Tap and selection response stays fast, while panel swaps, sheets, dock state feedback, edge-swipe completion/restoration, and startup close/fill motion now share grouped constants and a smoother eased workflow animator. Gesture thresholds, storage, rhyme behavior, media, and update routing remain unchanged.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -51,7 +53,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.1 / versionCode 57 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest published build: 23.2 / versionCode 58 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -73,7 +75,7 @@ Latest published build: 23.1 / versionCode 57 passed `tools\rhyme_quality_check.
 
 ## Current Next Task
 
-Next: implement 23.2 shared motion foundation. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
+Next: implement 23.3 OLED modal/menu surface polish. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -91,6 +93,7 @@ Next: implement 23.2 shared motion foundation. Preserve note storage, rhyme beha
 - Version 22.9 upgrades startup/preload visual identity and should remain in the multi-version appcast list after later releases.
 - Version 23.0 completes the premium UI milestone and should remain the top-level appcast latest until superseded.
 - Version 23.1 supersedes 23.0 with the Compose lifecycle fix, a pure-black backdrop, and a replacement temporary JSONBlob manifest. Keep Compose; do not fall back to the legacy native backdrop.
+- Version 23.2 adds the shared motion foundation. Keep the timing constants grouped and avoid changing gesture thresholds unless a future build has visual/test evidence.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.

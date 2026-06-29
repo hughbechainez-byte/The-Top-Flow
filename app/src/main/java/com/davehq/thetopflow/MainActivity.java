@@ -125,18 +125,6 @@ public class MainActivity extends ComponentActivity {
     private static final int MAX_CONTENT_WIDTH_DP = 860;
     private static final int RADIUS_DP = 28;
     private static final int SPACE_DP = 14;
-    private static final int BUTTON_PRESS_MS = 82;
-    private static final int BUTTON_RELEASE_MS = 92;
-    private static final int SELECT_PRESS_MS = 66;
-    private static final int SELECT_RELEASE_MS = 86;
-    private static final float BUTTON_PRESS_SCALE = 0.984f;
-    private static final float BUTTON_RELEASE_SCALE = 1f;
-    private static final float SELECTION_SCALE = 1.03f;
-    private static final float SELECTION_ALPHA = 0.93f;
-    private static final float SWIPE_SCALE_REDUCE_X = 0.05f;
-    private static final float SWIPE_SCALE_REDUCE_Y = 0.02f;
-    private static final int PANEL_TRANSITION_MS = 150;
-    private static final int SWAP_TRANSITION_MS = 220;
     private static final int SUGGESTION_DEBOUNCE_MS = 220;
     private static final int FAST_RHYME_LIMIT = 6;
     private static final int FAST_RHYME_CANDIDATE_LIMIT = 360;
@@ -146,11 +134,45 @@ public class MainActivity extends ComponentActivity {
     private static final int MIN_EDITOR_FONT_SIZE_SP = 14;
     private static final int MAX_EDITOR_FONT_SIZE_SP = 28;
     private static final int DEFAULT_NOTE_GLOW_STRENGTH = 1;
-    private static final int SPLASH_MIN_MS = 760;
-    private static final int SPLASH_MAX_MS = 1800;
+    // Motion: tap and selection feedback stays quick for touch response.
+    private static final int MOTION_TAP_PRESS_MS = 78;
+    private static final int MOTION_TAP_RELEASE_MS = 96;
+    private static final float MOTION_TAP_PRESS_SCALE = 0.984f;
+    private static final float MOTION_TAP_RELEASE_SCALE = 1f;
+    private static final int MOTION_SELECTION_PRESS_MS = 74;
+    private static final int MOTION_SELECTION_RELEASE_MS = 106;
+    private static final float MOTION_SELECTION_SCALE = 1.03f;
+    private static final float MOTION_SELECTION_ALPHA = 0.93f;
+
+    // Motion: panels and sheets are slower than tap feedback for a premium shell feel.
+    private static final int MOTION_PANEL_SHOW_MS = 240;
+    private static final int MOTION_PANEL_HIDE_MS = 190;
+    private static final int MOTION_PANEL_SWAP_MS = 280;
+    private static final int MOTION_SHEET_REVEAL_MS = 220;
+    private static final int MOTION_SHEET_DISMISS_MS = 210;
+    private static final int MOTION_SHEET_RESTORE_MS = 200;
+    private static final int SHEET_BLUR_RADIUS_DP = 24;
     private static final int SHEET_DISMISS_DISTANCE_DP = 50;
     private static final int SHEET_DISMISS_VELOCITY = 700;
-    private static final int SHEET_BLUR_RADIUS_DP = 24;
+
+    // Motion: dock and edge gestures remain responsive while sharing the same easing.
+    private static final int MOTION_DOCK_FEEDBACK_MS = 138;
+    private static final float MOTION_DOCK_ACTIVE_SCALE = 1.03f;
+    private static final float MOTION_DOCK_INACTIVE_SCALE = 1f;
+    private static final float MOTION_DOCK_ACTIVE_ALPHA = 1f;
+    private static final float MOTION_DOCK_INACTIVE_ALPHA = 0.68f;
+    private static final float MOTION_SWIPE_SCALE_REDUCE_X = 0.05f;
+    private static final float MOTION_SWIPE_SCALE_REDUCE_Y = 0.02f;
+    private static final int MOTION_SWIPE_COMPLETE_MS = 132;
+    private static final int MOTION_SWIPE_RESTORE_MS = 170;
+
+    // Motion: startup keeps the existing preload timing with smoother fill/close.
+    private static final int SPLASH_MIN_MS = 760;
+    private static final int SPLASH_MAX_MS = 1800;
+    private static final int MOTION_SPLASH_FILL_MS = 1040;
+    private static final int MOTION_SPLASH_READY_FILL_MS = 220;
+    private static final int MOTION_SPLASH_CLOSE_FILL_MS = 160;
+    private static final int MOTION_SPLASH_CLOSE_MS = 240;
     private static final int RHYME_PRELOAD_COMMON_LIMIT = 64;
     private static final int RHYME_PRELOAD_EXPANDED_LIMIT = 12;
     private static final int DOCK_STATE_NONE = 0;
@@ -166,20 +188,10 @@ public class MainActivity extends ComponentActivity {
     private static final float WORKFLOW_SWIPE_TRIGGER_RATIO = 0.52f;
     private static final float WORKFLOW_SWIPE_FLICK_RATIO = 1.45f;
     private static final float WORKFLOW_SWIPE_STRAIGHTNESS_RATIO = 1.75f;
-    private static final int WORKFLOW_SWIPE_COMPLETE_MS = 108;
-    private static final int WORKFLOW_SWIPE_RESTORE_MS = 135;
     private static final int WORKFLOW_SWIPE_RAIL_WIDTH_DP = 4;
-    private static final int SHEET_DISMISS_MS = 155;
-    private static final int SHEET_RESTORE_MS = 123;
-    private static final int SHEET_REVEAL_MS = 90;
-    private static final int DOCK_FEEDBACK_MS = 112;
     private static final int SHEET_MENU_PREVIEW_LIMIT = 4;
-    private static final TimeInterpolator WORKFLOW_INTERPOLATOR = new DecelerateInterpolator();
+    private static final TimeInterpolator MOTION_INTERPOLATOR = new DecelerateInterpolator(1.35f);
     private static final int SHEET_SCROLL_CAP_ATTEMPTS = 3;
-    private static final float DOCK_ACTIVE_SCALE = 1.03f;
-    private static final float DOCK_INACTIVE_SCALE = 1f;
-    private static final float DOCK_ACTIVE_ALPHA = 1f;
-    private static final float DOCK_INACTIVE_ALPHA = 0.68f;
     private static final float SHEET_DRAG_START_RATIO = 0.58f;
     private static final int DOCK_STATE_ELEVATION_DP = 12;
     private static final boolean RHYME_TRACE = true;
@@ -911,7 +923,7 @@ public class MainActivity extends ComponentActivity {
         boxLp.rightMargin = dp(24);
         splashOverlay.addView(box, boxLp);
         root.addView(splashOverlay, new FrameLayout.LayoutParams(-1, -1));
-        fill.animate().scaleX(0.82f).setDuration(900).start();
+        fill.animate().scaleX(0.82f).setDuration(MOTION_SPLASH_FILL_MS).start();
         handler.postDelayed(() -> maybeFinishStartupSplash(false), SPLASH_MIN_MS);
         handler.postDelayed(() -> maybeFinishStartupSplash(true), SPLASH_MAX_MS);
     }
@@ -923,7 +935,7 @@ public class MainActivity extends ComponentActivity {
         }
         if (splashStatus != null) splashStatus.setText(formatSplashStatus(status));
         if (splashFill != null && "Rhyme engine ready".equals(status)) {
-            splashFill.animate().scaleX(1f).setDuration(180).start();
+            splashFill.animate().scaleX(1f).setDuration(MOTION_SPLASH_READY_FILL_MS).start();
         }
         updateSplashProgressLabel();
     }
@@ -937,8 +949,8 @@ public class MainActivity extends ComponentActivity {
         }
         if (!force && !rhymePreloadComplete && elapsed < SPLASH_MAX_MS) return;
         splashClosing = true;
-        if (splashFill != null) splashFill.animate().scaleX(1f).setDuration(120).start();
-        splashOverlay.animate().alpha(0f).setDuration(180).withEndAction(() -> {
+        if (splashFill != null) splashFill.animate().scaleX(1f).setDuration(MOTION_SPLASH_CLOSE_FILL_MS).start();
+        splashOverlay.animate().alpha(0f).setDuration(MOTION_SPLASH_CLOSE_MS).withEndAction(() -> {
             if (root != null && splashOverlay != null) root.removeView(splashOverlay);
             splashOverlay = null;
             splashStatus = null;
@@ -1640,7 +1652,7 @@ public class MainActivity extends ComponentActivity {
                     .scaleX(1f)
                     .scaleY(1f)
                     .translationY(0f)
-                    .setDuration(PANEL_TRANSITION_MS + 30)
+                    .setDuration(MOTION_PANEL_SHOW_MS)
                     .start();
         } else {
             withWorkflowMotion(panel)
@@ -1648,7 +1660,7 @@ public class MainActivity extends ComponentActivity {
                     .scaleX(0.985f)
                     .scaleY(0.985f)
                     .translationY(dp(-10))
-                    .setDuration(WORKFLOW_SWIPE_RESTORE_MS)
+                    .setDuration(MOTION_PANEL_HIDE_MS)
                     .withEndAction(() -> {
                         panel.setVisibility(View.GONE);
                         resetSwipePanelState(panel);
@@ -1676,7 +1688,7 @@ public class MainActivity extends ComponentActivity {
                 .alpha(1f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(WORKFLOW_SWIPE_RESTORE_MS)
+                .setDuration(MOTION_SWIPE_RESTORE_MS)
                 .withEndAction(() -> resetSwipePanelState(panel))
                 .start();
     }
@@ -1692,7 +1704,7 @@ public class MainActivity extends ComponentActivity {
                 .alpha(0f)
                 .scaleX(0.94f)
                 .scaleY(0.95f)
-                .setDuration(WORKFLOW_SWIPE_COMPLETE_MS)
+                .setDuration(MOTION_SWIPE_COMPLETE_MS)
                 .withEndAction(() -> {
                     hideSwipeAffordanceForPanel(panel);
                     resetSwipePanelState(panel);
@@ -1712,7 +1724,7 @@ public class MainActivity extends ComponentActivity {
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration((long) (SWAP_TRANSITION_MS * emphasis))
+                .setDuration((long) (MOTION_PANEL_SWAP_MS * emphasis))
                 .start();
     }
 
@@ -3548,7 +3560,7 @@ public class MainActivity extends ComponentActivity {
             return;
         }
         dismissSheet();
-        editHandler.postDelayed(action, SHEET_DISMISS_MS + 12L);
+        editHandler.postDelayed(action, MOTION_SHEET_DISMISS_MS + 12L);
     }
 
     private void showStyleMenu() {
@@ -4254,8 +4266,8 @@ public class MainActivity extends ComponentActivity {
                 float translation = Math.min(deltaX[0], max);
                 editorPanel.setTranslationX(translation);
                 editorPanel.setAlpha(1f - (0.28f * progress));
-                editorPanel.setScaleX(1f - (SWIPE_SCALE_REDUCE_X * progress));
-                editorPanel.setScaleY(1f - (SWIPE_SCALE_REDUCE_Y * progress));
+                editorPanel.setScaleX(1f - (MOTION_SWIPE_SCALE_REDUCE_X * progress));
+                editorPanel.setScaleY(1f - (MOTION_SWIPE_SCALE_REDUCE_Y * progress));
                 target.requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -4355,8 +4367,8 @@ public class MainActivity extends ComponentActivity {
                 float translation = -Math.min(deltaX[0], max);
                 menuPanel.setTranslationX(translation);
                 menuPanel.setAlpha(1f - (0.28f * progress));
-                menuPanel.setScaleX(1f - (SWIPE_SCALE_REDUCE_X * progress));
-                menuPanel.setScaleY(1f - (SWIPE_SCALE_REDUCE_Y * progress));
+                menuPanel.setScaleX(1f - (MOTION_SWIPE_SCALE_REDUCE_X * progress));
+                menuPanel.setScaleY(1f - (MOTION_SWIPE_SCALE_REDUCE_Y * progress));
                 target.requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -4402,7 +4414,7 @@ public class MainActivity extends ComponentActivity {
             sheetOverlay.animate().cancel();
             withWorkflowMotion(sheetOverlay)
                     .alpha(1f)
-                    .setDuration(SHEET_RESTORE_MS)
+                    .setDuration(MOTION_SHEET_RESTORE_MS)
                     .start();
         }
         if (sheetCard != null) {
@@ -4410,7 +4422,7 @@ public class MainActivity extends ComponentActivity {
             withWorkflowMotion(sheetCard)
                     .translationY(0f)
                     .alpha(1f)
-                    .setDuration(SHEET_DISMISS_MS)
+                    .setDuration(MOTION_SHEET_RESTORE_MS)
                     .start();
         }
         setSheetBackdropEnabled(true);
@@ -4433,9 +4445,9 @@ public class MainActivity extends ComponentActivity {
         sheetCard.post(() -> capSheetBodyHeight(0));
         if (!alreadyVisible) {
             sheetOverlay.setAlpha(0f);
-            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
+            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(MOTION_SHEET_REVEAL_MS).start();
         } else {
-            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(SHEET_REVEAL_MS).start();
+            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(MOTION_SHEET_REVEAL_MS).start();
         }
         setSheetBackdropEnabled(true);
         sheetCard.animate().cancel();
@@ -4445,7 +4457,7 @@ public class MainActivity extends ComponentActivity {
             withWorkflowMotion(sheetCard)
                     .translationY(0f)
                     .alpha(1f)
-                    .setDuration(PANEL_TRANSITION_MS)
+                    .setDuration(MOTION_SHEET_REVEAL_MS)
                     .start();
         } else {
             sheetCard.setTranslationY(0f);
@@ -4560,12 +4572,12 @@ public class MainActivity extends ComponentActivity {
             withWorkflowMotion(sheetCard)
                     .translationY(travel)
                     .alpha(0f)
-                    .setDuration(SHEET_DISMISS_MS)
+                    .setDuration(MOTION_SHEET_DISMISS_MS)
                     .start();
         }
         if (sheetOverlay != null) {
             sheetOverlay.animate().cancel();
-            withWorkflowMotion(sheetOverlay).alpha(0f).setDuration(SHEET_DISMISS_MS).withEndAction(() -> {
+            withWorkflowMotion(sheetOverlay).alpha(0f).setDuration(MOTION_SHEET_DISMISS_MS).withEndAction(() -> {
                 sheetOverlay.setVisibility(View.GONE);
                 if (sheetBody != null) sheetBody.removeAllViews();
                 if (sheetBodyScroll != null) {
@@ -4593,7 +4605,7 @@ public class MainActivity extends ComponentActivity {
     private android.view.ViewPropertyAnimator withWorkflowMotion(View view) {
         if (view == null) return null;
         return view.animate()
-                .setInterpolator(WORKFLOW_INTERPOLATOR)
+                .setInterpolator(MOTION_INTERPOLATOR)
                 .withLayer();
     }
 
@@ -4632,11 +4644,11 @@ public class MainActivity extends ComponentActivity {
         if (button == null) return;
         button.animate().cancel();
         withWorkflowMotion(button)
-                .alpha(active ? DOCK_ACTIVE_ALPHA : DOCK_INACTIVE_ALPHA)
-                .scaleX(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
-                .scaleY(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
+                .alpha(active ? MOTION_DOCK_ACTIVE_ALPHA : MOTION_DOCK_INACTIVE_ALPHA)
+                .scaleX(active ? MOTION_DOCK_ACTIVE_SCALE : MOTION_DOCK_INACTIVE_SCALE)
+                .scaleY(active ? MOTION_DOCK_ACTIVE_SCALE : MOTION_DOCK_INACTIVE_SCALE)
                 .translationY(active ? -dp(2) : 0)
-                .setDuration(DOCK_FEEDBACK_MS)
+                .setDuration(MOTION_DOCK_FEEDBACK_MS)
                 .start();
     }
 
@@ -4666,7 +4678,7 @@ public class MainActivity extends ComponentActivity {
                 .alpha(active ? 0.82f : 1f)
                 .scaleX(active ? (legacy ? 0.985f : 1f) : 1f)
                 .scaleY(active ? (legacy ? 0.985f : 1f) : 1f)
-                .setDuration(active ? PANEL_TRANSITION_MS : SHEET_DISMISS_MS)
+                .setDuration(active ? MOTION_SHEET_REVEAL_MS : MOTION_SHEET_DISMISS_MS)
                 .start();
     }
 
@@ -5496,13 +5508,13 @@ public class MainActivity extends ComponentActivity {
         }
         view.animate().cancel();
         withWorkflowMotion(view)
-                .scaleX(SELECTION_SCALE)
-                .scaleY(SELECTION_SCALE)
-                .alpha(SELECTION_ALPHA)
-                .setDuration(SELECT_PRESS_MS)
+                .scaleX(MOTION_SELECTION_SCALE)
+                .scaleY(MOTION_SELECTION_SCALE)
+                .alpha(MOTION_SELECTION_ALPHA)
+                .setDuration(MOTION_SELECTION_PRESS_MS)
                 .withEndAction(() -> {
                     if (action != null) action.run();
-                    withWorkflowMotion(view).scaleX(BUTTON_RELEASE_SCALE).scaleY(BUTTON_RELEASE_SCALE).alpha(1f).setDuration(SELECT_RELEASE_MS).start();
+                    withWorkflowMotion(view).scaleX(MOTION_TAP_RELEASE_SCALE).scaleY(MOTION_TAP_RELEASE_SCALE).alpha(1f).setDuration(MOTION_SELECTION_RELEASE_MS).start();
                 })
                 .start();
     }
@@ -5511,17 +5523,17 @@ public class MainActivity extends ComponentActivity {
         v.setOnTouchListener((view, e) -> {
             if (e.getAction() == MotionEvent.ACTION_DOWN) {
                 withWorkflowMotion(view)
-                        .scaleX(BUTTON_PRESS_SCALE)
-                        .scaleY(BUTTON_PRESS_SCALE)
+                        .scaleX(MOTION_TAP_PRESS_SCALE)
+                        .scaleY(MOTION_TAP_PRESS_SCALE)
                         .translationY(dp(1))
-                        .setDuration(BUTTON_PRESS_MS)
+                        .setDuration(MOTION_TAP_PRESS_MS)
                         .start();
             } else if (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL) {
                 withWorkflowMotion(view)
-                        .scaleX(BUTTON_RELEASE_SCALE)
-                        .scaleY(BUTTON_RELEASE_SCALE)
+                        .scaleX(MOTION_TAP_RELEASE_SCALE)
+                        .scaleY(MOTION_TAP_RELEASE_SCALE)
                         .translationY(0f)
-                        .setDuration(BUTTON_RELEASE_MS)
+                        .setDuration(MOTION_TAP_RELEASE_MS)
                         .start();
             }
             return false;

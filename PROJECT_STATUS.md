@@ -38,6 +38,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.9 upgrades startup and preload visual identity with a premium OLED launch surface, crisp signal rails, refined preload status treatment, and unchanged rhyme preload behavior.
 - 23.0 completes the milestone with cohesive global chrome, live context status for Notes/Editor, a refreshed header signal rail, and final dock polish while preserving app behavior.
 - 23.1 makes the Compose backdrop lifecycle-safe by moving `MainActivity` to `ComponentActivity`, explicitly attaching view-tree owners to manual hosts, using lifecycle-based Compose disposal, and removing the blue radar/grid/waveform backdrop so the root returns to pure OLED black.
+- 23.2 adds a shared motion foundation by centralizing tap, selection, panel, sheet, dock, swipe, and startup timing constants behind one eased workflow animator. It slows major transitions toward the Pixel-style visual direction while preserving quick tap response and existing gesture thresholds.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -56,8 +57,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-23.1 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the 23.2 shared motion foundation for Pixel-grade transitions.
+23.2 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.3 OLED modal/menu surface pass.
 
 ## Next Milestone
 
-Next: implement 23.2 shared motion foundation with slower, more coherent 120 Hz-feeling transitions.
+Next: implement 23.3 OLED modal/menu surface polish with pure-black menu composition, cleaner active neon focus, and no background imagery.

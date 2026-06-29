@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 23.2 shared motion foundation with centralized timings/easing and slower, smoother OLED transitions.
+Implement 23.3 OLED modal/menu surface polish with pure-black menu composition, cleaner neon focus, and no background imagery.

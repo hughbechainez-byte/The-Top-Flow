@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 23.2 with a shared motion foundation: centralized timing/easing constants, smoother panel/sheet/dock/swipe/startup transitions, and quick tap feedback preserved for responsiveness.
 - Released 23.1 with the Compose lifecycle host fix retained and the blue radar/grid/waveform backdrop removed, returning the app to a pure OLED black foundation behind active neon UI surfaces.
 - Released 23.0 with cohesive global chrome, live Notes/Editor context status, a refreshed header signal rail, `Tune` dock polish, and final review fixes to avoid per-keystroke body scans.
 - Released 22.9 with a premium OLED launch/preload surface, crisp startup signal rails, refined status/progress treatment, and review fixes that removed fake percentage labels while preserving preload behavior.

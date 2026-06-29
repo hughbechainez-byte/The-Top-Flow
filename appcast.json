@@ -1,9 +1,15 @@
 {
-  "versionName": "23.1",
-  "notes": "Version 23.1 keeps the Compose lifecycle host fix and removes the blue radar/tech backdrop so the app returns to a pure OLED black foundation with only UI neon/glow above it.",
-  "versionCode": 57,
-  "apkUrl": "https://temp.sh/mOcRV/the-top-flow-23.1.apk",
+  "versionName": "23.2",
+  "notes": "Version 23.2 centralizes the motion foundation with grouped timing specs and smoother panel, sheet, dock, swipe, and startup transitions while keeping tap response quick.",
+  "versionCode": 58,
+  "apkUrl": "https://temp.sh/fIdqs/the-top-flow-23.2.apk",
   "versions": [
+    {
+      "versionName": "23.2",
+      "notes": "Version 23.2 centralizes the motion foundation with grouped timing specs and smoother panel, sheet, dock, swipe, and startup transitions while keeping tap response quick.",
+      "versionCode": 58,
+      "apkUrl": "https://temp.sh/fIdqs/the-top-flow-23.2.apk"
+    },
     {
       "versionName": "23.1",
       "notes": "Version 23.1 keeps the Compose lifecycle host fix and removes the blue radar/tech backdrop so the app returns to a pure OLED black foundation with only UI neon/glow above it.",
