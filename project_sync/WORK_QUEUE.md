@@ -2,11 +2,6 @@
 
 ## High
 
-- 22.1 multi-version update chooser
-  - Complexity: Medium
-  - Recommended model: GPT-5.3
-  - Recommended reasoning level: Medium
-
 - 22.2 Compose shell foundation
   - Complexity: High
   - Recommended model: GPT-5.3 implementation under GPT-5.5 supervision

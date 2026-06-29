@@ -27,6 +27,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 21.4 removes the dark-blue middle panel layer, keeps the shell true OLED black, adds a real note halo behind the editor card, makes bottom-sheet drag dismissal more forgiving, dims/scales the background behind sheets, expands offline font choices, and prewarms common rhyme caches during startup.
 - 21.5 keeps bottom-sheet handles/headers visible while long sheet content scrolls, adds active feedback to the bottom dock, and makes the currently open note visibly selected in the Notes list.
 - 21.6 through 22.0 continue the UI-alpha run with blur-backed sheets, solid OLED surfaces, bidirectional editor/Notes edge gestures, velocity-aware swipe completion, swipe rail affordances, compact recent-note context, and a cleaner Main Menu command surface.
+- 22.1 adds multi-version update discovery with legacy appcast fallback support and an OLED chooser sheet when several newer APKs are available.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -44,8 +45,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.0 temporary APK packaging is complete without updating JSONBlob/appcast manifests. Current priority is the 22.1 to 23.0 premium UI transformation, starting with multi-version update discovery for the 22.0 appcast line.
+22.1 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, starting with the 22.2 Compose-led shell foundation.
 
 ## Next Milestone
 
-Next: implement 22.1 multi-version update chooser, then begin the staged Compose-led premium UI rebuild through 23.0.
+Next: implement 22.2 Compose-led shell foundation while preserving Java note, rhyme, recording, playback, and install behavior.

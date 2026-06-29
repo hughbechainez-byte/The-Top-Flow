@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 22.1 multi-version update discovery and chooser UI. Preserve legacy appcast compatibility, then package 22.1 and publish it to the 22.0 JSONBlob/appcast line after Codex review.
+Implement 22.2 Compose-led shell foundation. Preserve Java note storage, rhyme suggestions, recording/playback, and update install behavior.

@@ -4034,13 +4034,23 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 String json = readUpdateManifest();
-                JSONObject manifest = new JSONObject(json);
-                int versionCode = manifest.getInt("versionCode");
-                String versionName = manifest.optString("versionName", String.valueOf(versionCode));
-                String apkUrl = manifest.getString("apkUrl");
-                if (versionCode > BuildConfig.VERSION_CODE) {
-                    runOnUiThread(() -> showUpdateFound(versionName, apkUrl));
-                    notifyUpdate(versionName);
+                ArrayList<AvailableUpdate> updates = parseUpdateManifest(json);
+                ArrayList<AvailableUpdate> eligible = new ArrayList<>();
+                for (AvailableUpdate update : updates) {
+                    if (update.versionCode <= BuildConfig.VERSION_CODE) continue;
+                    if (update.apkUrl == null || update.apkUrl.trim().isEmpty()) continue;
+                    eligible.add(update);
+                }
+                Collections.sort(eligible, (a, b) -> Integer.compare(b.versionCode, a.versionCode));
+                if (!eligible.isEmpty()) {
+                    if (eligible.size() == 1) {
+                        AvailableUpdate update = eligible.get(0);
+                        runOnUiThread(() -> showUpdateFound(update.versionName, update.apkUrl));
+                        notifyUpdate(update.versionName);
+                    } else {
+                        runOnUiThread(() -> showUpdateChooser(eligible));
+                        notifyUpdate(eligible.get(0).versionName);
+                    }
                 } else if (manual) {
                     runOnUiThread(() -> Toast.makeText(this, "No update found.", Toast.LENGTH_SHORT).show());
                 }
@@ -4064,6 +4074,109 @@ public class MainActivity extends Activity {
             }
         }
         throw last == null ? new Exception("No update source") : last;
+    }
+
+    private static class AvailableUpdate {
+        final int versionCode;
+        final String versionName;
+        final String notes;
+        final String apkUrl;
+
+        AvailableUpdate(int versionCode, String versionName, String notes, String apkUrl) {
+            this.versionCode = versionCode;
+            this.versionName = versionName;
+            this.notes = notes;
+            this.apkUrl = apkUrl;
+        }
+    }
+
+    private ArrayList<AvailableUpdate> parseUpdateManifest(String json) throws Exception {
+        JSONObject manifest = new JSONObject(json);
+        ArrayList<AvailableUpdate> updates = new ArrayList<>();
+        if (manifest.has("versions")) {
+            JSONArray versions = manifest.optJSONArray("versions");
+            if (versions == null) return updates;
+            for (int i = 0; i < versions.length(); i++) {
+                JSONObject item = versions.optJSONObject(i);
+                AvailableUpdate parsed = parseUpdateItem(item);
+                if (parsed != null) updates.add(parsed);
+            }
+            return updates;
+        }
+
+        AvailableUpdate parsed = parseUpdateItem(manifest);
+        if (parsed != null) {
+            updates.add(parsed);
+        } else {
+            throw new Exception("Invalid legacy update manifest");
+        }
+        return updates;
+    }
+
+    private AvailableUpdate parseUpdateItem(JSONObject item) {
+        if (item == null) return null;
+        if (!item.has("versionCode") || !item.has("apkUrl")) return null;
+        int versionCode;
+        try {
+            versionCode = item.getInt("versionCode");
+        } catch (Exception ignored) {
+            return null;
+        }
+        String versionName = item.optString("versionName", String.valueOf(versionCode));
+        String notes = item.optString("notes", "");
+        String apkUrl = item.optString("apkUrl", "");
+        return new AvailableUpdate(versionCode, versionName, notes, apkUrl);
+    }
+
+    private void showUpdateChooser(ArrayList<AvailableUpdate> updates) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
+
+        for (int i = 0; i < updates.size(); i++) {
+            AvailableUpdate update = updates.get(i);
+            View row = buildUpdateChoiceRow(update);
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+            if (i < updates.size() - 1) rowLp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+            content.addView(row, rowLp);
+        }
+        showSheet("Choose an update", content);
+    }
+
+    private View buildUpdateChoiceRow(AvailableUpdate update) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        card.setBackground(TopFlowUiKit.floatingPanel(this, 18));
+        TopFlowUiKit.applyFloating(card, 8);
+
+        TextView title = new TextView(this);
+        title.setText("Version " + update.versionName + " (" + update.versionCode + ")");
+        textStyle(title, R.style.TextAppearance_TopFlow21_Section);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextColor(TopFlowUiKit.TEXT);
+        title.setLetterSpacing(0f);
+        title.setIncludeFontPadding(false);
+        card.addView(title);
+
+        if (update.notes != null && !update.notes.trim().isEmpty()) {
+            TextView notes = new TextView(this);
+            notes.setText(update.notes.trim());
+            textStyle(notes, R.style.TextAppearance_TopFlow21_Caption);
+            TopFlowUiKit.applyQuietText(notes);
+            notes.setLetterSpacing(0f);
+            notes.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_sm));
+            notes.setIncludeFontPadding(false);
+            card.addView(notes);
+        }
+
+        Button action = button("Download");
+        action.setOnClickListener(v -> {
+            dismissSheet();
+            downloadAndInstall(update.apkUrl);
+        });
+        card.addView(action, new LinearLayout.LayoutParams(-1, -2));
+        return card;
     }
 
     private String readUrl(String urlText) throws Exception {

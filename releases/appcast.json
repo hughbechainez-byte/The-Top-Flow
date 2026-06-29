@@ -1,1 +1,14 @@
-{"versionName":"21.4","notes":"Version 21.4 polishes the 21.x OLED UI with true black panels, visible note glow, easier bottom-sheet dismissal, dimmed sheet backdrop, expanded offline font choices, smoother lightweight selection animations, and startup rhyme cache prewarming.","versionCode":40,"apkUrl":"https://temp.sh/Jawft/the-top-flow-21.4.apk"}
+{
+  "versionName": "22.1",
+  "notes": "Version 22.1 adds multi-version update discovery, keeps legacy appcast compatibility, and shows a premium OLED chooser when several newer builds are available.",
+  "versionCode": 47,
+  "apkUrl": "https://temp.sh/bqCQA/the-top-flow-22.1.apk",
+  "versions": [
+    {
+      "versionName": "22.1",
+      "notes": "Version 22.1 adds multi-version update discovery, keeps legacy appcast compatibility, and shows a premium OLED chooser when several newer builds are available.",
+      "versionCode": 47,
+      "apkUrl": "https://temp.sh/bqCQA/the-top-flow-22.1.apk"
+    }
+  ]
+}

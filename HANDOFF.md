@@ -18,6 +18,8 @@ Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose
 
 The active milestone is now 22.1 to 23.0: a premium UI transformation. The chosen architecture is a staged Compose-led shell migration rather than a one-shot rewrite. Preserve Java note storage, `RhymeEngine`, recording/playback, and install/update behavior while moving visible UI surfaces into richer Compose or Compose-hosted layers.
 
+22.1 adds multi-version update discovery. The app now accepts both the legacy single-update appcast shape and a new `versions[]` shape. When multiple newer versions are available, it shows an OLED bottom-sheet chooser. Appcasts should keep top-level latest-version fields for older 22.0 clients and include `versions[]` for 22.1+ clients.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -29,7 +31,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 22.0 / versionCode 46 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.1 / versionCode 47 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -51,13 +53,14 @@ Latest verified build: 22.0 / versionCode 46 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Implement 22.1 multi-version update discovery and chooser UI, then publish future 22.x/23.0 builds to the 22.0 JSONBlob/appcast line so 22.0 users can choose among available newer versions.
+Implement 22.2 Compose-led shell foundation without changing note storage, rhyme logic, recording/playback, or install behavior.
 
 ## Assumptions
 
 - The app is intended to stay lightweight and native.
 - Local note data is stored as `notes.json` in app private files.
 - Rhyme suggestion behavior should continue improving without disturbing notes, recordings, styling, song playback, or updates.
+- Version 22.1 is the first build published to the 22.0 JSONBlob/appcast line and should be represented in both top-level latest fields and the `versions[]` list.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -88,4 +91,5 @@ Implement 22.1 multi-version update discovery and chooser UI, then publish futur
 - 21.5 addresses sheet scroll safety, active dock feedback, and selected-note feedback without changing rhyme scoring quality or live update manifests.
 - 21.6 through 22.0 address continued OLED UI polish, gesture discoverability, velocity-aware swipes, Main Menu recent-session context, and shared motion polish without publishing update manifests.
 - 22.1 must convert update handling to support multiple available versions while preserving legacy single-version manifest compatibility.
+- 22.2 should begin the visible Compose-led premium shell foundation while keeping the Java workflows intact.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

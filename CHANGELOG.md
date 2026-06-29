@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 22.1 with multi-version update manifest parsing, legacy appcast fallback compatibility, and a premium OLED update chooser sheet for multiple available builds.
 - Released 22.0 with a cleaner OLED Main Menu command surface, compact recent-session previews, deferred menu actions after dismiss motion, and shared workflow animation polish. APK was temp-hosted only; appcast/update manifests were not changed.
 - Released 21.9 with swipe rail affordance polish, shared workflow motion across dock/panel interactions, tighter saved-session rows, cleaner empty-state copy, and gesture cleanup fixes. APK was temp-hosted only; appcast/update manifests were not changed.
 - Released 21.8 with velocity-aware editor/Notes swipes, shared settle/complete gesture helpers, and current-session context in the Notes header. APK was temp-hosted only; appcast/update manifests were not changed.
