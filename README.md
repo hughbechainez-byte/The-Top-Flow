@@ -2,8 +2,8 @@
 
 Native Android note app for songwriting on GrapheneOS/Android.
 
-Current local build: `23.9`.
-Current milestone: 23.1 to 24.0 pure-black motion foundation.
+Current local build: `24.0`.
+Current milestone: 24.0 pure-black motion foundation complete.
 
 ## Project Record
 

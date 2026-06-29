@@ -56,6 +56,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 23.9 performs the final acceptance polish before 24.0. Remaining generic chrome/card surfaces in the global header and reusable card helpers now use the pure-black command-surface language instead of legacy floating panels, and `LOCAL_QA_24_PLAN.md` documents laptop-based crash, screenshot, jank, Macrobenchmark, Baseline Profile, and JankStats paths. Emulator/device visual tests were deliberately not run per Dave's instruction.
 
+24.0 completes the 23.1 to 24.0 pure-black OLED UI foundation milestone. It packages the pure-black backdrop, shared motion foundation, menu/modal surfaces, Notes dashboard, editor/rhyme surfaces, dock/gesture polish, runtime-used rhyme acceleration assets, local QA plan, final Desktop report, and appcast publication as the completed release.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -67,7 +69,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest published build: 23.9 / versionCode 65 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest published build: 24.0 / versionCode 66 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -89,7 +91,7 @@ Latest published build: 23.9 / versionCode 65 passed `tools\rhyme_quality_check.
 
 ## Current Next Task
 
-Next: implement 24.0 final release wrap-up and report. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
+Next: replace temporary hosting with durable hosting and run approved local emulator/screenshot/jank QA. Preserve note storage, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -115,10 +117,11 @@ Next: implement 24.0 final release wrap-up and report. Preserve note storage, me
 - Version 23.7 adds the default fast-rhyme hot cache. Keep hot-cache eligibility conservative; fall back to the scorer whenever settings, removals, or request shape differ.
 - Version 23.8 adds the uncompressed prepared index and expanded hot cache. Keep all new large assets runtime-used and preserve TSV/scorer fallbacks.
 - Version 23.9 adds the local QA plan and final pure-black chrome cleanup. Do not run emulator/device tests unless Dave explicitly allows it.
+- Version 24.0 completes the milestone. JSONBlob/temp.sh/tmpfiles are still temporary; durable update hosting remains the next operational risk.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
-- Version 21.4 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh are temporary hosts, so durable update hosting is still needed.
+- Version 21.4 uses JSONBlob manifest `019f0d91-7b07-768c-a38a-dacd0a9b84df`; JSONBlob/temp.sh/tmpfiles are temporary hosts, so durable update hosting is still needed.
 - Version 21.3 APK was published at `https://temp.sh/SZvCg/the-top-flow-21.3.apk`.
 - Version 21.2 APK was published at `https://temp.sh/nTEYR/the-top-flow-21.2.apk`.
 

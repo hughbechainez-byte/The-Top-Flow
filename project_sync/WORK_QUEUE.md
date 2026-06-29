@@ -2,9 +2,9 @@
 
 ## High
 
-- 24.0 final release wrap-up
+- Durable update hosting replacement
   - Complexity: Medium
-  - Recommended model: GPT-5.3 implementation with GPT-5.5 review
+  - Recommended model: GPT-5.5
   - Recommended reasoning level: Medium
 
 ## Medium
@@ -14,7 +14,7 @@
   - Recommended model: GPT-5.5 review with GPT-5.3 targeted fixes if needed
   - Recommended reasoning level: Medium
 
-- Durable update hosting to replace JSONBlob/temp.sh
+- Durable update hosting to replace JSONBlob/temp.sh/tmpfiles
   - Complexity: Medium
   - Recommended model: GPT-5.5
   - Recommended reasoning level: Medium

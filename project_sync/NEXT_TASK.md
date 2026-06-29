@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 24.0 final release wrap-up, desktop report, and manifest publication.
+Post-24.0: replace temporary hosting with durable hosting and run approved local emulator/screenshot/jank QA.

@@ -46,6 +46,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 23.7 adds a shipped offline rhyme hot-cache asset for default fast suggestions, loads it on the existing rhyme background thread, and serves it only for safe Balanced/default fast cases while all non-default settings and expanded/context paths fall back to the existing scorer.
 - 23.8 clears the functional APK-size gate with runtime-used rhyme acceleration data: an uncompressed prepared index tried before TSV fallback and a default expanded-rhyme hot cache, both loaded on the existing rhyme background path with scorer fallbacks preserved.
 - 23.9 performs final acceptance polish by converting remaining generic chrome/card surfaces to the pure-black command-surface language and adds a local QA plan for future laptop-based crash, screenshot, and jank validation without running emulator/device tests yet.
+- 24.0 completes the pure-black OLED UI foundation milestone with the 23.1-23.9 UI, motion, dock, menu, Notes, editor, and rhyme acceleration work packaged as the final release line.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -58,14 +59,14 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - The 21.0 rhyme system is now extracted into `RhymeEngine.java`, but legacy rhyme helpers still remain in `MainActivity.java` and should be removed only after device validation.
 - A focused rhyme regression check exists at `tools/rhyme_quality_check.py`, including `my/try`, `yours`, `out`, slang, phrase, and known bad-match cases.
 - In-app update metadata points to the current JSONBlob appcast, but install flow still needs device verification on Pixel 10 Pro.
-- JSONBlob/temp.sh are temporary hosts; durable update hosting is still needed. The original JSONBlob manifest returned 404 during 23.1 release work, so 23.1+ points at replacement temporary blob `019f13c7-dc3f-7cf2-bf88-038a846852bd`.
+- JSONBlob/temp.sh/tmpfiles are temporary hosts; durable update hosting is still needed. The original JSONBlob manifest returned 404 during 23.1 release work, so 23.1+ points at replacement temporary blob `019f13c7-dc3f-7cf2-bf88-038a846852bd`.
 - Rebuild B is still a Java-runtime bridge; the live app is not fully Compose yet.
 - Published 23.0 / versionCode 56 could crash on startup from `ViewTreeLifecycleOwner not found`; 23.1 supersedes it with the lifecycle host fix and pure-black backdrop.
 
 ## Current Development Priority
 
-23.9 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 24.0 final report and release wrap-up.
+24.0 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is post-24.0 durable hosting and measured local QA setup.
 
 ## Next Milestone
 
-Next: implement 24.0 final release wrap-up, desktop report, and manifest publication.
+Next: replace temporary hosting with durable hosting and run the planned emulator/screenshot/jank QA once Dave approves.

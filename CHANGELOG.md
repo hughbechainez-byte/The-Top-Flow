@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 24.0 as the completed pure-black OLED UI foundation milestone, retaining the motion/menu/Notes/editor/dock overhaul, runtime-used rhyme acceleration assets, size gate compliance, temp-hosted APK, and final Desktop report.
 - Released 23.9 with final pure-black chrome cleanup, black command-surface cards in remaining generic chrome paths, and a local laptop QA plan for crash, screenshot, and jank testing without running those tests yet.
 - Released 23.8 with a runtime-used uncompressed prepared rhyme index, a default expanded-rhyme hot cache, scorer/TSV fallbacks, and release APK size above the required 2x target.
 - Released 23.7 with a shipped offline default fast-rhyme hot cache, conservative `RhymeEngine` loader/fallback rules, and no-compress packaging so APK growth comes from runtime-used rhyme data.

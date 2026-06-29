@@ -12,7 +12,7 @@
 
 ## Blocked Work
 
-- Durable update hosting is still needed; JSONBlob/temp.sh are temporary.
+- Durable update hosting is still needed; JSONBlob/temp.sh/tmpfiles are temporary.
 
 ## Future Investigations
 

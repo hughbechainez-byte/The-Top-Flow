@@ -1,9 +1,15 @@
 {
-  "versionName": "23.9",
-  "notes": "Version 23.9 adds final pure-black chrome cleanup plus a local laptop QA plan for crash, screenshot, and jank testing paths without running emulator/device tests yet.",
-  "versionCode": 65,
-  "apkUrl": "https://temp.sh/OPcsu/the-top-flow-23.9.apk",
+  "versionName": "24.0",
+  "notes": "Version 24.0 completes the pure-black OLED UI foundation milestone with the 23.x motion, menu, Notes, editor, dock, gesture, and runtime-used rhyme acceleration work packaged as the final release line.",
+  "versionCode": 66,
+  "apkUrl": "https://tmpfiles.org/dl/wGwWt5elGA2c/the-top-flow-24.0.apk",
   "versions": [
+    {
+      "versionName": "24.0",
+      "notes": "Version 24.0 completes the pure-black OLED UI foundation milestone with the 23.x motion, menu, Notes, editor, dock, gesture, and runtime-used rhyme acceleration work packaged as the final release line.",
+      "versionCode": 66,
+      "apkUrl": "https://tmpfiles.org/dl/wGwWt5elGA2c/the-top-flow-24.0.apk"
+    },
     {
       "versionName": "23.9",
       "notes": "Version 23.9 adds final pure-black chrome cleanup plus a local laptop QA plan for crash, screenshot, and jank testing paths without running emulator/device tests yet.",
