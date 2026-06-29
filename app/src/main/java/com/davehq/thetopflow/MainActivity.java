@@ -122,8 +122,18 @@ public class MainActivity extends Activity {
     private static final int MAX_CONTENT_WIDTH_DP = 860;
     private static final int RADIUS_DP = 28;
     private static final int SPACE_DP = 14;
-    private static final int BUTTON_PRESS_MS = 90;
+    private static final int BUTTON_PRESS_MS = 82;
+    private static final int BUTTON_RELEASE_MS = 92;
+    private static final int SELECT_PRESS_MS = 66;
+    private static final int SELECT_RELEASE_MS = 86;
+    private static final float BUTTON_PRESS_SCALE = 0.984f;
+    private static final float BUTTON_RELEASE_SCALE = 1f;
+    private static final float SELECTION_SCALE = 1.03f;
+    private static final float SELECTION_ALPHA = 0.93f;
+    private static final float SWIPE_SCALE_REDUCE_X = 0.05f;
+    private static final float SWIPE_SCALE_REDUCE_Y = 0.02f;
     private static final int PANEL_TRANSITION_MS = 150;
+    private static final int SWAP_TRANSITION_MS = 220;
     private static final int SUGGESTION_DEBOUNCE_MS = 220;
     private static final int FAST_RHYME_LIMIT = 6;
     private static final int FAST_RHYME_CANDIDATE_LIMIT = 360;
@@ -135,8 +145,8 @@ public class MainActivity extends Activity {
     private static final int DEFAULT_NOTE_GLOW_STRENGTH = 1;
     private static final int SPLASH_MIN_MS = 760;
     private static final int SPLASH_MAX_MS = 1800;
-    private static final int SHEET_DISMISS_DISTANCE_DP = 56;
-    private static final int SHEET_DISMISS_VELOCITY = 720;
+    private static final int SHEET_DISMISS_DISTANCE_DP = 50;
+    private static final int SHEET_DISMISS_VELOCITY = 700;
     private static final int SHEET_BLUR_RADIUS_DP = 24;
     private static final int RHYME_PRELOAD_COMMON_LIMIT = 64;
     private static final int RHYME_PRELOAD_EXPANDED_LIMIT = 12;
@@ -145,14 +155,21 @@ public class MainActivity extends Activity {
     private static final int DOCK_STATE_RHYME = 2;
     private static final int DOCK_STATE_STYLE = 3;
     private static final int DOCK_STATE_SETTINGS = 4;
-    private static final int EDITOR_BACK_SWIPE_EDGE_DP = 64;
-    private static final int EDITOR_BACK_SWIPE_TRIGGER_DP = 170;
-    private static final int EDITOR_BACK_SWIPE_VELOCITY_PX = 1650;
-    private static final int WORKFLOW_SWIPE_COMPLETE_MS = 120;
-    private static final int WORKFLOW_SWIPE_RESTORE_MS = 150;
+    private static final int EDITOR_BACK_SWIPE_EDGE_DP = 74;
+    private static final int EDITOR_BACK_SWIPE_TRIGGER_DP = 150;
+    private static final int EDITOR_BACK_SWIPE_VELOCITY_PX = 1450;
+    private static final int EDITOR_BACK_SWIPE_START_DP = 12;
+    private static final int EDITOR_BACK_SWIPE_VERTICAL_BREAK_DP = 18;
+    private static final float WORKFLOW_SWIPE_TRIGGER_RATIO = 0.52f;
+    private static final float WORKFLOW_SWIPE_FLICK_RATIO = 1.45f;
+    private static final float WORKFLOW_SWIPE_STRAIGHTNESS_RATIO = 1.75f;
+    private static final int WORKFLOW_SWIPE_COMPLETE_MS = 108;
+    private static final int WORKFLOW_SWIPE_RESTORE_MS = 135;
     private static final int WORKFLOW_SWIPE_RAIL_WIDTH_DP = 4;
-    private static final int SHEET_DISMISS_MS = 170;
-    private static final int SHEET_RESTORE_MS = 130;
+    private static final int SHEET_DISMISS_MS = 155;
+    private static final int SHEET_RESTORE_MS = 123;
+    private static final int SHEET_REVEAL_MS = 90;
+    private static final int DOCK_FEEDBACK_MS = 112;
     private static final int SHEET_MENU_PREVIEW_LIMIT = 4;
     private static final TimeInterpolator WORKFLOW_INTERPOLATOR = new DecelerateInterpolator();
     private static final int SHEET_SCROLL_CAP_ATTEMPTS = 3;
@@ -160,6 +177,7 @@ public class MainActivity extends Activity {
     private static final float DOCK_INACTIVE_SCALE = 1f;
     private static final float DOCK_ACTIVE_ALPHA = 1f;
     private static final float DOCK_INACTIVE_ALPHA = 0.68f;
+    private static final float SHEET_DRAG_START_RATIO = 0.58f;
     private static final int DOCK_STATE_ELEVATION_DP = 12;
     private static final boolean RHYME_TRACE = true;
     private static final String UPDATE_MANIFEST_JSONBLOB = "https://jsonblob.com/api/jsonBlob/019f0d91-7b07-768c-a38a-dacd0a9b84df";
@@ -1382,24 +1400,20 @@ public class MainActivity extends Activity {
             panel.setScaleX(0.98f);
             panel.setScaleY(0.98f);
             panel.setTranslationY(dp(14));
-            panel.animate()
-                    .setInterpolator(WORKFLOW_INTERPOLATOR)
+            withWorkflowMotion(panel)
                     .alpha(1f)
                     .scaleX(1f)
                     .scaleY(1f)
                     .translationY(0f)
-                    .withLayer()
-                    .setDuration(180)
+                    .setDuration(PANEL_TRANSITION_MS + 30)
                     .start();
         } else {
-            panel.animate()
-                    .setInterpolator(WORKFLOW_INTERPOLATOR)
+            withWorkflowMotion(panel)
                     .alpha(0f)
                     .scaleX(0.985f)
                     .scaleY(0.985f)
                     .translationY(dp(-10))
-                    .withLayer()
-                    .setDuration(130)
+                    .setDuration(WORKFLOW_SWIPE_RESTORE_MS)
                     .withEndAction(() -> {
                         panel.setVisibility(View.GONE);
                         resetSwipePanelState(panel);
@@ -1421,14 +1435,12 @@ public class MainActivity extends Activity {
     private void settleSwipePanel(View panel) {
         if (panel == null) return;
         panel.animate().cancel();
-        panel.animate()
-                .setInterpolator(WORKFLOW_INTERPOLATOR)
+        withWorkflowMotion(panel)
                 .translationX(0f)
                 .translationY(0f)
                 .alpha(1f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .withLayer()
                 .setDuration(WORKFLOW_SWIPE_RESTORE_MS)
                 .withEndAction(() -> resetSwipePanelState(panel))
                 .start();
@@ -1440,13 +1452,11 @@ public class MainActivity extends Activity {
         if (width <= 0) width = getResources().getDisplayMetrics().widthPixels;
         float delta = toRight ? width : -width;
         panel.animate().cancel();
-        panel.animate()
-                .setInterpolator(WORKFLOW_INTERPOLATOR)
+        withWorkflowMotion(panel)
                 .translationX(delta)
                 .alpha(0f)
                 .scaleX(0.94f)
                 .scaleY(0.95f)
-                .withLayer()
                 .setDuration(WORKFLOW_SWIPE_COMPLETE_MS)
                 .withEndAction(() -> {
                     hideSwipeAffordanceForPanel(panel);
@@ -1462,14 +1472,12 @@ public class MainActivity extends Activity {
         firstVisible.setTranslationY(dp(10));
         firstVisible.setScaleX(0.985f);
         firstVisible.setScaleY(0.985f);
-        firstVisible.animate()
-                .setInterpolator(WORKFLOW_INTERPOLATOR)
+        withWorkflowMotion(firstVisible)
                 .alpha(1f)
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .withLayer()
-                .setDuration((long) (220 * emphasis))
+                .setDuration((long) (SWAP_TRANSITION_MS * emphasis))
                 .start();
     }
 
@@ -3834,7 +3842,7 @@ public class MainActivity extends Activity {
                     }
                     active[0] = false;
                     if (event.getActionMasked() != MotionEvent.ACTION_CANCEL
-                            && (releaseDy > dp(SHEET_DISMISS_DISTANCE_DP) || velocityY > SHEET_DISMISS_VELOCITY)) {
+                            && shouldDismissSheet(releaseDy, velocityY)) {
                         dismissSheet();
                     } else {
                         settleSheetOpen();
@@ -3892,9 +3900,9 @@ public class MainActivity extends Activity {
                         hideSwipeAffordance(editorSwipeRail);
                         return false;
                     }
-                    if (deltaX[0] > dp(12) && deltaX[0] > deltaY[0] * 1.6f) {
+                    if (shouldTrackHorizontalSwipe(deltaX[0], deltaY[0])) {
                         horizontal[0] = true;
-                    } else if (deltaY[0] > Math.max(dp(20), deltaX[0] * 1.4f)) {
+                    } else if (shouldAbortHorizontalSwipe(deltaX[0], deltaY[0])) {
                         tracking[0] = false;
                         horizontal[0] = false;
                         if (tracker[0] != null) {
@@ -3912,8 +3920,8 @@ public class MainActivity extends Activity {
                 float translation = Math.min(deltaX[0], max);
                 editorPanel.setTranslationX(translation);
                 editorPanel.setAlpha(1f - (0.28f * progress));
-                editorPanel.setScaleX(1f - (0.05f * progress));
-                editorPanel.setScaleY(1f - (0.02f * progress));
+                editorPanel.setScaleX(1f - (SWIPE_SCALE_REDUCE_X * progress));
+                editorPanel.setScaleY(1f - (SWIPE_SCALE_REDUCE_Y * progress));
                 target.requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -3926,11 +3934,7 @@ public class MainActivity extends Activity {
                     tracker[0].recycle();
                     tracker[0] = null;
                 }
-                float absVx = Math.abs(velocityX[0]);
-                float absVy = Math.abs(velocityY[0]);
-                boolean enoughDistance = deltaX[0] >= dp(EDITOR_BACK_SWIPE_TRIGGER_DP) * 0.5f;
-                boolean isFlick = velocityX[0] > EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * 1.5f;
-                boolean trigger = (enoughDistance && deltaY[0] < deltaX[0] * 1.8f) || isFlick;
+                boolean trigger = shouldCompleteBackSwipe(deltaX[0], deltaY[0], velocityX[0], velocityY[0], true);
                 if (trigger) {
                     completeSwipePanel(editorPanel, true, () -> showMenuScreen());
                 } else {
@@ -3997,9 +4001,9 @@ public class MainActivity extends Activity {
                         hideSwipeAffordance(notesSwipeRail);
                         return false;
                     }
-                    if (deltaX[0] > dp(12) && deltaX[0] > deltaY[0] * 1.6f) {
+                    if (shouldTrackHorizontalSwipe(deltaX[0], deltaY[0])) {
                         horizontal[0] = true;
-                    } else if (deltaY[0] > Math.max(dp(20), deltaX[0] * 1.4f)) {
+                    } else if (shouldAbortHorizontalSwipe(deltaX[0], deltaY[0])) {
                         tracking[0] = false;
                         horizontal[0] = false;
                         if (tracker[0] != null) {
@@ -4017,8 +4021,8 @@ public class MainActivity extends Activity {
                 float translation = -Math.min(deltaX[0], max);
                 menuPanel.setTranslationX(translation);
                 menuPanel.setAlpha(1f - (0.28f * progress));
-                menuPanel.setScaleX(1f - (0.05f * progress));
-                menuPanel.setScaleY(1f - (0.02f * progress));
+                menuPanel.setScaleX(1f - (SWIPE_SCALE_REDUCE_X * progress));
+                menuPanel.setScaleY(1f - (SWIPE_SCALE_REDUCE_Y * progress));
                 target.requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -4031,11 +4035,7 @@ public class MainActivity extends Activity {
                     tracker[0].recycle();
                     tracker[0] = null;
                 }
-                float absVx = Math.abs(velocityX[0]);
-                float absVy = Math.abs(velocityY[0]);
-                boolean enoughDistance = deltaX[0] >= dp(EDITOR_BACK_SWIPE_TRIGGER_DP) * 0.5f;
-                boolean isFlick = velocityX[0] < -EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * 1.5f;
-                boolean trigger = (enoughDistance && deltaY[0] < deltaX[0] * 1.8f) || isFlick;
+                boolean trigger = shouldCompleteBackSwipe(deltaX[0], deltaY[0], velocityX[0], velocityY[0], false);
                 if (trigger) {
                     completeSwipePanel(menuPanel, false, () -> {
                         if (current != null) openNote(current);
@@ -4060,7 +4060,7 @@ public class MainActivity extends Activity {
         if (target != sheetCard) return true;
         float y = event.getY();
         int height = sheetCard.getHeight() > 0 ? sheetCard.getHeight() : dp(420);
-        return y <= Math.max(dp(180), height * 0.52f);
+        return y <= Math.max(dp(170), height * SHEET_DRAG_START_RATIO);
     }
 
     private void settleSheetOpen() {
@@ -4101,7 +4101,7 @@ public class MainActivity extends Activity {
             sheetOverlay.setAlpha(0f);
             withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(PANEL_TRANSITION_MS).start();
         } else {
-            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(90).start();
+            withWorkflowMotion(sheetOverlay).alpha(1f).setDuration(SHEET_REVEAL_MS).start();
         }
         setSheetBackdropEnabled(true);
         sheetCard.animate().cancel();
@@ -4117,6 +4117,31 @@ public class MainActivity extends Activity {
             sheetCard.setTranslationY(0f);
             sheetCard.setAlpha(1f);
         }
+    }
+
+    private boolean shouldCompleteBackSwipe(float deltaX, float deltaY, float velocityX, float velocityY, boolean toRight) {
+        if (deltaX < 0f) return false;
+        float absVx = Math.abs(velocityX);
+        float absVy = Math.abs(velocityY);
+        if (absVx <= 0f) absVx = 1f;
+        boolean enoughDistance = deltaX >= dp(EDITOR_BACK_SWIPE_TRIGGER_DP) * WORKFLOW_SWIPE_TRIGGER_RATIO;
+        boolean straightEnough = deltaY <= deltaX * WORKFLOW_SWIPE_STRAIGHTNESS_RATIO;
+        boolean isFlick = toRight
+                ? velocityX > EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * WORKFLOW_SWIPE_FLICK_RATIO
+                : velocityX < -EDITOR_BACK_SWIPE_VELOCITY_PX && absVx > absVy * WORKFLOW_SWIPE_FLICK_RATIO;
+        return (enoughDistance && straightEnough) || isFlick;
+    }
+
+    private boolean shouldTrackHorizontalSwipe(float deltaX, float deltaY) {
+        return deltaX > dp(EDITOR_BACK_SWIPE_START_DP) && deltaX > deltaY * WORKFLOW_SWIPE_STRAIGHTNESS_RATIO;
+    }
+
+    private boolean shouldAbortHorizontalSwipe(float deltaX, float deltaY) {
+        return deltaY > Math.max(dp(EDITOR_BACK_SWIPE_VERTICAL_BREAK_DP), deltaX * WORKFLOW_SWIPE_FLICK_RATIO);
+    }
+
+    private boolean shouldDismissSheet(float releaseDy, float velocityY) {
+        return releaseDy > dp(SHEET_DISMISS_DISTANCE_DP) || velocityY > SHEET_DISMISS_VELOCITY;
     }
 
     private TextView sheetSectionTitle(String text) {
@@ -4272,14 +4297,12 @@ public class MainActivity extends Activity {
     private void applyDockButtonState(Button button, boolean active) {
         if (button == null) return;
         button.animate().cancel();
-        button.animate()
-                .setInterpolator(WORKFLOW_INTERPOLATOR)
+        withWorkflowMotion(button)
                 .alpha(active ? DOCK_ACTIVE_ALPHA : DOCK_INACTIVE_ALPHA)
                 .scaleX(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
                 .scaleY(active ? DOCK_ACTIVE_SCALE : DOCK_INACTIVE_SCALE)
                 .translationY(active ? -dp(2) : 0)
-                .withLayer()
-                .setDuration(120)
+                .setDuration(DOCK_FEEDBACK_MS)
                 .start();
     }
 
@@ -4944,13 +4967,13 @@ public class MainActivity extends Activity {
         }
         view.animate().cancel();
         withWorkflowMotion(view)
-                .scaleX(1.035f)
-                .scaleY(1.035f)
-                .alpha(0.92f)
-                .setDuration(70)
+                .scaleX(SELECTION_SCALE)
+                .scaleY(SELECTION_SCALE)
+                .alpha(SELECTION_ALPHA)
+                .setDuration(SELECT_PRESS_MS)
                 .withEndAction(() -> {
                     if (action != null) action.run();
-                    withWorkflowMotion(view).scaleX(1f).scaleY(1f).alpha(1f).setDuration(90).start();
+                    withWorkflowMotion(view).scaleX(BUTTON_RELEASE_SCALE).scaleY(BUTTON_RELEASE_SCALE).alpha(1f).setDuration(SELECT_RELEASE_MS).start();
                 })
                 .start();
     }
@@ -4959,17 +4982,17 @@ public class MainActivity extends Activity {
         v.setOnTouchListener((view, e) -> {
             if (e.getAction() == MotionEvent.ACTION_DOWN) {
                 withWorkflowMotion(view)
-                        .scaleX(0.985f)
-                        .scaleY(0.985f)
+                        .scaleX(BUTTON_PRESS_SCALE)
+                        .scaleY(BUTTON_PRESS_SCALE)
                         .translationY(dp(1))
                         .setDuration(BUTTON_PRESS_MS)
                         .start();
             } else if (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL) {
                 withWorkflowMotion(view)
-                        .scaleX(1f)
-                        .scaleY(1f)
+                        .scaleX(BUTTON_RELEASE_SCALE)
+                        .scaleY(BUTTON_RELEASE_SCALE)
                         .translationY(0f)
-                        .setDuration(BUTTON_PRESS_MS)
+                        .setDuration(BUTTON_RELEASE_MS)
                         .start();
             }
             return false;

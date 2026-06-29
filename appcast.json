@@ -1,9 +1,15 @@
 {
-  "versionName": "22.6",
-  "notes": "Version 22.6 rebuilds bottom sheets and menus as premium OLED command panels with stronger handles, command-row menu surfaces, refined style/font/glow sheets, and cleaner update chooser cards.",
-  "versionCode": 52,
-  "apkUrl": "https://temp.sh/BjhEG/the-top-flow-22.6.apk",
+  "versionName": "22.7",
+  "notes": "Version 22.7 tunes gestures and motion with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap feedback, and consistent workflow animation paths.",
+  "versionCode": 53,
+  "apkUrl": "https://temp.sh/Eehmr/the-top-flow-22.7.apk",
   "versions": [
+    {
+      "versionName": "22.7",
+      "notes": "Version 22.7 tunes gestures and motion with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap feedback, and consistent workflow animation paths.",
+      "versionCode": 53,
+      "apkUrl": "https://temp.sh/Eehmr/the-top-flow-22.7.apk"
+    },
     {
       "versionName": "22.6",
       "notes": "Version 22.6 rebuilds bottom sheets and menus as premium OLED command panels with stronger handles, command-row menu surfaces, refined style/font/glow sheets, and cleaner update chooser cards.",

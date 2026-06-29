@@ -33,6 +33,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.4 upgrades the editor into a premium Draft Studio surface with editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces while preserving typing and rhyme hot paths.
 - 22.5 adds meaningful bundled font assets: Space Grotesk, Share Tech Mono, and Silkscreen from Google Fonts under OFL, wired into editor rendering and font previews with fallback-safe loading.
 - 22.6 rebuilds bottom sheets and menus as premium OLED command panels with stronger fixed handles/headers, command-row menu surfaces, refined style/font/glow sheets, and cleaner update chooser cards while preserving sheet behavior.
+- 22.7 tunes the gesture and motion system with larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap motion, and consistent workflow animation paths while preserving editor focus guards.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -50,8 +51,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.6 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.7 gesture and motion system.
+22.7 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.8 settings and personalization overhaul.
 
 ## Next Milestone
 
-Next: implement 22.7 gesture and motion system while preserving typing and sheet safety.
+Next: implement 22.8 settings and personalization overhaul while preserving persistence.
