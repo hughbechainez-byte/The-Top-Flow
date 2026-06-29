@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 23.6 dock/gesture fluidity polish with stronger active feedback, stable touch targets, and Pixel-grade transition continuity.
+Implement 23.7 offline rhyme hot-cache asset and loader for faster default common suggestions and functional APK growth.

@@ -244,6 +244,7 @@ public class MainActivity extends ComponentActivity {
     private Button dockRhymeButton;
     private Button dockStyleButton;
     private Button dockSettingsButton;
+    private LinearLayout studioDock;
     private int activeDockState = DOCK_STATE_NONE;
     private LinearLayout noteList;
     private LinearLayout editor;
@@ -744,6 +745,7 @@ public class MainActivity extends ComponentActivity {
         sheetOverlay = buildSheetOverlay();
         root.addView(sheetOverlay, new FrameLayout.LayoutParams(-1, -1));
         styleActionButtonPalette(C_GREEN);
+        setActiveDockState(DOCK_STATE_NOTES);
         applyInsetsNow();
         animateScreenSwap(menuPanel, 1f);
     }
@@ -757,16 +759,20 @@ public class MainActivity extends ComponentActivity {
 
     private LinearLayout buildStudioDock() {
         LinearLayout dock = new LinearLayout(this);
+        studioDock = dock;
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
-        dock.setPadding(dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_xs));
-        dock.setBackgroundResource(R.drawable.bg21_bottom_dock);
-        TopFlowUiKit.applyFloating(dock, 10);
+        dock.setPadding(dimen(R.dimen.topflow_space_sm), dp(7), dimen(R.dimen.topflow_space_sm), dp(7));
+        dock.setMinimumHeight(dp(66));
+        dock.setBackground(dockSurfaceDrawable(dockAccent()));
+        TopFlowUiKit.applyFloating(dock, DOCK_STATE_ELEVATION_DP);
         Button notes = button("Notes");
         dockNotesButton = notes;
+        styleDockButton(notes);
         notes.setOnClickListener(v -> showMenuScreen());
         Button rhymes = button("Rhyme");
         dockRhymeButton = rhymes;
+        styleDockButton(rhymes);
         rhymes.setOnClickListener(v -> {
             if (current == null) {
                 Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
@@ -776,6 +782,7 @@ public class MainActivity extends ComponentActivity {
         });
         Button style = button("Style");
         dockStyleButton = style;
+        styleDockButton(style);
         style.setOnClickListener(v -> {
             if (current == null) {
                 Toast.makeText(this, "Open a note first", Toast.LENGTH_SHORT).show();
@@ -785,11 +792,13 @@ public class MainActivity extends ComponentActivity {
         });
         Button settings = button("Tune");
         dockSettingsButton = settings;
+        styleDockButton(settings);
         settings.setOnClickListener(v -> showRhymeSettingsMenu());
         dock.addView(notes, dockButtonLp(0));
         dock.addView(rhymes, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
         dock.addView(style, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
         dock.addView(settings, dockButtonLp(dimen(R.dimen.topflow_space_xs)));
+        refreshDockVisuals();
         return dock;
     }
 
@@ -840,9 +849,58 @@ public class MainActivity extends ComponentActivity {
     }
 
     private LinearLayout.LayoutParams dockButtonLp(int leftMargin) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(52), 1);
         lp.leftMargin = leftMargin;
         return lp;
+    }
+
+    private int dockAccent() {
+        return current != null ? current.accentColor : C_CYAN;
+    }
+
+    private void styleDockButton(Button button) {
+        if (button == null) return;
+        button.setGravity(Gravity.CENTER);
+        button.setMinHeight(dp(52));
+        button.setMinimumHeight(dp(52));
+        button.setMinWidth(0);
+        button.setMinimumWidth(0);
+        button.setMaxLines(1);
+        button.setSingleLine(true);
+        button.setHorizontallyScrolling(false);
+        button.setEllipsize(TextUtils.TruncateAt.END);
+        button.setIncludeFontPadding(false);
+        button.setLetterSpacing(0f);
+        button.setPadding(dp(6), dp(5), dp(6), dp(5));
+        button.setCompoundDrawablePadding(dp(4));
+        button.setStateListAnimator(null);
+        applyDockButtonVisual(button, false);
+    }
+
+    private void refreshDockVisuals() {
+        if (studioDock != null) {
+            studioDock.setBackground(dockSurfaceDrawable(dockAccent()));
+        }
+        applyDockButtonVisual(dockNotesButton, activeDockState == DOCK_STATE_NOTES);
+        applyDockButtonVisual(dockRhymeButton, activeDockState == DOCK_STATE_RHYME);
+        applyDockButtonVisual(dockStyleButton, activeDockState == DOCK_STATE_STYLE);
+        applyDockButtonVisual(dockSettingsButton, activeDockState == DOCK_STATE_SETTINGS);
+    }
+
+    private void applyDockButtonVisual(Button button, boolean active) {
+        if (button == null) return;
+        int accent = dockAccent();
+        button.setBackground(dockButtonSurface(accent, active));
+        button.setTextColor(active ? TopFlowUiKit.TEXT : TopFlowUiKit.TEXT_SOFT);
+        button.setTypeface(android.graphics.Typeface.create("sans-serif-medium", active ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
+        button.setForeground(TopFlowUiKit.ripple(accent));
+        TopFlowUiKit.applyFloating(button, active ? DOCK_STATE_ELEVATION_DP : 3);
+        if (Build.VERSION.SDK_INT >= 28) {
+            int shadow = active ? Color.argb(150, Color.red(accent), Color.green(accent), Color.blue(accent)) : Color.BLACK;
+            button.setOutlineAmbientShadowColor(shadow);
+            button.setOutlineSpotShadowColor(shadow);
+        }
+        applyButtonIcon(button, button.getText() == null ? "" : button.getText().toString());
     }
 
     private void showStartupSplash() {
@@ -1741,16 +1799,9 @@ public class MainActivity extends ComponentActivity {
 
     private View createSwipeRail(boolean rightAligned) {
         View rail = new View(this);
-        GradientDrawable glow = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{
-                        TopFlowUiKit.MINT,
-                        Color.argb(150, Color.red(C_CYAN), Color.green(C_CYAN), Color.blue(C_CYAN)),
-                        C_CYAN
-                });
-        glow.setCornerRadius(dp(2));
-        rail.setBackground(glow);
+        rail.setBackground(swipeRailDrawable(dockAccent()));
         rail.setAlpha(0f);
+        rail.setScaleX(0.72f);
         rail.setScaleY(0.15f);
         rail.setVisibility(View.GONE);
         rail.setRotationY(rightAligned ? 180f : 0f);
@@ -1767,7 +1818,8 @@ public class MainActivity extends ComponentActivity {
             return;
         }
         rail.setVisibility(View.VISIBLE);
-        rail.setAlpha(0.2f + (0.8f * clamped));
+        rail.setAlpha(0.18f + (0.72f * clamped));
+        rail.setScaleX(0.72f + (0.28f * clamped));
         rail.setScaleY(Math.max(0.15f, clamped));
     }
 
@@ -1776,6 +1828,7 @@ public class MainActivity extends ComponentActivity {
         rail.animate().cancel();
         rail.setVisibility(View.GONE);
         rail.setAlpha(0f);
+        rail.setScaleX(0.72f);
         rail.setScaleY(0.15f);
     }
 
@@ -1807,8 +1860,15 @@ public class MainActivity extends ComponentActivity {
         bodyInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, current.fontSizeSp);
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
+        refreshDockVisuals();
         if (editorSignalRail != null) {
             editorSignalRail.setBackground(commandRailDrawable(current.accentColor));
+        }
+        if (editorSwipeRail != null) {
+            editorSwipeRail.setBackground(swipeRailDrawable(current.accentColor));
+        }
+        if (notesSwipeRail != null) {
+            notesSwipeRail.setBackground(swipeRailDrawable(current.accentColor));
         }
         if (editorHeaderTitle != null) {
             editorHeaderTitle.setText(noteTitleForDisplay(current));
@@ -4621,6 +4681,30 @@ public class MainActivity extends ComponentActivity {
         return d;
     }
 
+    private Drawable dockSurfaceDrawable(int accent) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.BLACK);
+        d.setCornerRadius(dp(22));
+        d.setStroke(dp(1), Color.argb(92, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable dockButtonSurface(int accent, boolean active) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.BLACK);
+        d.setCornerRadius(dp(16));
+        int alpha = active ? 190 : 64;
+        d.setStroke(active ? dp(2) : dp(1), Color.argb(alpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable swipeRailDrawable(int accent) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.argb(218, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        d.setCornerRadius(dp(999));
+        return d;
+    }
+
     private Drawable sheetHandleDrawable(int accent) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(Color.argb(188, Color.red(accent), Color.green(accent), Color.blue(accent)));
@@ -4817,6 +4901,7 @@ public class MainActivity extends ComponentActivity {
     private void applyDockButtonState(Button button, boolean active) {
         if (button == null) return;
         button.animate().cancel();
+        applyDockButtonVisual(button, active);
         withWorkflowMotion(button)
                 .alpha(active ? MOTION_DOCK_ACTIVE_ALPHA : MOTION_DOCK_INACTIVE_ALPHA)
                 .scaleX(active ? MOTION_DOCK_ACTIVE_SCALE : MOTION_DOCK_INACTIVE_SCALE)

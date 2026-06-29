@@ -143,26 +143,26 @@ Review:
 ### 23.6
 
 Purpose:
-Add a real local visual asset/render layer that justifies APK growth.
+Dock and gesture fluidity polish.
 
 Implementation:
-- Add a local neon/glow asset atlas or animation runtime only if used in shipped UI.
-- Use it for shell/sheet/editor active glow, not as a decorative background.
-- Keep assets black/OLED compatible.
+- Polish bottom dock active states as one stable high-refresh control system.
+- Refresh swipe rail visuals to match the pure-black neon language.
+- Keep panel/dock state transitions on the existing shared motion helpers.
 
 Review:
-- APK size increases for visible assets/systems.
-- Assets render crisp and do not create grainy background texture.
+- Gesture thresholds and start rules remain unchanged.
+- Dock controls keep fixed dimensions and do not jump.
 
 ### 23.7
 
 Purpose:
-Offline rhyme preload speed and shipped data improvement.
+Offline rhyme preload speed, shipped data improvement, and functional APK growth.
 
 Implementation:
-- Add a meaningful precomputed lookup/cache asset if it reduces startup/query work.
-- Keep scoring behavior stable unless tests are updated deliberately.
-- Avoid blocking UI thread.
+- Add a meaningful precomputed lookup/cache asset that reduces common default fast-suggestion work.
+- Keep scoring behavior stable and fall back to the existing scorer whenever settings differ.
+- Configure release packaging so the shipped data meaningfully increases APK size without useless filler.
 
 Review:
 - Rhyme quality checks pass.
@@ -172,16 +172,16 @@ Review:
 ### 23.8
 
 Purpose:
-Local testing foundation without requiring Dave's Pixel.
+Local visual asset/render layer or UI runtime polish that justifies additional shipped size if still needed.
 
 Implementation:
-- Add Gradle managed device or emulator test docs/config if SDK components are available.
-- Add screenshot/performance test plan using Macrobenchmark, Baseline Profiles, JankStats, Roborazzi/Paparazzi decision notes.
-- Do not run device/emulator tests in this milestone per Dave's instruction; document exact local path in final report.
+- Add local neon/glow assets or a lightweight runtime only if used in shipped UI.
+- Use assets for shell/sheet/editor active glow or crisp UI emphasis, not as a decorative background.
+- Keep assets black/OLED compatible.
 
 Review:
-- Does not affect release behavior.
-- Final report includes how to run crash, visual, and jank testing locally later.
+- APK growth is from visible assets/systems.
+- Assets render crisp and do not create grainy background texture.
 
 ### 23.9
 

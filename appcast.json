@@ -1,9 +1,15 @@
 {
-  "versionName": "23.5",
-  "notes": "Version 23.5 unifies editor and rhyme surfaces with pure-black active-session chrome, black media/editor panels, sharper rhyme chips, and focused expanded-rhyme context.",
-  "versionCode": 61,
-  "apkUrl": "https://temp.sh/kPNNb/the-top-flow-23.5.apk",
+  "versionName": "23.6",
+  "notes": "Version 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger neon active feedback, accent-aware icons/strokes, and refreshed swipe rails.",
+  "versionCode": 62,
+  "apkUrl": "https://temp.sh/YbCuZ/the-top-flow-23.6.apk",
   "versions": [
+    {
+      "versionName": "23.6",
+      "notes": "Version 23.6 polishes dock and gesture visuals with a fixed-height pure-black bottom dock, stronger neon active feedback, accent-aware icons/strokes, and refreshed swipe rails.",
+      "versionCode": 62,
+      "apkUrl": "https://temp.sh/YbCuZ/the-top-flow-23.6.apk"
+    },
     {
       "versionName": "23.5",
       "notes": "Version 23.5 unifies editor and rhyme surfaces with pure-black active-session chrome, black media/editor panels, sharper rhyme chips, and focused expanded-rhyme context.",
