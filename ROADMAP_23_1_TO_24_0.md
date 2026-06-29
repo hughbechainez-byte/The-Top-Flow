@@ -113,6 +113,21 @@ Review:
 ### 23.4
 
 Purpose:
+Notes home makeover on the pure-black system.
+
+Implementation:
+- More distinctive black/neon session list.
+- Better active note treatment.
+- Smoother Notes-to-Editor continuity.
+
+Review:
+- Create/open note behavior unchanged.
+- Large note lists avoid heavy rebuild animations.
+- Long titles/previews stay stable and ellipsized.
+
+### 23.5
+
+Purpose:
 Editor motion and text fidelity pass.
 
 Implementation:
@@ -124,20 +139,6 @@ Review:
 - Long-note typing must remain safe.
 - No full-body scans on every keystroke.
 - Editor text stays crisp with letter spacing 0.
-
-### 23.5
-
-Purpose:
-Notes home makeover on the pure-black system.
-
-Implementation:
-- More distinctive black/neon session list.
-- Better active note treatment.
-- Smoother Notes-to-Editor choreography.
-
-Review:
-- Create/open note behavior unchanged.
-- Large note lists avoid heavy rebuild animations.
 
 ### 23.6
 

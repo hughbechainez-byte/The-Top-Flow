@@ -40,6 +40,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 23.1 makes the Compose backdrop lifecycle-safe by moving `MainActivity` to `ComponentActivity`, explicitly attaching view-tree owners to manual hosts, using lifecycle-based Compose disposal, and removing the blue radar/grid/waveform backdrop so the root returns to pure OLED black.
 - 23.2 adds a shared motion foundation by centralizing tap, selection, panel, sheet, dock, swipe, and startup timing constants behind one eased workflow animator. It slows major transitions toward the Pixel-style visual direction while preserving quick tap response and existing gesture thresholds.
 - 23.3 rebuilds modal/menu surfaces around pure-black OLED command panels, accent rails, thin neon separators, current-session context, and a darker black scrim across Main Menu, update chooser, settings rows, font/style rows, and rhyme settings controls.
+- 23.4 rebuilds the Notes dashboard around the same pure-black OLED command language with a current-session header, flatter note cards, fixed signal slots, thin accent rails, and stable long-title/preview ellipsizing.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -58,8 +59,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-23.3 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.4 Notes home high-fidelity surface pass.
+23.4 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is the 23.5 editor high-fidelity surface pass.
 
 ## Next Milestone
 
-Next: implement 23.4 Notes home high-fidelity surface polish with pure-black card composition, crisp typography, and stronger recent-session hierarchy.
+Next: implement 23.5 editor high-fidelity surface polish with pure-black chrome, stronger active writing context, and safer smooth transitions around rhyme suggestions.

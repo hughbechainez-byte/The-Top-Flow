@@ -1,9 +1,15 @@
 {
-  "versionName": "23.3",
-  "notes": "Version 23.3 rebuilds modal and menu surfaces around pure-black OLED command panels, current-session context, accent rails, thin neon separators, and a darker black scrim.",
-  "versionCode": 59,
-  "apkUrl": "https://temp.sh/nDtdu/the-top-flow-23.3.apk",
+  "versionName": "23.4",
+  "notes": "Version 23.4 sharpens the Notes dashboard with pure-black current-session chrome, flatter note cards, fixed signal slots, thin accent rails, and safer long-title handling.",
+  "versionCode": 60,
+  "apkUrl": "https://temp.sh/kfrPv/the-top-flow-23.4.apk",
   "versions": [
+    {
+      "versionName": "23.4",
+      "notes": "Version 23.4 sharpens the Notes dashboard with pure-black current-session chrome, flatter note cards, fixed signal slots, thin accent rails, and safer long-title handling.",
+      "versionCode": 60,
+      "apkUrl": "https://temp.sh/kfrPv/the-top-flow-23.4.apk"
+    },
     {
       "versionName": "23.3",
       "notes": "Version 23.3 rebuilds modal and menu surfaces around pure-black OLED command panels, current-session context, accent rails, thin neon separators, and a darker black scrim.",

@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 23.4 with a sharper pure-black Notes dashboard, current-session header continuity, flatter note cards, fixed signal slots, thin accent rails, and safer long-title/preview handling.
 - Released 23.3 with pure-black OLED menu and modal surfaces, crisper command rows, current-session context in the Main Menu, unified update/settings sheet styling, and a darker black modal scrim.
 - Released 23.2 with a shared motion foundation: centralized timing/easing constants, smoother panel/sheet/dock/swipe/startup transitions, and quick tap feedback preserved for responsiveness.
 - Released 23.1 with the Compose lifecycle host fix retained and the blue radar/grid/waveform backdrop removed, returning the app to a pure OLED black foundation behind active neon UI surfaces.

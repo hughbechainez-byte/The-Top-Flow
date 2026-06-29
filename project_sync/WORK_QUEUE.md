@@ -2,7 +2,7 @@
 
 ## High
 
-- 23.4 Notes home high-fidelity surface polish
+- 23.5 editor high-fidelity surface polish
   - Complexity: Medium
   - Recommended model: GPT-5.3 implementation with GPT-5.5 review
   - Recommended reasoning level: Medium
