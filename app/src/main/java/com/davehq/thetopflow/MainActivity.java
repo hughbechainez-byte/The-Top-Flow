@@ -255,6 +255,7 @@ public class MainActivity extends Activity {
     private PopupWindow suggestionPopup;
     private FrameLayout splashOverlay;
     private TextView splashStatus;
+    private TextView splashProgressLabel;
     private View splashFill;
     private Button stopRecordingButton;
     private SeekBar songSeek;
@@ -748,33 +749,72 @@ public class MainActivity extends Activity {
         splashOverlay.setClickable(true);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(dp(28), dp(28), dp(28), dp(28));
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.setPadding(dp(24), dp(22), dp(24), dp(24));
+
+        View signalRail = buildSplashSignalRail();
+        box.addView(signalRail, new LinearLayout.LayoutParams(-1, -2));
+
         TextView intro = new TextView(this);
-        intro.setText("Owens, Betcha, & Ondewey Technologies present...");
-        intro.setTextColor(C_TEXT);
-        intro.setTextSize(16);
+        intro.setText("THE TOP FLOW");
+        intro.setTextColor(TopFlowUiKit.TEXT);
+        intro.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36);
+        intro.setTypeface(android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD));
         intro.setGravity(Gravity.CENTER);
-        intro.setShadowLayer(8f, 0f, 0f, C_CYAN);
+        intro.setLetterSpacing(0f);
+        intro.setIncludeFontPadding(false);
+        intro.setSingleLine(true);
+        intro.setEllipsize(TextUtils.TruncateAt.END);
+        intro.setPadding(0, dp(14), 0, dp(8));
         box.addView(intro, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Offline rhyme studio");
+        subtitle.setTextColor(C_TEXT_MUTED);
+        subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        subtitle.setGravity(Gravity.CENTER);
+        subtitle.setIncludeFontPadding(false);
+        subtitle.setSingleLine(true);
+        subtitle.setEllipsize(TextUtils.TruncateAt.END);
+        box.addView(subtitle, new LinearLayout.LayoutParams(-1, -2));
+
         splashStatus = new TextView(this);
-        splashStatus.setText("Preloading rhyme engine");
-        splashStatus.setTextColor(C_TEXT_MUTED);
-        splashStatus.setTextSize(13);
+        splashStatus.setText(formatSplashStatus("Loading rhyme index"));
+        splashStatus.setTextColor(C_TEXT);
+        splashStatus.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        splashStatus.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         splashStatus.setGravity(Gravity.CENTER);
-        splashStatus.setPadding(0, dp(10), 0, 0);
+        splashStatus.setPadding(0, dp(18), 0, dp(8));
+        splashStatus.setIncludeFontPadding(false);
+        splashStatus.setMaxLines(1);
+        splashStatus.setEllipsize(TextUtils.TruncateAt.END);
         box.addView(splashStatus, new LinearLayout.LayoutParams(-1, -2));
+
+        View signalRow = buildSplashStatusRail();
+        box.addView(signalRow);
+
         FrameLayout track = new FrameLayout(this);
-        track.setBackground(glassDrawable(Color.argb(160, 4, 8, 12), C_CYAN, 6));
+        track.setBackground(trackForSplash());
+        track.setPadding(dp(1), dp(1), dp(1), dp(1));
         LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(-1, dp(12));
         trackLp.topMargin = dp(18);
+        trackLp.bottomMargin = dp(6);
         box.addView(track, trackLp);
         View fill = new View(this);
         splashFill = fill;
-        fill.setBackground(glassDrawable(C_CYAN, C_GREEN, 6));
+        fill.setBackground(splashFillDrawable());
         fill.setPivotX(0f);
         fill.setScaleX(0f);
         track.addView(fill, new FrameLayout.LayoutParams(-1, -1));
+
+        splashProgressLabel = metadataLabel("Initializing");
+        splashProgressLabel.setSingleLine(true);
+        splashProgressLabel.setEllipsize(TextUtils.TruncateAt.END);
+        splashProgressLabel.setGravity(Gravity.END);
+        splashProgressLabel.setPadding(0, 0, dp(2), 0);
+        box.addView(splashProgressLabel, new LinearLayout.LayoutParams(-1, -2));
+
+        updateSplashProgressLabel();
         FrameLayout.LayoutParams boxLp = new FrameLayout.LayoutParams(-1, -2, Gravity.CENTER);
         boxLp.leftMargin = dp(24);
         boxLp.rightMargin = dp(24);
@@ -790,10 +830,11 @@ public class MainActivity extends Activity {
             editHandler.post(() -> updateSplashStatus(status));
             return;
         }
-        if (splashStatus != null) splashStatus.setText(status);
+        if (splashStatus != null) splashStatus.setText(formatSplashStatus(status));
         if (splashFill != null && "Rhyme engine ready".equals(status)) {
             splashFill.animate().scaleX(1f).setDuration(180).start();
         }
+        updateSplashProgressLabel();
     }
 
     private void maybeFinishStartupSplash(boolean force) {
@@ -810,8 +851,107 @@ public class MainActivity extends Activity {
             if (root != null && splashOverlay != null) root.removeView(splashOverlay);
             splashOverlay = null;
             splashStatus = null;
+            splashProgressLabel = null;
             splashFill = null;
         }).start();
+    }
+
+    private View buildSplashSignalRail() {
+        LinearLayout rail = new LinearLayout(this);
+        rail.setOrientation(LinearLayout.HORIZONTAL);
+        rail.setGravity(Gravity.CENTER);
+        rail.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        for (int i = 0; i < 7; i++) {
+            View node = new View(this);
+            int alpha = i % 2 == 0 ? 210 : 120;
+            node.setBackground(topflowDimLine(Color.argb(alpha, 90, 215, 255)));
+            int h = i == 3 ? dp(46) : dp(16 + (i % 3) * 4);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, h, 1f);
+            lp.rightMargin = i == 6 ? 0 : dp(4);
+            node.setLayoutParams(lp);
+            rail.addView(node);
+        }
+        rail.setPadding(0, dp(2), 0, dp(8));
+        return rail;
+    }
+
+    private View buildSplashStatusRail() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(0, 0, 0, dp(8));
+        for (int i = 0; i < 3; i++) {
+            View segment = new View(this);
+            segment.setBackground(topflowDimLine(i == 0 ? C_CYAN : C_TEXT_MUTED));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(3), 1f);
+            lp.rightMargin = i == 2 ? 0 : dp(10);
+            segment.setLayoutParams(lp);
+            bar.addView(segment);
+        }
+        return bar;
+    }
+
+    private Drawable trackForSplash() {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{
+                        Color.argb(64, 20, 24, 36),
+                        Color.argb(120, 24, 32, 46),
+                        Color.argb(64, 20, 24, 36)
+                }
+        );
+        d.setCornerRadius(dp(10));
+        d.setStroke(dp(1), Color.argb(124, Color.red(C_CYAN), Color.green(C_CYAN), Color.blue(C_CYAN)));
+        return d;
+    }
+
+    private Drawable splashFillDrawable() {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{
+                        Color.argb(240, Math.max(0, Color.red(C_CYAN) - 12), Math.max(0, Color.green(C_CYAN) - 12), Math.max(0, Color.blue(C_CYAN) - 8)),
+                        C_CYAN,
+                        Color.argb(240, Math.max(0, Color.red(C_GREEN) + 12), Math.max(0, Color.green(C_GREEN) + 5), Math.max(0, Color.blue(C_GREEN) + 2))
+                }
+        );
+        d.setCornerRadius(dp(8));
+        return d;
+    }
+
+    private String formatSplashStatus(String status) {
+        if ("Loading rhyme index".equals(status)) return "Loading index";
+        if ("Warming common rhymes".equals(status)) return "Warming cache";
+        if ("Rhyme engine ready".equals(status)) return "Ready";
+        return status;
+    }
+
+    private void updateSplashProgressLabel() {
+        if (splashProgressLabel == null) return;
+        if (splashStatus == null) {
+            splashProgressLabel.setText("Loading");
+            return;
+        }
+        String text = splashStatus.getText().toString();
+        if (text == null || text.isEmpty()) {
+            splashProgressLabel.setText("Loading");
+            return;
+        }
+        if (text.contains("index")) {
+            splashProgressLabel.setText("Index");
+        } else if (text.contains("cache")) {
+            splashProgressLabel.setText("Cache");
+        } else if (text.contains("Ready")) {
+            splashProgressLabel.setText("Ready");
+        } else {
+            splashProgressLabel.setText("Starting");
+        }
+    }
+
+    private Drawable topflowDimLine(int color) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.argb(140, Color.red(color), Color.green(color), Color.blue(color)));
+        d.setCornerRadius(dp(999));
+        return d;
     }
 
     private void renderNoteList() {

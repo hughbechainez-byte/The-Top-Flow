@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 22.9 with a premium OLED launch/preload surface, crisp startup signal rails, refined status/progress treatment, and review fixes that removed fake percentage labels while preserving preload behavior.
 - Released 22.8 with preview-first settings and personalization sheets, richer color/font/glow controls, live preview surfaces, refined rhyme-setting cards, and review fixes for preview contrast and card spacing.
 - Released 22.7 with tuned gesture thresholds, larger edge hitboxes, shared swipe completion helpers, faster sheet/dock/tap motion, and consistent workflow animation paths while preserving input safety.
 - Released 22.6 with premium OLED sheet chrome, stronger fixed handles/headers, command-row menu surfaces, refined style/font/glow sheets, and cleaner update chooser cards while preserving sheet behavior.

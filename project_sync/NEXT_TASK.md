@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 22.9 splash, preload, and visual identity overhaul. Preserve startup reliability, rhyme preload behavior, note storage, and update behavior.
+Implement 23.0 final flagship polish and acceptance. Preserve note storage, rhyme behavior, media, gestures, update behavior, and the multi-version release line.

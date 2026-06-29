@@ -34,6 +34,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 22.8 upgrades settings and personalization. Style, color, font, font-size, glow, and rhyme settings now use preview-first OLED/neon cards, live preview surfaces, larger touch targets, and clearer current-value treatments. Persistence keys, note style storage, rhyme settings, and update behavior remain unchanged.
 
+22.9 upgrades startup and preload identity. The launch overlay now uses a true-OLED branded surface, crisp signal rails, refined preload status treatment, and the existing progress fill path. Rhyme preload timing, cache warming, status callbacks, startup dismissal, and forced-close behavior remain unchanged.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -45,7 +47,7 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
-Latest verified build: 22.8 / versionCode 54 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+Latest verified build: 22.9 / versionCode 55 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 ## Important Files
 
@@ -67,7 +69,7 @@ Latest verified build: 22.8 / versionCode 54 passed `tools\rhyme_quality_check.p
 
 ## Current Next Task
 
-Implement 22.9 splash, preload, and visual identity overhaul. Preserve startup reliability, rhyme preload behavior, note storage, and update behavior.
+Implement 23.0 final flagship polish, acceptance checks, and final Desktop report. Preserve note storage, rhyme behavior, media, gestures, update behavior, and existing release line compatibility.
 
 ## Assumptions
 
@@ -82,6 +84,7 @@ Implement 22.9 splash, preload, and visual identity overhaul. Preserve startup r
 - Version 22.6 upgrades sheets/menus and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.7 upgrades gesture/motion behavior and should remain in the multi-version appcast list after later 22.x releases.
 - Version 22.8 upgrades settings/personalization and should remain in the multi-version appcast list after later 22.x releases.
+- Version 22.9 upgrades startup/preload visual identity and should remain in the multi-version appcast list after later releases.
 - Version 22.0 APK is temp-hosted at `https://temp.sh/xXCOu/the-top-flow-22.0.apk`; it was not published through JSONBlob/appcast during the 21.6 to 22.0 UI-alpha run.
 - Version 21.5 APK is temp-hosted for validation only at `https://temp.sh/ZIRmO/the-top-flow-21.5.apk`; do not publish it through JSONBlob/appcast until directed.
 - Version 21.4 APK is published at `https://temp.sh/Jawft/the-top-flow-21.4.apk`.
@@ -120,4 +123,5 @@ Implement 22.9 splash, preload, and visual identity overhaul. Preserve startup r
 - 22.7 should centralize and improve gesture/motion behavior without disturbing input hot paths.
 - 22.8 should make settings/personalization feel preview-first while preserving existing option persistence.
 - 22.9 should make startup, preload, and visual identity feel premium without blocking app entry or changing rhyme scoring.
+- 23.0 should perform a cohesive acceptance pass over shell, notes, editor, sheets, settings, startup, typography, gestures, and release records.
 - Release signing and APK artifacts exist locally; avoid touching them unless the task is explicitly about releases.

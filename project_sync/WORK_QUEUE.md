@@ -2,16 +2,11 @@
 
 ## High
 
-- 22.9 splash/preload visual identity
+- 23.0 final flagship polish and acceptance
   - Complexity: Medium
-  - Recommended model: GPT-5.3
+  - Recommended model: GPT-5.5 review with GPT-5.3 targeted implementation
   - Recommended reasoning level: Medium
 
 ## Medium
 
 ## Low
-
-- 23.0 final polish fixes, release report, and acceptance pass
-  - Complexity: Medium
-  - Recommended model: GPT-5.5 final review with GPT-5.3 targeted fixes
-  - Recommended reasoning level: Medium
