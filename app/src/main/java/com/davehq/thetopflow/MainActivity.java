@@ -779,47 +779,74 @@ public class MainActivity extends Activity {
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.HORIZONTAL);
         shell.setGravity(Gravity.CENTER_VERTICAL);
-        shell.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        shell.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
         shell.setBackground(TopFlowUiKit.floatingPanel(this, 22));
         TopFlowUiKit.applyFloating(shell, 8);
 
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
-        TextView title = label("Recent writing sessions");
+        TextView title = label("Session Dashboard");
         title.setTextColor(TopFlowUiKit.TEXT);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.topflow21_text_title));
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setIncludeFontPadding(false);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         left.addView(title);
+
         int noteCount = notes.size();
         String currentTitle = current != null && current.title != null && !current.title.isEmpty() ? current.title : (current == null ? "No note open" : "Untitled");
-        String status = noteCount == 0 ? "No notes yet" : noteCount + (noteCount == 1 ? " note · " : " notes · ") + currentTitle;
-        TextView sub = label(status);
+        TextView sub = label("Recent sessions · " + noteCount + (noteCount == 1 ? " session · " : " sessions · ") + "Active: " + currentTitle);
         sub.setTextColor(TopFlowUiKit.TEXT_SOFT);
         sub.setIncludeFontPadding(false);
         sub.setMaxLines(1);
         sub.setEllipsize(TextUtils.TruncateAt.END);
+        sub.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         left.addView(sub);
+
         if (current != null) {
-            String openTitle = current.title == null || current.title.isEmpty() ? "Untitled" : current.title;
-            TextView session = new TextView(this);
-            session.setText("Open · " + openTitle);
-            textStyle(session, R.style.TextAppearance_TopFlow21_Caption);
-            session.setBackgroundResource(R.drawable.bg_chip);
-            session.setTextColor(TopFlowUiKit.TEXT);
-            session.setIncludeFontPadding(false);
-            session.setLetterSpacing(0f);
-            session.setSingleLine(true);
-            session.setEllipsize(TextUtils.TruncateAt.END);
-            session.setMaxLines(1);
-            session.setMaxWidth(dp(260));
-            session.setPadding(dp(10), dp(4), dp(10), dp(4));
-            LinearLayout.LayoutParams sessionLp = new LinearLayout.LayoutParams(-2, -2);
-            sessionLp.topMargin = dp(6);
-            left.addView(session, sessionLp);
+            TextView openTag = new TextView(this);
+            openTag.setText("Open session");
+            openTag.setTextColor(TopFlowUiKit.MINT);
+            openTag.setTextSize(10);
+            openTag.setPadding(dp(8), dp(3), dp(8), dp(3));
+            openTag.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            openTag.setBackgroundResource(R.drawable.bg_chip);
+            openTag.setSingleLine(true);
+            openTag.setEllipsize(TextUtils.TruncateAt.END);
+            openTag.setIncludeFontPadding(false);
+            openTag.setMaxWidth(dp(220));
+            LinearLayout.LayoutParams tagLp = new LinearLayout.LayoutParams(-2, -2);
+            tagLp.topMargin = dp(6);
+            left.addView(openTag, tagLp);
         }
+
+        View signal = buildSessionMiniSignal(current != null ? current.accentColor : C_CYAN, 18, true);
+        if (signal != null) {
+            left.addView(signal);
+        }
+
+        LinearLayout statusPillWrap = new LinearLayout(this);
+        statusPillWrap.setOrientation(LinearLayout.HORIZONTAL);
+        statusPillWrap.setGravity(Gravity.END);
+        statusPillWrap.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        statusPillWrap.setPadding(0, dp(6), 0, 0);
+
+        TextView pulse = new TextView(this);
+        pulse.setText("Local");
+        pulse.setTextColor(TopFlowUiKit.MINT);
+        pulse.setTextSize(10);
+        pulse.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        pulse.setBackgroundResource(R.drawable.bg_chip);
+        pulse.setIncludeFontPadding(false);
+        pulse.setLetterSpacing(0f);
+        pulse.setPadding(dp(7), dp(3), dp(7), dp(3));
+        statusPillWrap.addView(pulse);
+        left.addView(statusPillWrap);
+
         shell.addView(left);
+
         Button add = button("+ Note");
         add.setOnClickListener(v -> {
             Note n = Note.create("Untitled");
@@ -832,7 +859,8 @@ public class MainActivity extends Activity {
         add.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
         add.setMinHeight(dp(46));
         add.setLetterSpacing(0f);
-        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(dp(120), -2);
+        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(dp(128), -2);
+        addLp.leftMargin = dp(8);
         shell.addView(add, addLp);
         return shell;
     }
@@ -933,52 +961,104 @@ public class MainActivity extends Activity {
         empty.setGravity(Gravity.CENTER_VERTICAL);
         empty.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
         empty.setBackground(TopFlowUiKit.floatingPanel(this, 22));
+        TopFlowUiKit.applyFloating(empty, 8);
+        empty.setBackground(glassDrawable(TopFlowUiKit.OLED, C_CYAN, 22));
+
         TextView title = label("No notes yet");
         textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setIncludeFontPadding(false);
         TextView body = label("No saved sessions");
         textStyle(body, R.style.TextAppearance_TopFlow21_Caption);
-        body.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
-        body.setSingleLine(true);
+        body.setPadding(0, dimen(R.dimen.topflow_space_md), 0, 0);
+        body.setSingleLine(false);
         body.setEllipsize(TextUtils.TruncateAt.END);
+        body.setMaxLines(2);
+        body.setLineSpacing(0f, 0.95f);
+        body.setIncludeFontPadding(false);
         empty.addView(title);
         empty.addView(body);
+
+        LinearLayout footer = new LinearLayout(this);
+        footer.setOrientation(LinearLayout.HORIZONTAL);
+        footer.setGravity(Gravity.CENTER_VERTICAL);
+        footer.setPadding(0, dimen(R.dimen.topflow_space_md), 0, 0);
+        TextView label = label("Session signal");
+        label.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        label.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        label.setTextSize(12);
+        label.setIncludeFontPadding(false);
+        footer.addView(label);
+        footer.addView(buildSessionMiniSignal(C_CYAN, 12, true));
+        empty.addView(footer);
         return empty;
     }
 
     private View buildNoteRow(Note note, boolean selected) {
+        int accent = note == null ? C_CYAN : note.accentColor;
+        String titleText = note == null || note.title == null || note.title.isEmpty() ? "Untitled" : note.title;
+        String previewText = compactPreview(note == null ? null : note.body);
+        String metaText = noteMetadataLine(note);
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
         row.setMinimumHeight(dp(68));
         row.setBackground(noteRowBackground(note, selected));
         TopFlowUiKit.applyFloating(row, selected ? DOCK_STATE_ELEVATION_DP : 6);
-        row.setForeground(TopFlowUiKit.ripple(note.accentColor));
+        row.setForeground(TopFlowUiKit.ripple(accent));
         row.setClickable(true);
         row.setFocusable(true);
         attachTapAnimation(row);
 
         View edge = new View(this);
-        edge.setBackgroundColor(selected ? TopFlowUiKit.MINT : note.accentColor);
-        LinearLayout.LayoutParams edgeLp = new LinearLayout.LayoutParams(selected ? dp(6) : dp(4), -1);
-        edgeLp.rightMargin = dp(12);
+        edge.setBackgroundColor(selected ? TopFlowUiKit.MINT : accent);
+        edge.setAlpha(selected ? 1f : 0.96f);
+        int railHeight = dp(selected ? 8 : 6);
+        LinearLayout.LayoutParams edgeLp = new LinearLayout.LayoutParams(selected ? dp(8) : dp(5), -1);
+        edgeLp.rightMargin = dp(10);
+        edgeLp.topMargin = railHeight;
+        edgeLp.bottomMargin = railHeight;
         row.addView(edge, edgeLp);
 
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = new TextView(this);
-        title.setText(note.title == null || note.title.isEmpty() ? "Untitled" : note.title);
-        title.setTextColor(selected ? TopFlowUiKit.MINT : note.textColor);
+        title.setText(titleText);
+        title.setTextColor(selected ? TopFlowUiKit.MINT : (note == null ? TopFlowUiKit.TEXT : note.textColor));
         textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         title.setIncludeFontPadding(false);
         title.setLetterSpacing(0f);
         title.setMaxLines(1);
         title.setEllipsize(TextUtils.TruncateAt.END);
+
+        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+
+        if (selected) {
+            TextView currentTag = new TextView(this);
+            currentTag.setText("Current");
+            currentTag.setTextColor(TopFlowUiKit.MINT);
+            currentTag.setTextSize(10);
+            currentTag.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            currentTag.setBackgroundResource(R.drawable.bg_chip);
+            currentTag.setPadding(dp(8), dp(3), dp(8), dp(3));
+            currentTag.setIncludeFontPadding(false);
+            LinearLayout.LayoutParams tagLp = new LinearLayout.LayoutParams(-2, -2);
+            tagLp.leftMargin = dp(8);
+            top.addView(currentTag, tagLp);
+        }
+
+        box.addView(top);
+
         TextView preview = new TextView(this);
-        preview.setText(compactPreview(note.body));
+        preview.setText(previewText);
         textStyle(preview, R.style.TextAppearance_TopFlow21_Caption);
         preview.setIncludeFontPadding(false);
         preview.setLetterSpacing(0f);
@@ -986,22 +1066,65 @@ public class MainActivity extends Activity {
         preview.setEllipsize(TextUtils.TruncateAt.END);
         preview.setMaxLines(1);
         preview.setPadding(0, dp(3), 0, 0);
+
         TextView meta = new TextView(this);
         textStyle(meta, R.style.TextAppearance_TopFlow21_Caption);
-        meta.setText(noteMetadataLine(note));
+        meta.setText(metaText);
         meta.setTextColor(TopFlowUiKit.TEXT_SOFT);
         meta.setIncludeFontPadding(false);
         meta.setLetterSpacing(0f);
         meta.setMaxLines(1);
         meta.setEllipsize(TextUtils.TruncateAt.END);
         meta.setPadding(0, dp(2), 0, 0);
-        box.addView(title);
-        box.addView(meta);
         box.addView(preview);
+        box.addView(meta);
         row.addView(box);
+
+        View signal = buildSessionMiniSignal(accent, 8, false);
+        if (signal != null) {
+            LinearLayout.LayoutParams signalLp = new LinearLayout.LayoutParams(dp(28), dp(32));
+            signalLp.leftMargin = dp(10);
+            row.addView(signal, signalLp);
+        }
 
         row.setOnClickListener(v -> openNote(note));
         return row;
+    }
+
+    private View buildSessionMiniSignal(int accent, int barCount, boolean compact) {
+        LinearLayout bars = new LinearLayout(this);
+        bars.setOrientation(LinearLayout.HORIZONTAL);
+        bars.setGravity(Gravity.BOTTOM | Gravity.END);
+        bars.setLayoutParams(new LinearLayout.LayoutParams(-2, compact ? dp(30) : dp(42)));
+        bars.setPadding(0, 0, 0, 0);
+
+        int count = Math.max(5, Math.min(compact ? 18 : 12, barCount));
+        int minHeight = compact ? 4 : 6;
+        int maxExtra = compact ? 6 : 11;
+        int barWidth = compact ? 3 : 3;
+        int gap = compact ? 2 : 2;
+
+        for (int i = 0; i < count; i++) {
+            View bar = new View(this);
+            int jitter = Math.floorMod(accent * (i + 1) + 57 * (i + 3), maxExtra + 1);
+            int h = minHeight + jitter;
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(barWidth), dp(h));
+            if (i > 0) lp.leftMargin = dp(gap);
+
+            int baseAlpha = compact ? 164 : 208;
+            int fade = Math.max(44, 196 - (i * (compact ? 5 : 8)));
+            int top = blendColor(accent, Color.BLACK, 0.2f);
+            int bottom = Color.argb(Math.max(100, baseAlpha - fade / 2), Color.red(accent), Color.green(accent), Color.blue(accent));
+            GradientDrawable bg = new GradientDrawable(
+                    GradientDrawable.Orientation.BOTTOM_TOP,
+                    new int[]{top, bottom}
+            );
+            bg.setCornerRadius(dp(2));
+            bar.setBackground(bg);
+            bar.setAlpha((compact ? 0.78f : 0.88f));
+            bars.addView(bar, lp);
+        }
+        return bars;
     }
 
     private Drawable noteRowBackground(Note note, boolean selected) {

@@ -2,7 +2,7 @@
 
 ## High
 
-- 22.3 premium Notes home and 22.4 premium editor surface
+- 22.4 premium editor surface
   - Complexity: High
   - Recommended model: GPT-5.3 implementation under GPT-5.5 supervision
   - Recommended reasoning level: Medium

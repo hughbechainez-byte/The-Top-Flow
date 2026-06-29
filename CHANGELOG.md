@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 22.3 with a premium Notes home dashboard, stronger active-session treatment, richer note cards, accent rails, compact metadata/previews, and crisp view-built signal markers.
 - Released 22.2 with a Compose-backed premium OLED studio backdrop mounted behind the existing Java workflows, adding crisp neon rails, waveform marks, and grid details without changing app behavior.
 - Released 22.1 with multi-version update manifest parsing, legacy appcast fallback compatibility, and a premium OLED update chooser sheet for multiple available builds.
 - Released 22.0 with a cleaner OLED Main Menu command surface, compact recent-session previews, deferred menu actions after dismiss motion, and shared workflow animation polish. APK was temp-hosted only; appcast/update manifests were not changed.
