@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 22.6 with premium OLED sheet chrome, stronger fixed handles/headers, command-row menu surfaces, refined style/font/glow sheets, and cleaner update chooser cards while preserving sheet behavior.
 - Released 22.5 with bundled OFL Google Fonts assets for Space Grotesk, Share Tech Mono, and Silkscreen, wired into editor rendering and font previews with fallback-safe loading.
 - Released 22.4 with a premium Draft Studio editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces while preserving input hot paths.
 - Released 22.3 with a premium Notes home dashboard, stronger active-session treatment, richer note cards, accent rails, compact metadata/previews, and crisp view-built signal markers.

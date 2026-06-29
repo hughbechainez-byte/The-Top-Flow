@@ -3260,37 +3260,26 @@ public class MainActivity extends Activity {
     private void showMainMenu() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(0, 0, 0, 0);
-        TextView desc = label("Menu");
-        desc.setTextColor(C_TEXT_MUTED);
+        TextView title = sheetSectionTitle("Main Menu");
+        box.addView(title);
+        TextView desc = label("Session dashboard");
+        desc.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        desc.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, dimen(R.dimen.topflow_space_lg));
         box.addView(desc);
+        TextView recentHeader = sheetSectionTitle("Recent sessions");
+        recentHeader.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        box.addView(recentHeader);
         box.addView(buildRecentSessionPreview());
-        TextView actions = label("Actions");
-        actions.setTextColor(C_TEXT_MUTED);
+        TextView actions = sheetSectionTitle("Actions");
+        actions.setTextColor(TopFlowUiKit.TEXT_SOFT);
         actions.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_xs));
         box.addView(actions);
-        Button notes = button("Notes");
-        notes.setOnClickListener(v -> runAfterMenuDismiss(this::showMenuScreen));
-        box.addView(notes);
-        Button noteStyle = button("Note Style");
-        noteStyle.setOnClickListener(v -> runAfterMenuDismiss(() -> showStyleMenu()));
-        box.addView(noteStyle);
-        Button expandedRhymes = button("Expanded Rhymes");
-        expandedRhymes.setOnClickListener(v -> runAfterMenuDismiss(() -> showExpandedRhymes()));
-        box.addView(expandedRhymes);
-        Button rhymeSettings = button("Rhyme Settings");
-        rhymeSettings.setOnClickListener(v -> runAfterMenuDismiss(() -> showRhymeSettingsMenu()));
-        box.addView(rhymeSettings);
-        Button deleted = button("Deleted Rhymes");
-        deleted.setOnClickListener(v -> runAfterMenuDismiss(() -> showDeletedRhymesMenu()));
-        box.addView(deleted);
-        Button updates = button("Check for updates");
-        updates.setOnClickListener(v -> runAfterMenuDismiss(() -> checkForUpdates(true)));
-        box.addView(updates);
-        TextView updateInfo = label("Installed v" + BuildConfig.VERSION_NAME + ". Updates use the online appcast.");
-        updateInfo.setTextColor(C_TEXT_MUTED);
-        updateInfo.setTextSize(13);
-        box.addView(updateInfo);
+        box.addView(buildSheetMenuRow("Notes", "Session dashboard", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(this::showMenuScreen)));
+        box.addView(buildSheetMenuRow("Note Style", "Palette · fonts · glow", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(this::showStyleMenu)));
+        box.addView(buildSheetMenuRow("Expanded Rhymes", "Focused word", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(() -> showExpandedRhymes())));
+        box.addView(buildSheetMenuRow("Rhyme Settings", "Strictness · row limits", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(() -> showRhymeSettingsMenu())));
+        box.addView(buildSheetMenuRow("Deleted Rhymes", "Removed suggestions", C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(() -> showDeletedRhymesMenu())));
+        box.addView(buildSheetMenuRow("Check for updates", "Installed v" + BuildConfig.VERSION_NAME, C_TEXT_MUTED, C_CYAN, () -> runAfterMenuDismiss(() -> checkForUpdates(true))));
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
@@ -3311,30 +3300,36 @@ public class MainActivity extends Activity {
         setActiveDockState(DOCK_STATE_STYLE);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        String[] names = {"Note Color", "Text Color", "Accent Color", "Font", "Font Size", "Note Glow"};
-        for (int i = 0; i < names.length; i++) {
-            final int target = i;
-            Button b = button(names[i]);
-            b.setOnClickListener(v -> {
-                if (current == null) return;
-                if (target == 3) {
-                    showFontMenu();
-                    return;
-                }
-                if (target == 4) {
-                    showFontSizeMenu();
-                    return;
-                }
-                if (target == 5) {
-                    showGlowMenu();
-                    return;
-                }
-                selectedColorTarget = target;
-                int c = target == 0 ? current.noteColor : target == 1 ? current.textColor : current.accentColor;
-                showColorEditor(c);
-            });
-            box.addView(b);
-        }
+        TextView heading = sheetSectionTitle("Note Style");
+        heading.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        box.addView(heading);
+        box.addView(buildSheetMenuRow("Note Color", "Workspace frame", C_TEXT_MUTED, C_CYAN, () -> {
+            if (current == null) return;
+            selectedColorTarget = 0;
+            showColorEditor(current.noteColor);
+        }));
+        box.addView(buildSheetMenuRow("Text Color", "Lyric text", C_TEXT_MUTED, current != null ? current.accentColor : TopFlowUiKit.MINT, () -> {
+            if (current == null) return;
+            selectedColorTarget = 1;
+            showColorEditor(current.textColor);
+        }));
+        box.addView(buildSheetMenuRow("Accent Color", "Signals · commands", C_TEXT_MUTED, C_CYAN, () -> {
+            if (current == null) return;
+            selectedColorTarget = 2;
+            showColorEditor(current.accentColor);
+        }));
+        box.addView(buildSheetMenuRow("Font", current == null ? "--" : fontLabel(current.font), C_TEXT_MUTED, C_CYAN, () -> {
+            if (current == null) return;
+            showFontMenu();
+        }));
+        box.addView(buildSheetMenuRow("Font Size", "Editor size: " + (current == null ? "--" : (current.fontSizeSp + "sp")), C_TEXT_MUTED, C_CYAN, () -> {
+            if (current == null) return;
+            showFontSizeMenu();
+        }));
+        box.addView(buildSheetMenuRow("Note Glow", "Glow: " + (current == null ? "--" : (current.noteGlow ? "On" : "Off")) + "  Strength: " + (current == null ? "0" : current.glowStrength), C_TEXT_MUTED, C_CYAN, () -> {
+            if (current == null) return;
+            showGlowMenu();
+        }));
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
         box.addView(close);
@@ -3345,8 +3340,10 @@ public class MainActivity extends Activity {
         if (current == null) return;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
+        box.addView(sheetSectionTitle("Font Size"));
         TextView value = label("Editor font size: " + current.fontSizeSp + "sp");
         value.setTextColor(C_TEXT_MUTED);
+        value.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_md));
         box.addView(value);
         SeekBar bar = new SeekBar(this);
         bar.setMax(MAX_EDITOR_FONT_SIZE_SP - MIN_EDITOR_FONT_SIZE_SP);
@@ -3374,8 +3371,10 @@ public class MainActivity extends Activity {
         if (current == null) return;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
+        box.addView(sheetSectionTitle("Note Glow"));
         TextView status = label(glowStatus());
         status.setTextColor(C_TEXT_MUTED);
+        status.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_md));
         box.addView(status);
         Button toggle = button("Glow: " + (current.noteGlow ? "On" : "Off"));
         toggle.setOnClickListener(v -> {
@@ -3425,6 +3424,7 @@ public class MainActivity extends Activity {
         String[] fonts = TopFlowUiKit.fontPreviewIds();
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
+        box.addView(sheetSectionTitle("Font"));
         for (String f : fonts) {
             View b = buildFontPreviewRow(f);
             b.setOnClickListener(v -> {
@@ -3449,21 +3449,26 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
-        row.setBackgroundResource(R.drawable.bg21_quiet_control);
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
         row.setForeground(TopFlowUiKit.ripple(TopFlowUiKit.MINT));
         row.setClickable(true);
         row.setFocusable(true);
-        TopFlowUiKit.applyFloating(row, current != null && fontId.equals(current.font) ? 8 : 2);
+        row.setMinimumHeight(dp(84));
+        TopFlowUiKit.applyFloating(row, current != null && fontId.equals(current.font) ? 8 : 4);
         TextView name = new TextView(this);
         name.setText(fontLabel(fontId) + (current != null && fontId.equals(current.font) ? "  Selected" : ""));
         textStyle(name, R.style.TextAppearance_TopFlow21_Caption);
         name.setTextColor(current != null && fontId.equals(current.font) ? TopFlowUiKit.MINT : TopFlowUiKit.TEXT_SOFT);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
         TextView preview = new TextView(this);
         preview.setText("whisper my name");
         textStyle(preview, R.style.TextAppearance_TopFlow21_Section);
         preview.setTypeface(TopFlowUiKit.fontForPreview(this, fontId));
         preview.setTextColor(TopFlowUiKit.TEXT);
         preview.setPadding(0, dimen(R.dimen.topflow_space_xs), 0, 0);
+        preview.setSingleLine(true);
+        preview.setEllipsize(TextUtils.TruncateAt.END);
         row.addView(name);
         row.addView(preview);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -3726,8 +3731,8 @@ public class MainActivity extends Activity {
 
         sheetCard = new LinearLayout(this);
         sheetCard.setOrientation(LinearLayout.VERTICAL);
-        sheetCard.setPadding(dimen(R.dimen.topflow_space_xxl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xxl), dimen(R.dimen.topflow_space_xxl));
-        sheetCard.setBackground(TopFlowUiKit.floatingPanel(this, 28));
+        sheetCard.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        sheetCard.setBackground(TopFlowUiKit.floatingPanel(this, 26));
         TopFlowUiKit.applyFloating(sheetCard, 18);
         sheetCard.setClickable(true);
         sheetCard.setFocusable(false);
@@ -3740,10 +3745,10 @@ public class MainActivity extends Activity {
 
         FrameLayout handleHitbox = new FrameLayout(this);
         sheetDragHandle = handleHitbox;
-        handleHitbox.setPadding(0, dp(12), 0, dp(12));
+        handleHitbox.setPadding(0, dp(14), 0, dp(14));
         View handle = new View(this);
-        handle.setBackground(dragHandleDrawable());
-        FrameLayout.LayoutParams handleInnerLp = new FrameLayout.LayoutParams(dp(74), dp(6), Gravity.CENTER);
+        handle.setBackground(TopFlowUiKit.floatingPanel(this, 999));
+        FrameLayout.LayoutParams handleInnerLp = new FrameLayout.LayoutParams(dp(94), dp(8), Gravity.CENTER);
         handleHitbox.addView(handle, handleInnerLp);
         LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(-1, dp(34));
         handleLp.gravity = Gravity.CENTER_HORIZONTAL;
@@ -3755,9 +3760,11 @@ public class MainActivity extends Activity {
         sheetHeader = header;
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_xs));
         sheetTitle = new TextView(this);
         textStyle(sheetTitle, R.style.TextAppearance_TopFlow21_Section);
         sheetTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        sheetTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
         header.addView(sheetTitle, new LinearLayout.LayoutParams(0, -2, 1));
         Button close = button("Close");
         close.setOnClickListener(v -> dismissSheet());
@@ -4112,6 +4119,79 @@ public class MainActivity extends Activity {
         }
     }
 
+    private TextView sheetSectionTitle(String text) {
+        TextView t = new TextView(this);
+        t.setText(text == null ? "" : text);
+        textStyle(t, R.style.TextAppearance_TopFlow21_Caption);
+        t.setTextColor(TopFlowUiKit.TEXT_SOFT);
+        t.setIncludeFontPadding(false);
+        t.setLetterSpacing(0f);
+        t.setPadding(0, dimen(R.dimen.topflow_space_md), 0, dimen(R.dimen.topflow_space_xs));
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
+        return t;
+    }
+
+    private View buildSheetMenuRow(String title, String subtitle, int detailColor, int accent, Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
+        row.setBackground(TopFlowUiKit.floatingPanel(this, 14));
+        row.setForeground(TopFlowUiKit.ripple(accent));
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setMinimumHeight(dp(56));
+        TopFlowUiKit.applyFloating(row, 4);
+        attachTapAnimation(row);
+
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView titleView = new TextView(this);
+        titleView.setText(title == null ? "" : title);
+        titleView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        titleView.setTextColor(TopFlowUiKit.TEXT);
+        titleView.setTextSize(15);
+        titleView.setIncludeFontPadding(false);
+        titleView.setLetterSpacing(0f);
+        titleView.setSingleLine(true);
+        titleView.setEllipsize(TextUtils.TruncateAt.END);
+        copy.addView(titleView);
+
+        if (subtitle != null && !subtitle.trim().isEmpty()) {
+            TextView detail = new TextView(this);
+            detail.setText(subtitle);
+            detail.setTextColor(detailColor != 0 ? detailColor : TopFlowUiKit.TEXT_SOFT);
+            detail.setTextSize(12);
+            detail.setIncludeFontPadding(false);
+            detail.setLetterSpacing(0f);
+            detail.setSingleLine(true);
+            detail.setEllipsize(TextUtils.TruncateAt.END);
+            copy.addView(detail);
+        }
+
+        row.addView(copy);
+
+        TextView arrow = new TextView(this);
+        arrow.setText("›");
+        arrow.setTextColor(TopFlowUiKit.MINT);
+        arrow.setTextSize(18);
+        arrow.setPadding(dp(8), 0, 0, 0);
+        arrow.setIncludeFontPadding(false);
+        row.addView(arrow);
+
+        if (action != null) {
+            row.setOnClickListener(v -> runSelectionAnimation(v, action));
+        }
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.bottomMargin = dimen(R.dimen.topflow_space_sm);
+        row.setLayoutParams(lp);
+        return row;
+    }
+
     private void dismissSheet() {
         if (sheetOverlay == null || sheetOverlay.getVisibility() != View.VISIBLE) return;
         int travel = sheetCard != null && sheetCard.getHeight() > 0 ? sheetCard.getHeight() + dp(48) : dp(260);
@@ -4353,14 +4433,17 @@ public class MainActivity extends Activity {
         card.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_md));
         card.setBackground(TopFlowUiKit.floatingPanel(this, 18));
         TopFlowUiKit.applyFloating(card, 8);
+        card.setMinimumHeight(dp(132));
 
         TextView title = new TextView(this);
-        title.setText("Version " + update.versionName + " (" + update.versionCode + ")");
+        title.setText("Version " + update.versionName + " · " + update.versionCode);
         textStyle(title, R.style.TextAppearance_TopFlow21_Section);
         title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         title.setTextColor(TopFlowUiKit.TEXT);
         title.setLetterSpacing(0f);
         title.setIncludeFontPadding(false);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
         card.addView(title);
 
         if (update.notes != null && !update.notes.trim().isEmpty()) {
@@ -4371,6 +4454,8 @@ public class MainActivity extends Activity {
             notes.setLetterSpacing(0f);
             notes.setPadding(0, dimen(R.dimen.topflow_space_sm), 0, dimen(R.dimen.topflow_space_sm));
             notes.setIncludeFontPadding(false);
+            notes.setMaxLines(4);
+            notes.setEllipsize(TextUtils.TruncateAt.END);
             card.addView(notes);
         }
 

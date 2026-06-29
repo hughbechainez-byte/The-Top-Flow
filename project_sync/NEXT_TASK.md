@@ -1,3 +1,3 @@
 # Next Task
 
-Implement 22.6 premium sheets and menus. Preserve command behavior, update chooser behavior, and sheet dismissal safety.
+Implement 22.7 gesture and motion system. Preserve typing, sheet safety, and update behavior.
