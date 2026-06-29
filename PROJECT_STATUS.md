@@ -30,6 +30,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 22.1 adds multi-version update discovery with legacy appcast fallback support and an OLED chooser sheet when several newer APKs are available.
 - 22.2 begins the Compose-led premium shell foundation with a Java-callable Compose backdrop layer behind the existing workflows, using true OLED black plus crisp neon studio linework instead of blurred or grainy effects.
 - 22.3 rebuilds the Notes home presentation into a premium session dashboard with stronger current-session context, richer note cards, accent rails, compact metadata/previews, and view-built signal markers.
+- 22.4 upgrades the editor into a premium Draft Studio surface with editor chrome, accent rail, compact session metadata, note-accent signal detail, and refined title/body field surfaces while preserving typing and rhyme hot paths.
 - Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
@@ -47,8 +48,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-22.3 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.4 premium editor surface.
+22.4 release packaging is complete on the 22.0 JSONBlob/appcast line. Current priority is the staged premium UI transformation, continuing with the 22.5 font and asset library.
 
 ## Next Milestone
 
-Next: implement 22.4 premium editor surface while preserving typing, keyboard, cursor, rhyme row, and note persistence.
+Next: implement 22.5 real font and asset library with meaningful local resources only.

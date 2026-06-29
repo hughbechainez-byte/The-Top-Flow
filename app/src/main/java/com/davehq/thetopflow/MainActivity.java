@@ -216,6 +216,11 @@ public class MainActivity extends Activity {
     private LinearLayout editor;
     private FrameLayout editorGlowFrame;
     private LinearLayout editorCard;
+    private LinearLayout editorChrome;
+    private View editorSignalRail;
+    private View editorMiniSignal;
+    private TextView editorHeaderTitle;
+    private TextView editorHeaderMeta;
     private LinearLayout songCard;
     private LinearLayout voiceCard;
     private EditText titleInput;
@@ -460,38 +465,81 @@ public class MainActivity extends Activity {
 
         editorGlowFrame = new FrameLayout(this);
         editorGlowFrame.setClipToPadding(false);
-        editorGlowFrame.setPadding(dp(14), dp(12), dp(14), dp(16));
+        editorGlowFrame.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout.LayoutParams editorCardLp = new LinearLayout.LayoutParams(-1, -2);
         editorCardLp.bottomMargin = dimen(R.dimen.topflow_space_md);
         editor.addView(editorGlowFrame, editorCardLp);
 
         editorCard = createCardSurface();
-        editorCard.setPadding(dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl), dimen(R.dimen.topflow_space_xl));
+        editorCard.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
         editorGlowFrame.addView(editorCard, new FrameLayout.LayoutParams(-1, -2));
 
-        TextView editorHead = new TextView(this);
-        editorHead.setText("Draft");
-        textStyle(editorHead, R.style.TextAppearance_TopFlow21_Caption);
-        editorHead.setTextColor(TopFlowUiKit.MINT);
-        editorHead.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        editorHead.setPadding(2, 0, 2, dimen(R.dimen.topflow_space_xs));
-        editorCard.addView(editorHead);
+        editorChrome = new LinearLayout(this);
+        editorChrome.setOrientation(LinearLayout.HORIZONTAL);
+        editorChrome.setGravity(Gravity.CENTER_VERTICAL);
+        editorChrome.setPadding(0, 0, 0, dimen(R.dimen.topflow_space_sm));
+        editorChrome.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        editorCard.addView(editorChrome);
+
+        editorSignalRail = new View(this);
+        editorSignalRail.setLayoutParams(new LinearLayout.LayoutParams(dp(5), dp(28)));
+        editorChrome.addView(editorSignalRail);
+
+        View railGap = new View(this);
+        railGap.setLayoutParams(new LinearLayout.LayoutParams(dp(10), 0));
+        editorChrome.addView(railGap);
+
+        LinearLayout headerCopy = new LinearLayout(this);
+        headerCopy.setOrientation(LinearLayout.VERTICAL);
+        headerCopy.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+        editorChrome.addView(headerCopy);
+
+        editorHeaderTitle = new TextView(this);
+        editorHeaderTitle.setText("Draft Studio");
+        editorHeaderTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        editorHeaderTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        editorHeaderTitle.setIncludeFontPadding(false);
+        editorHeaderTitle.setLetterSpacing(0f);
+        editorHeaderTitle.setMaxLines(1);
+        editorHeaderTitle.setEllipsize(TextUtils.TruncateAt.END);
+        headerCopy.addView(editorHeaderTitle);
+
+        editorHeaderMeta = new TextView(this);
+        editorHeaderMeta.setText("Draft session");
+        editorHeaderMeta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        editorHeaderMeta.setIncludeFontPadding(false);
+        editorHeaderMeta.setLetterSpacing(0f);
+        editorHeaderMeta.setMaxLines(1);
+        editorHeaderMeta.setEllipsize(TextUtils.TruncateAt.END);
+        headerCopy.addView(editorHeaderMeta);
+
+        editorMiniSignal = buildSessionMiniSignal(C_CYAN, 14, true);
+        if (editorMiniSignal != null) {
+            LinearLayout.LayoutParams signalLp = new LinearLayout.LayoutParams(-2, -2);
+            signalLp.leftMargin = dp(8);
+            editorChrome.addView(editorMiniSignal, signalLp);
+        }
 
         titleInput = new EditText(this);
         titleInput.setSingleLine(true);
         titleInput.setHint("Untitled track");
-        titleInput.setBackgroundResource(R.drawable.bg21_quiet_control);
+        titleInput.setBackgroundColor(Color.TRANSPARENT);
         textStyle(titleInput, R.style.TextAppearance_TopFlow21_Title);
-        titleInput.setPadding(dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_sm));
-        editorCard.addView(titleInput, new LinearLayout.LayoutParams(-1, -2));
+        titleInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md));
+        titleInput.setIncludeFontPadding(false);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(-1, -2);
+        titleLp.topMargin = dp(2);
+        titleLp.bottomMargin = dp(2);
+        editorCard.addView(titleInput, titleLp);
 
         bodyInput = new RuledEditText(this);
         bodyInput.setGravity(Gravity.TOP | Gravity.START);
         bodyInput.setMinLines(18);
         bodyInput.setHint("Start writing...");
         textStyle(bodyInput, R.style.TextAppearance_TopFlow21_Body);
-        bodyInput.setLineSpacing(dp(3), 1.04f);
-        bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_lg));
+        bodyInput.setLineSpacing(dp(2), 1.06f);
+        bodyInput.setPadding(dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_md), dimen(R.dimen.topflow_space_lg), dimen(R.dimen.topflow_space_xl));
+        bodyInput.setIncludeFontPadding(false);
         configureEditorInput(bodyInput);
         editorCard.addView(bodyInput, new LinearLayout.LayoutParams(-1, 0, 1));
 
@@ -1485,8 +1533,8 @@ public class MainActivity extends Activity {
 
     private void applyStyle() {
         if (current == null) return;
-        titleInput.setBackground(notePageDrawable(current.noteColor, current.accentColor, 18));
-        bodyInput.setBackground(notePageDrawable(current.noteColor, current.accentColor, 22));
+        titleInput.setBackground(editorFieldDrawable(current.noteColor, current.accentColor, 18));
+        bodyInput.setBackground(editorFieldDrawable(current.noteColor, current.accentColor, 22));
         titleInput.setTextColor(current.textColor);
         bodyInput.setTextColor(current.textColor);
         titleInput.setHintTextColor(current.accentColor);
@@ -1499,6 +1547,34 @@ public class MainActivity extends Activity {
         bodyInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, current.fontSizeSp);
         if (Build.VERSION.SDK_INT >= 29) titleInput.setTextCursorDrawable(null);
         styleActionButtonPalette(current.accentColor);
+        if (editorSignalRail != null) {
+            editorSignalRail.setBackground(editorRailDrawable(current.accentColor));
+        }
+        if (editorHeaderTitle != null) {
+            editorHeaderTitle.setText("Draft Studio");
+            editorHeaderTitle.setTextColor(TopFlowUiKit.TEXT);
+            editorHeaderTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            editorHeaderTitle.setLetterSpacing(0f);
+            editorHeaderTitle.setIncludeFontPadding(false);
+        }
+        if (editorHeaderMeta != null) {
+            String meta = (current.title == null || current.title.isEmpty() ? "Draft session" : "Draft: " + current.title) + " · " + noteMetadataLine(current);
+            editorHeaderMeta.setText(meta);
+            editorHeaderMeta.setTextColor(TopFlowUiKit.TEXT_SOFT);
+            editorHeaderMeta.setIncludeFontPadding(false);
+            editorHeaderMeta.setLetterSpacing(0f);
+        }
+        if (editorChrome != null && editorMiniSignal != null && editorChrome.indexOfChild(editorMiniSignal) >= 0) {
+            editorChrome.removeView(editorMiniSignal);
+        }
+        if (editorChrome != null) {
+            editorMiniSignal = buildSessionMiniSignal(current.accentColor, 14, true);
+            if (editorMiniSignal != null) {
+                LinearLayout.LayoutParams miniLp = new LinearLayout.LayoutParams(-2, -2);
+                miniLp.leftMargin = dp(8);
+                editorChrome.addView(editorMiniSignal, miniLp);
+            }
+        }
         if (editorGlowFrame != null) {
             editorGlowFrame.setBackground(noteGlowDrawable(current.accentColor, current.noteGlow, current.glowStrength));
         }
@@ -4685,6 +4761,31 @@ public class MainActivity extends Activity {
         );
         d.setCornerRadius(dp(26));
         d.setStroke(dp(1), Color.argb(strokeAlpha, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        return d;
+    }
+
+    private Drawable editorRailDrawable(int accent) {
+        int glow = Color.argb(212, Color.red(accent), Color.green(accent), Color.blue(accent));
+        int fade = Color.argb(36, Color.red(accent), Color.green(accent), Color.blue(accent));
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{glow, TopFlowUiKit.OLED, fade, TopFlowUiKit.OLED}
+        );
+        d.setCornerRadius(dp(999));
+        return d;
+    }
+
+    private Drawable editorFieldDrawable(int color, int accent, int radiusDp) {
+        GradientDrawable d = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        blendColor(color, TopFlowUiKit.OLED, 0.18f),
+                        TopFlowUiKit.OLED,
+                        blendColor(color, TopFlowUiKit.OLED, 0.06f)
+                }
+        );
+        d.setCornerRadius(dp(radiusDp));
+        d.setStroke(dp(1), Color.argb(132, Color.red(accent), Color.green(accent), Color.blue(accent)));
         return d;
     }
 
