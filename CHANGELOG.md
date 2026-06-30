@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 24.4 with editor typing stabilization, collapsed song/voice panels moved below the note body, removed the old preview phrase from style UI, and rebuilt style editing around focused submenus, a wheel-style color picker, saved note defaults, and menu color controls.
 - Released 24.3 with restored Compose media/style/gesture workflows: attached song playback and seeking, voice recording/playback/rename/export, preview-first font/page/text/accent editing, broader swipe navigation, keyboard dismissal before major actions, and retained 24.2 note data-safety guards.
 - Released 24.2 as a data-safety hotfix after 24.1 exposed a destructive save path: saves are blocked until notes finish loading, empty state cannot overwrite an existing non-empty `notes.json`, `notes.backup.json` is created before future saves, backup fallback is used when the primary file is empty, and 24.1 was removed from the updater manifest.
 - Built 24.1 as a Material 3 Compose note-taking foundation: Kotlin `ComponentActivity` host, single `NotesTheme`, Compose-only note text/editor rendering, staggered note grid, immutable `NoteUi` state via `StateFlow`, off-main storage/search/rhyme paths, debug JankStats state labels, Macrobenchmark/Baseline Profile wiring, generated Baseline Profile, and screenshot tests for note cards/editor across light/dark and font scale coverage. APK was packaged locally only; appcast/update manifests were not changed.

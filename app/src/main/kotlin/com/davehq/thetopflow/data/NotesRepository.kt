@@ -15,6 +15,8 @@ import java.util.UUID
 private const val DEFAULT_NOTE_COLOR = 0xFF0ECDBE.toInt()
 private const val DEFAULT_NOTE_TEXT_COLOR = 0xFF080C0E.toInt()
 private const val DEFAULT_NOTE_ACCENT_COLOR = 0xFF84FFEE.toInt()
+private const val DEFAULT_MENU_COLOR = 0xFF05070D.toInt()
+private const val DEFAULT_MENU_ACCENT_COLOR = 0xFF5AD7A0.toInt()
 private const val DEFAULT_EDITOR_FONT_SIZE_SP = 18
 private const val MIN_EDITOR_FONT_SIZE_SP = 14
 private const val MAX_EDITOR_FONT_SIZE_SP = 28
@@ -49,15 +51,15 @@ data class NoteUi(
         get() = body.splitToSequence(Regex("\\s+")).count { it.isNotBlank() }
 
     companion object {
-        fun blank(now: Long = System.currentTimeMillis()): NoteUi = NoteUi(
+        fun blank(now: Long = System.currentTimeMillis(), defaults: StyleDefaults = StyleDefaults()): NoteUi = NoteUi(
             id = UUID.randomUUID().toString(),
             title = "Untitled",
             body = "",
-            font = "sans",
-            fontSizeSp = DEFAULT_EDITOR_FONT_SIZE_SP,
-            noteColor = DEFAULT_NOTE_COLOR,
-            textColor = DEFAULT_NOTE_TEXT_COLOR,
-            accentColor = DEFAULT_NOTE_ACCENT_COLOR,
+            font = defaults.font,
+            fontSizeSp = defaults.fontSizeSp,
+            noteColor = defaults.noteColor,
+            textColor = defaults.textColor,
+            accentColor = defaults.accentColor,
             noteGlow = false,
             glowStrength = 1,
             songUri = "",
@@ -68,12 +70,47 @@ data class NoteUi(
     }
 }
 
+@Immutable
+data class StyleDefaults(
+    val font: String = "sans",
+    val fontSizeSp: Int = DEFAULT_EDITOR_FONT_SIZE_SP,
+    val noteColor: Int = DEFAULT_NOTE_COLOR,
+    val textColor: Int = DEFAULT_NOTE_TEXT_COLOR,
+    val accentColor: Int = DEFAULT_NOTE_ACCENT_COLOR,
+    val menuColor: Int = DEFAULT_MENU_COLOR,
+    val menuAccentColor: Int = DEFAULT_MENU_ACCENT_COLOR
+)
+
 class NotesRepository(
     application: Application,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val notesFile = File(application.filesDir, "notes.json")
     private val backupFile = File(application.filesDir, "notes.backup.json")
+    private val prefs = application.getSharedPreferences("top_flow_style_defaults", 0)
+
+    fun loadStyleDefaults(): StyleDefaults = StyleDefaults(
+        font = prefs.getString("font", "sans") ?: "sans",
+        fontSizeSp = prefs.getInt("fontSizeSp", DEFAULT_EDITOR_FONT_SIZE_SP)
+            .coerceIn(MIN_EDITOR_FONT_SIZE_SP, MAX_EDITOR_FONT_SIZE_SP),
+        noteColor = prefs.getInt("noteColor", DEFAULT_NOTE_COLOR),
+        textColor = prefs.getInt("textColor", DEFAULT_NOTE_TEXT_COLOR),
+        accentColor = prefs.getInt("accentColor", DEFAULT_NOTE_ACCENT_COLOR),
+        menuColor = prefs.getInt("menuColor", DEFAULT_MENU_COLOR),
+        menuAccentColor = prefs.getInt("menuAccentColor", DEFAULT_MENU_ACCENT_COLOR)
+    )
+
+    fun saveStyleDefaults(defaults: StyleDefaults) {
+        prefs.edit()
+            .putString("font", defaults.font.ifBlank { "sans" })
+            .putInt("fontSizeSp", defaults.fontSizeSp.coerceIn(MIN_EDITOR_FONT_SIZE_SP, MAX_EDITOR_FONT_SIZE_SP))
+            .putInt("noteColor", defaults.noteColor)
+            .putInt("textColor", defaults.textColor)
+            .putInt("accentColor", defaults.accentColor)
+            .putInt("menuColor", defaults.menuColor)
+            .putInt("menuAccentColor", defaults.menuAccentColor)
+            .apply()
+    }
 
     suspend fun loadNotes(): List<NoteUi> = withContext(ioDispatcher) {
         val sourceFile = when {

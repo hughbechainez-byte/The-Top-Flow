@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.NotesRepository
 import com.davehq.thetopflow.data.RecordingUi
+import com.davehq.thetopflow.data.StyleDefaults
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,7 +39,8 @@ data class NotesUiState(
     val isLoading: Boolean = true,
     val isCreating: Boolean = false,
     val media: MediaUiState = MediaUiState(),
-    val lastOpenedNoteId: String? = null
+    val lastOpenedNoteId: String? = null,
+    val styleDefaults: StyleDefaults = StyleDefaults()
 )
 
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
@@ -53,6 +55,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val rhymeSuggestions = MutableStateFlow<List<String>>(emptyList())
     private val rhymeLoading = MutableStateFlow(true)
     private val lastOpenedNoteId = MutableStateFlow<String?>(null)
+    private val styleDefaults = MutableStateFlow(repository.loadStyleDefaults())
     private var saveJob: Job? = null
     private var rhymeJob: Job? = null
     private var notesLoaded = false
@@ -67,10 +70,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         rhymeSuggestions,
         rhymeLoading,
         mediaController.mediaState,
-        lastOpenedNoteId
+        lastOpenedNoteId,
+        styleDefaults
     ) { values ->
         val media = values[7] as MediaUiState
         val lastOpened = values[8] as String?
+        val defaults = values[9] as StyleDefaults
         RawNotesState(
             notes = values[0] as List<NoteUi>,
             selectedNoteId = values[1] as String?,
@@ -80,7 +85,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             rhymeSuggestions = values[5] as List<String>,
             rhymeLoading = values[6] as Boolean,
             media = media,
-            lastOpenedNoteId = lastOpened
+            lastOpenedNoteId = lastOpened,
+            styleDefaults = defaults
         )
     }.mapLatest { raw ->
         withContext(Dispatchers.Default) {
@@ -104,7 +110,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 isLoading = raw.isLoading,
                 isCreating = raw.isCreating,
                 media = raw.media,
-                lastOpenedNoteId = raw.lastOpenedNoteId
+                lastOpenedNoteId = raw.lastOpenedNoteId,
+                styleDefaults = raw.styleDefaults
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotesUiState())
@@ -129,7 +136,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun createNote() {
-        val note = NoteUi.blank()
+        val note = NoteUi.blank(defaults = styleDefaults.value)
         notes.update { current -> listOf(note) + current }
         selectedNoteId.value = note.id
         lastOpenedNoteId.value = note.id
@@ -282,8 +289,31 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         fontSizeSp: Int,
         noteColor: Int,
         textColor: Int,
-        accentColor: Int
+        accentColor: Int,
+        menuColor: Int,
+        menuAccentColor: Int,
+        saveAsDefaults: Boolean
     ) {
+        val defaults = StyleDefaults(
+            font = font.ifBlank { "sans" },
+            fontSizeSp = fontSizeSp.coerceIn(14, 28),
+            noteColor = noteColor,
+            textColor = textColor,
+            accentColor = accentColor,
+            menuColor = menuColor,
+            menuAccentColor = menuAccentColor
+        )
+        if (saveAsDefaults) {
+            styleDefaults.value = defaults
+            repository.saveStyleDefaults(defaults)
+        } else {
+            val current = styleDefaults.value
+            if (current.menuColor != menuColor || current.menuAccentColor != menuAccentColor) {
+                val updated = current.copy(menuColor = menuColor, menuAccentColor = menuAccentColor)
+                styleDefaults.value = updated
+                repository.saveStyleDefaults(updated)
+            }
+        }
         updateSelected {
             it.copy(
                 font = font.ifBlank { "sans" },
@@ -399,6 +429,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val rhymeSuggestions: List<String>,
         val rhymeLoading: Boolean,
         val media: MediaUiState,
-        val lastOpenedNoteId: String?
+        val lastOpenedNoteId: String?,
+        val styleDefaults: StyleDefaults
     )
 }

@@ -10,9 +10,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -45,6 +48,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -73,6 +77,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalDensity
@@ -93,8 +99,10 @@ import androidx.metrics.performance.PerformanceMetricsState
 import com.davehq.thetopflow.MediaUiState
 import com.davehq.thetopflow.NotesUiState
 import com.davehq.thetopflow.data.NoteUi
+import com.davehq.thetopflow.data.StyleDefaults
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.max
@@ -122,7 +130,7 @@ fun NotesRoute(
     onPlayRecording: (String) -> Unit,
     onRenameRecording: (String, String) -> Unit,
     onExportRecording: (String) -> Boolean,
-    onApplyStyle: (String, Int, Int, Int, Int) -> Unit
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit
 ) {
     val gridState = rememberLazyStaggeredGridState()
     val isScrolling by remember { derivedStateOf { gridState.isScrollInProgress } }
@@ -154,6 +162,7 @@ fun NotesRoute(
                 note = state.selectedNote,
                 isCreating = state.isCreating,
                 media = state.media,
+                styleDefaults = state.styleDefaults,
                 rhymeSuggestions = state.rhymeSuggestions,
                 rhymeLoading = state.rhymeLoading,
                 onBack = onCloseEditor,
@@ -186,6 +195,8 @@ private fun NotesGridScreen(
 ) {
     val density = LocalDensity.current
     val gesturePx = with(density) { 96.dp.toPx() }
+    val menuColor = Color(state.styleDefaults.menuColor)
+    val menuAccent = Color(state.styleDefaults.menuAccentColor)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -193,12 +204,13 @@ private fun NotesGridScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
+                    .background(menuColor.copy(alpha = 0.42f))
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 Text(
                     text = "The Top Flow",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = readableColor(menuColor, menuAccent, MaterialTheme.colorScheme.onBackground),
                     maxLines = 1
                 )
                 Text(
@@ -208,7 +220,12 @@ private fun NotesGridScreen(
                     maxLines = 1
                 )
                 Spacer(Modifier.height(16.dp))
-                SearchField(value = state.query, onValueChange = onSearch)
+                SearchField(
+                    value = state.query,
+                    onValueChange = onSearch,
+                    accent = menuAccent,
+                    menuColor = menuColor
+                )
             }
         },
         bottomBar = {
@@ -223,6 +240,7 @@ private fun NotesGridScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
+                    .background(menuColor.copy(alpha = 0.38f))
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.End
             ) {
@@ -230,7 +248,7 @@ private fun NotesGridScreen(
                     modifier = Modifier.testTag("create_note"),
                     onClick = { clearInput(onCreateNote) },
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        containerColor = menuAccent.copy(alpha = 0.28f),
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
@@ -311,6 +329,8 @@ private fun NotesGridScreen(
 private fun SearchField(
     value: String,
     onValueChange: (String) -> Unit,
+    accent: Color = MaterialTheme.colorScheme.primary,
+    menuColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -320,8 +340,8 @@ private fun SearchField(
             .testTag("search_notes")
             .semantics { contentDescription = "Search notes" },
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        color = menuColor.copy(alpha = 0.62f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
     ) {
         BasicTextField(
             value = value,
@@ -437,6 +457,7 @@ fun NoteEditorScreen(
     note: NoteUi,
     isCreating: Boolean,
     media: MediaUiState,
+    styleDefaults: StyleDefaults,
     rhymeSuggestions: List<String>,
     rhymeLoading: Boolean,
     onBack: () -> Unit,
@@ -451,13 +472,14 @@ fun NoteEditorScreen(
     onPlayRecording: (String) -> Unit,
     onRenameRecording: (String, String) -> Unit,
     onExportRecording: (String) -> Boolean,
-    onApplyStyle: (String, Int, Int, Int, Int) -> Unit
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit
 ) {
     BackHandler(onBack = onBack)
     NoteEditor(
         note = note,
         isCreating = isCreating,
         media = media,
+        styleDefaults = styleDefaults,
         rhymeSuggestions = rhymeSuggestions,
         rhymeLoading = rhymeLoading,
         onBack = onBack,
@@ -481,6 +503,7 @@ fun NoteEditor(
     note: NoteUi,
     isCreating: Boolean,
     media: MediaUiState,
+    styleDefaults: StyleDefaults = StyleDefaults(),
     rhymeSuggestions: List<String> = emptyList(),
     rhymeLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -496,7 +519,7 @@ fun NoteEditor(
     onPlayRecording: (String) -> Unit = {},
     onRenameRecording: (String, String) -> Unit = { _, _ -> },
     onExportRecording: (String) -> Boolean = { false },
-    onApplyStyle: (String, Int, Int, Int, Int) -> Unit = { _, _, _, _, _ -> }
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit = { _, _, _, _, _, _, _, _ -> }
 ) {
     val swipeThresholdPx = with(LocalDensity.current) { 96.dp.toPx() }
     val focusManager = LocalFocusManager.current
@@ -504,6 +527,15 @@ fun NoteEditor(
     var showStyleSheet by remember { mutableStateOf(false) }
     var renameRecordingPath by remember { mutableStateOf<String?>(null) }
     var renameValue by remember { mutableStateOf("") }
+    var draftTitle by remember(note.id) { mutableStateOf(note.title) }
+    var draftBody by remember(note.id) { mutableStateOf(note.body) }
+
+    LaunchedEffect(note.id, note.title) {
+        if (draftTitle != note.title) draftTitle = note.title
+    }
+    LaunchedEffect(note.id, note.body) {
+        if (draftBody != note.body) draftBody = note.body
+    }
 
     val runAction: (() -> Unit) -> Unit = { action ->
         focusManager.clearFocus(force = true)
@@ -559,8 +591,11 @@ fun NoteEditor(
             }
             item {
                 BasicTextField(
-                    value = note.title,
-                    onValueChange = onTitleChange,
+                    value = draftTitle,
+                    onValueChange = {
+                        draftTitle = it
+                        onTitleChange(it)
+                    },
                     textStyle = editorTitleStyle(note, bodyTextColor),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -570,7 +605,7 @@ fun NoteEditor(
                     singleLine = false,
                     decorationBox = { innerTextField ->
                         Box(contentAlignment = Alignment.CenterStart) {
-                            if (note.title.isBlank()) {
+                            if (draftTitle.isBlank()) {
                                 Text(
                                     text = "Untitled",
                                     style = editorTitleStyle(note, bodyTextColor.copy(alpha = 0.5f))
@@ -601,6 +636,46 @@ fun NoteEditor(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             item {
+                BasicTextField(
+                    value = draftBody,
+                    onValueChange = {
+                        draftBody = it
+                        onBodyChange(it)
+                    },
+                    textStyle = editorBodyStyle(note, bodyTextColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 320.dp)
+                        .testTag("editor_body")
+                        .semantics { contentDescription = "Note body" },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    decorationBox = { innerTextField ->
+                        Box(Modifier.fillMaxWidth()) {
+                            if (draftBody.isBlank()) {
+                                Text(
+                                    text = "Start writing...",
+                                    style = editorBodyStyle(note, bodyTextColor.copy(alpha = 0.45f)),
+                                    color = bodyTextColor.copy(alpha = 0.45f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+            item {
+                RhymeSuggestionRow(
+                    suggestions = rhymeSuggestions,
+                    loading = rhymeLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    onInsertWord = { insertion ->
+                        val next = draftBody + insertion
+                        draftBody = next
+                        onBodyChange(next)
+                    }
+                )
+            }
+            item {
                 MediaPanel(
                     note = note,
                     media = media,
@@ -614,49 +689,13 @@ fun NoteEditor(
                     note = note,
                     media = media,
                     onStartRecording = { runAction(onStartRecording) },
-                onStopRecording = { shouldSave -> runAction { onStopRecording(shouldSave) } },
-                onPlayRecording = { path -> runAction { onPlayRecording(path) } },
-                onRename = { path, tag -> runAction { renameRecordingPath = path; renameValue = tag } },
-                onExport = { path ->
-                    var exported = false
-                    runAction { exported = onExportRecording(path) }
-                    exported
-                }
-            )
-        }
-            item {
-                RhymeSuggestionRow(
-                    suggestions = rhymeSuggestions,
-                    loading = rhymeLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                    onInsertWord = { insertion ->
-                        runAction {
-                            onBodyChange(note.body + insertion)
-                        }
-                    }
-                )
-            }
-            item {
-                BasicTextField(
-                    value = note.body,
-                    onValueChange = onBodyChange,
-                    textStyle = editorBodyStyle(note, bodyTextColor),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("editor_body")
-                        .semantics { contentDescription = "Note body" },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    decorationBox = { innerTextField ->
-                        Box(Modifier.fillMaxWidth()) {
-                            if (note.body.isBlank()) {
-                                Text(
-                                    text = "Start writing...",
-                                    style = editorBodyStyle(note, bodyTextColor.copy(alpha = 0.45f)),
-                                    color = bodyTextColor.copy(alpha = 0.45f)
-                                )
-                            }
-                            innerTextField()
-                        }
+                    onStopRecording = { shouldSave -> runAction { onStopRecording(shouldSave) } },
+                    onPlayRecording = { path -> runAction { onPlayRecording(path) } },
+                    onRename = { path, tag -> runAction { renameRecordingPath = path; renameValue = tag } },
+                    onExport = { path ->
+                        var exported = false
+                        runAction { exported = onExportRecording(path) }
+                        exported
                     }
                 )
             }
@@ -667,9 +706,10 @@ fun NoteEditor(
         StyleEditorSheet(
             note = note,
             onDismiss = { runAction { showStyleSheet = false } },
-            onApply = { font, size, page, text, accent ->
+            defaults = styleDefaults,
+            onApply = { font, size, page, text, accent, menu, menuAccent, saveAsDefaults ->
                 runAction {
-                    onApplyStyle(font, size, page, text, accent)
+                    onApplyStyle(font, size, page, text, accent, menu, menuAccent, saveAsDefaults)
                     showStyleSheet = false
                 }
             },
@@ -703,51 +743,63 @@ private fun MediaPanel(
     onToggleSong: () -> Unit,
     onSeekSong: (Int) -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
     Surface(
-        color = Color(note.noteColor).copy(alpha = 0.12f),
+        color = Color(note.noteColor).copy(alpha = 0.08f),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, Color(note.accentColor))
+        border = BorderStroke(1.dp, Color(note.accentColor).copy(alpha = 0.7f))
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text("Song", style = MaterialTheme.typography.titleMedium, color = Color(note.accentColor))
                 Text(
                     text = if (note.songUri.isBlank()) "No song attached" else "Attached",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onAttach) { Text("Attach") }
-                OutlinedButton(onClick = onToggleSong, enabled = note.songUri.isNotBlank()) {
-                    Text(if (media.songPlaying) "Pause" else "Play")
+                OutlinedButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "Open")
                 }
             }
-            val sliderRange = if (media.songDurationMs <= 0) {
-                0f
-            } else {
-                (media.songPositionMs.toFloat() / media.songDurationMs.toFloat()).coerceIn(0f, 1f)
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(onClick = onAttach) { Text("Attach") }
+                        OutlinedButton(onClick = onToggleSong, enabled = note.songUri.isNotBlank()) {
+                            Text(if (media.songPlaying) "Pause" else "Play")
+                        }
+                    }
+                    val sliderRange = if (media.songDurationMs <= 0) {
+                        0f
+                    } else {
+                        (media.songPositionMs.toFloat() / media.songDurationMs.toFloat()).coerceIn(0f, 1f)
+                    }
+                    var pendingSeek by remember { mutableFloatStateOf(sliderRange) }
+                    LaunchedEffect(sliderRange) {
+                        pendingSeek = sliderRange
+                    }
+                    Slider(
+                        value = pendingSeek,
+                        onValueChange = { pendingSeek = it },
+                        onValueChangeFinished = {
+                            val targetMs = (pendingSeek * media.songDurationMs).roundToInt()
+                            onSeekSong(targetMs)
+                        },
+                        enabled = media.songDurationMs > 0 && note.songUri.isNotBlank(),
+                        colors = SliderDefaults.colors(),
+                        valueRange = 0f..1f
+                    )
+                    Text(
+                        text = "${formatDuration(media.songPositionMs)} / ${formatDuration(media.songDurationMs)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            var pendingSeek by remember { mutableFloatStateOf(sliderRange) }
-            LaunchedEffect(sliderRange) {
-                pendingSeek = sliderRange
-            }
-            Slider(
-                value = pendingSeek,
-                onValueChange = { pendingSeek = it },
-                onValueChangeFinished = {
-                    val targetMs = (pendingSeek * media.songDurationMs).roundToInt()
-                    onSeekSong(targetMs)
-                },
-                enabled = media.songDurationMs > 0 && note.songUri.isNotBlank(),
-                colors = SliderDefaults.colors(),
-                valueRange = 0f..1f
-            )
-            Text(
-                text = "${formatDuration(media.songPositionMs)} / ${formatDuration(media.songDurationMs)}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -762,49 +814,68 @@ private fun VoicePanel(
     onRename: (String, String) -> Unit,
     onExport: (String) -> Boolean
 ) {
+    var expanded by remember { mutableStateOf(false) }
     Surface(
-        color = Color(note.noteColor).copy(alpha = 0.12f),
+        color = Color(note.noteColor).copy(alpha = 0.08f),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, Color(note.accentColor))
+        border = BorderStroke(1.dp, Color(note.accentColor).copy(alpha = 0.7f))
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Voice", style = MaterialTheme.typography.titleMedium, color = Color(note.accentColor))
-            if (media.recordingActive) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Recording", style = MaterialTheme.typography.labelLarge)
-                    OutlinedButton(onClick = { onStopRecording(true) }) { Text("Stop + Save") }
-                    OutlinedButton(onClick = { onStopRecording(false) }) { Text("Cancel") }
-                }
-                Text("elapsed ${formatDuration(media.recordingElapsedMs)}", style = MaterialTheme.typography.labelMedium)
-            } else {
-                OutlinedButton(onClick = onStartRecording) { Text("Record") }
-            }
-            if (note.recordings.isEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Voice", style = MaterialTheme.typography.titleMedium, color = Color(note.accentColor))
                 Text(
-                    text = "No recordings yet",
-                    style = MaterialTheme.typography.labelSmall,
+                    text = if (media.recordingActive) "Recording" else "${note.recordings.size} saved",
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                OutlinedButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "Open")
+                }
             }
-            note.recordings.forEach { recording ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        recording.tag.ifBlank { "Recording" },
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    val isPlaying = media.recordingPlaybackActive && media.recordingPlaybackPath == recording.path
-                    OutlinedButton(onClick = { onPlayRecording(recording.path) }) {
-                        Text(if (isPlaying) "Stop" else "Play")
+            AnimatedVisibility(visible = expanded || media.recordingActive) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (media.recordingActive) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Recording", style = MaterialTheme.typography.labelLarge)
+                            OutlinedButton(onClick = { onStopRecording(true) }) { Text("Save") }
+                            OutlinedButton(onClick = { onStopRecording(false) }) { Text("Cancel") }
+                        }
+                        Text("elapsed ${formatDuration(media.recordingElapsedMs)}", style = MaterialTheme.typography.labelMedium)
+                    } else {
+                        OutlinedButton(onClick = onStartRecording) { Text("Record") }
                     }
-                    OutlinedButton(onClick = { onRename(recording.path, recording.tag) }) { Text("Rename") }
-                    OutlinedButton(onClick = { onExport(recording.path) }) { Text("Export") }
+                    if (note.recordings.isEmpty()) {
+                        Text(
+                            text = "No recordings yet",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    note.recordings.forEach { recording ->
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                recording.tag.ifBlank { "Recording" },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            val isPlaying = media.recordingPlaybackActive && media.recordingPlaybackPath == recording.path
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { onPlayRecording(recording.path) }) {
+                                    Text(if (isPlaying) "Stop" else "Play")
+                                }
+                                OutlinedButton(onClick = { onRename(recording.path, recording.tag) }) { Text("Rename") }
+                                OutlinedButton(onClick = { onExport(recording.path) }) { Text("Export") }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -851,8 +922,9 @@ private fun RenameRecordingDialog(
 @Composable
 private fun StyleEditorSheet(
     note: NoteUi,
+    defaults: StyleDefaults,
     onDismiss: () -> Unit,
-    onApply: (String, Int, Int, Int, Int) -> Unit,
+    onApply: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit,
     onCancel: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -862,19 +934,27 @@ private fun StyleEditorSheet(
     var draftNoteColor by remember(note.id) { mutableIntStateOf(note.noteColor) }
     var draftTextColor by remember(note.id) { mutableIntStateOf(note.textColor) }
     var draftAccentColor by remember(note.id) { mutableIntStateOf(note.accentColor) }
-    var draftColorTarget by remember { mutableStateOf("page") }
+    var draftMenuColor by remember(defaults) { mutableIntStateOf(defaults.menuColor) }
+    var draftMenuAccentColor by remember(defaults) { mutableIntStateOf(defaults.menuAccentColor) }
+    var draftColorTarget by remember { mutableStateOf("note") }
+    var section by remember { mutableStateOf("preview") }
+    var saveAsDefaults by remember { mutableStateOf(false) }
 
     fun colorForTarget() = when (draftColorTarget) {
+        "note" -> draftNoteColor
         "text" -> draftTextColor
         "accent" -> draftAccentColor
-        else -> draftNoteColor
+        "menu" -> draftMenuColor
+        else -> draftMenuAccentColor
     }
 
     fun setColorForTarget(nextColor: Int) {
         when (draftColorTarget) {
+            "note" -> draftNoteColor = nextColor
             "text" -> draftTextColor = nextColor
             "accent" -> draftAccentColor = nextColor
-            else -> draftNoteColor = nextColor
+            "menu" -> draftMenuColor = nextColor
+            else -> draftMenuAccentColor = nextColor
         }
     }
 
@@ -888,7 +968,7 @@ private fun StyleEditorSheet(
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Note Style", style = MaterialTheme.typography.titleLarge)
-            Text("Preview", style = MaterialTheme.typography.labelLarge)
+            StyleSectionTabs(selected = section, onSelect = { section = it })
             Surface(
                 color = Color(draftNoteColor).copy(alpha = 0.12f),
                 shape = MaterialTheme.shapes.medium,
@@ -904,7 +984,7 @@ private fun StyleEditorSheet(
                         color = Color(draftTextColor)
                     )
                     Text(
-                        "whisper my name",
+                        "The Top Flow",
                         style = editorBodyStyle(
                             note.copy(font = draftFont, fontSizeSp = draftFontSize, noteColor = draftNoteColor, textColor = draftTextColor, accentColor = draftAccentColor),
                             Color(draftTextColor)
@@ -913,41 +993,58 @@ private fun StyleEditorSheet(
                     )
                 }
             }
-            Text("Font", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(noteFontOptions) { spec ->
-                    val selected = spec.id == draftFont
-                    OutlinedButton(
-                        onClick = { draftFont = spec.id },
-                        colors = if (selected) {
-                            ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        } else {
-                            ButtonDefaults.outlinedButtonColors()
+            when (section) {
+                "font" -> {
+                    Text("Font", style = MaterialTheme.typography.labelLarge)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(noteFontOptions) { spec ->
+                            val selected = spec.id == draftFont
+                            OutlinedButton(
+                                onClick = { draftFont = spec.id },
+                                colors = if (selected) {
+                                    ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                } else {
+                                    ButtonDefaults.outlinedButtonColors()
+                                }
+                            ) {
+                                Text(spec.label, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
+                            }
                         }
-                    ) {
-                        Text(spec.label, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Size ${draftFontSize}sp", style = MaterialTheme.typography.labelLarge)
+                        Slider(
+                            value = draftFontSize.toFloat(),
+                            onValueChange = { draftFontSize = it.toInt().coerceIn(14, 28) },
+                            valueRange = 14f..28f,
+                            steps = 14
+                        )
                     }
                 }
+                "colors" -> {
+                    Text("Color target", style = MaterialTheme.typography.labelLarge)
+                    ColorTargetTabs(
+                        selected = draftColorTarget,
+                        onSelect = { draftColorTarget = it }
+                    )
+                    ColorWheelPicker(
+                        color = colorForTarget(),
+                        accent = draftAccentColor,
+                        onChange = { setColorForTarget(it) }
+                    )
+                }
+                "defaults" -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = saveAsDefaults, onCheckedChange = { saveAsDefaults = it })
+                        Text("Use this note style for new notes", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(
+                        "Menu colors always apply to the app menu.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Size ${draftFontSize}sp", style = MaterialTheme.typography.labelLarge)
-                Slider(
-                    value = draftFontSize.toFloat(),
-                    onValueChange = { draftFontSize = it.toInt().coerceIn(14, 28) },
-                    valueRange = 14f..28f,
-                    steps = 14
-                )
-            }
-            Text("Color target", style = MaterialTheme.typography.labelLarge)
-            ColorTargetTabs(
-                selected = draftColorTarget,
-                onSelect = { draftColorTarget = it }
-            )
-            ColorPickerInputs(
-                color = colorForTarget(),
-                accent = draftAccentColor,
-                onChange = { setColorForTarget(it) }
-            )
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -960,7 +1057,7 @@ private fun StyleEditorSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        " #${colorToHex(colorForTarget())}",
+                        "#${colorToHex(colorForTarget())}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -969,7 +1066,18 @@ private fun StyleEditorSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel") }
                 FilledTonalButton(
-                    onClick = { onApply(draftFont, draftFontSize, draftNoteColor, draftTextColor, draftAccentColor) },
+                    onClick = {
+                        onApply(
+                            draftFont,
+                            draftFontSize,
+                            draftNoteColor,
+                            draftTextColor,
+                            draftAccentColor,
+                            draftMenuColor,
+                            draftMenuAccentColor,
+                            saveAsDefaults
+                        )
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Apply")
@@ -984,8 +1092,16 @@ private fun ColorTargetTabs(
     selected: String,
     onSelect: (String) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        listOf("page", "text", "accent").forEach { target ->
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(
+            listOf(
+                "note" to "Note",
+                "text" to "Text",
+                "accent" to "Accent",
+                "menu" to "Menu",
+                "menuAccent" to "Menu Accent"
+            )
+        ) { (target, label) ->
             val isSelected = selected == target
             OutlinedButton(
                 onClick = { onSelect(target) },
@@ -994,11 +1110,113 @@ private fun ColorTargetTabs(
                 } else {
                     ButtonDefaults.outlinedButtonColors()
                 },
-                modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = target.replaceFirstChar { it.uppercase() },
+                    text = label,
                     style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StyleSectionTabs(
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        listOf("preview" to "Preview", "font" to "Font", "colors" to "Colors", "defaults" to "Defaults").forEach { (id, label) ->
+            val isSelected = selected == id
+            OutlinedButton(
+                onClick = { onSelect(id) },
+                colors = if (isSelected) {
+                    ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorWheelPicker(
+    color: Int,
+    accent: Int,
+    onChange: (Int) -> Unit
+) {
+    val hsv = remember(color) {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(color, it) }
+    }
+    var hue by remember(color) { mutableFloatStateOf(hsv[0]) }
+    var saturation by remember(color) { mutableFloatStateOf(hsv[1].coerceIn(0f, 1f)) }
+    var value by remember(color) { mutableFloatStateOf(hsv[2].coerceIn(0f, 1f)) }
+
+    fun commit(nextHue: Float = hue, nextSaturation: Float = saturation, nextValue: Float = value) {
+        hue = ((nextHue % 360f) + 360f) % 360f
+        saturation = nextSaturation.coerceIn(0f, 1f)
+        value = nextValue.coerceIn(0f, 1f)
+        onChange(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+            Canvas(
+                modifier = Modifier
+                    .size(196.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            val center = Offset(size.width / 2f, size.height / 2f)
+                            val dx = offset.x - center.x
+                            val dy = offset.y - center.y
+                            val degrees = Math.toDegrees(atan2(dy, dx).toDouble()).toFloat()
+                            val radius = min(size.width, size.height) / 2f
+                            val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+                            commit(nextHue = degrees + 180f, nextSaturation = (distance / radius).coerceIn(0f, 1f))
+                        }
+                    }
+            ) {
+                val radius = min(size.width, size.height) / 2f
+                val center = Offset(size.width / 2f, size.height / 2f)
+                for (angle in 0 until 360 step 6) {
+                    drawArc(
+                        color = Color(android.graphics.Color.HSVToColor(floatArrayOf(angle.toFloat(), 1f, value))),
+                        startAngle = angle.toFloat(),
+                        sweepAngle = 7f,
+                        useCenter = true
+                    )
+                }
+                drawCircle(color = Color.Black.copy(alpha = 0.18f), radius = radius * (1f - saturation), center = center)
+                drawCircle(color = Color(accent), radius = radius, center = center, style = Stroke(width = 3.dp.toPx()))
+            }
+        }
+        Text("Brightness ${(value * 100).roundToInt()}%", style = MaterialTheme.typography.labelMedium)
+        Slider(value = value, onValueChange = { commit(nextValue = it) }, valueRange = 0.18f..1f)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(
+                listOf(
+                    0xFF0ECDBE.toInt(),
+                    0xFF84FFEE.toInt(),
+                    0xFF6C63FF.toInt(),
+                    0xFFFFC875.toInt(),
+                    0xFFFF8A80.toInt(),
+                    0xFFFFFFFF.toInt(),
+                    0xFF05070D.toInt(),
+                    0xFF000000.toInt()
+                )
+            ) { swatch ->
+                val selected = swatch == color
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(swatch))
+                        .border(BorderStroke(if (selected) 2.dp else 1.dp, Color(accent)), CircleShape)
+                        .clickable { onChange(swatch) }
                 )
             }
         }
