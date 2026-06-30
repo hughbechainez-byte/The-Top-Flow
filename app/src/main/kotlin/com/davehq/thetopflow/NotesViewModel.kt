@@ -1,15 +1,19 @@
 package com.davehq.thetopflow
 
 import android.app.Application
+import android.content.ContentValues
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.NotesRepository
+import com.davehq.thetopflow.data.RecordingUi
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +21,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileInputStream
 
 @Immutable
 data class NotesUiState(
@@ -29,12 +36,15 @@ data class NotesUiState(
     val rhymeLoading: Boolean = true,
     val query: String = "",
     val isLoading: Boolean = true,
-    val isCreating: Boolean = false
+    val isCreating: Boolean = false,
+    val media: MediaUiState = MediaUiState(),
+    val lastOpenedNoteId: String? = null
 )
 
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = NotesRepository(application)
     private val rhymeEngine = RhymeEngine(application)
+    private val mediaController = TopFlowMediaController(application)
     private val notes = MutableStateFlow<List<NoteUi>>(emptyList())
     private val selectedNoteId = MutableStateFlow<String?>(null)
     private val query = MutableStateFlow("")
@@ -42,6 +52,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val creating = MutableStateFlow(false)
     private val rhymeSuggestions = MutableStateFlow<List<String>>(emptyList())
     private val rhymeLoading = MutableStateFlow(true)
+    private val lastOpenedNoteId = MutableStateFlow<String?>(null)
     private var saveJob: Job? = null
     private var rhymeJob: Job? = null
     private var notesLoaded = false
@@ -54,9 +65,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         loading,
         creating,
         rhymeSuggestions,
-        rhymeLoading
+        rhymeLoading,
+        mediaController.mediaState,
+        lastOpenedNoteId
     ) { values ->
-        @Suppress("UNCHECKED_CAST")
+        val media = values[7] as MediaUiState
+        val lastOpened = values[8] as String?
         RawNotesState(
             notes = values[0] as List<NoteUi>,
             selectedNoteId = values[1] as String?,
@@ -64,7 +78,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             isLoading = values[3] as Boolean,
             isCreating = values[4] as Boolean,
             rhymeSuggestions = values[5] as List<String>,
-            rhymeLoading = values[6] as Boolean
+            rhymeLoading = values[6] as Boolean,
+            media = media,
+            lastOpenedNoteId = lastOpened
         )
     }.mapLatest { raw ->
         withContext(Dispatchers.Default) {
@@ -86,7 +102,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 rhymeLoading = raw.rhymeLoading,
                 query = raw.query,
                 isLoading = raw.isLoading,
-                isCreating = raw.isCreating
+                isCreating = raw.isCreating,
+                media = raw.media,
+                lastOpenedNoteId = raw.lastOpenedNoteId
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotesUiState())
@@ -105,25 +123,43 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    override fun onCleared() {
+        mediaController.release()
+        super.onCleared()
+    }
+
     fun createNote() {
         val note = NoteUi.blank()
         notes.update { current -> listOf(note) + current }
         selectedNoteId.value = note.id
+        lastOpenedNoteId.value = note.id
         creating.value = true
         query.value = ""
+        mediaController.attachSong("")
         scheduleSave()
+        refreshMediaForSelected()
     }
 
     fun openNote(id: String) {
+        val note = notes.value.firstOrNull { it.id == id } ?: return
         selectedNoteId.value = id
         creating.value = false
+        lastOpenedNoteId.value = id
+        mediaController.attachSong(note.songUri)
         refreshRhymesForSelected()
+    }
+
+    fun openMostRecentOrNewestNote() {
+        val candidateId = lastOpenedNoteId.value ?: notes.value.maxByOrNull { it.updatedAt }?.id
+        candidateId ?: return
+        openNote(candidateId)
     }
 
     fun closeEditor() {
         selectedNoteId.value = null
         creating.value = false
         rhymeSuggestions.value = emptyList()
+        mediaController.pauseAll()
     }
 
     fun updateSearch(value: String) {
@@ -145,10 +181,123 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteSelected() {
         val id = selectedNoteId.value ?: return
-        notes.update { current -> current.filterNot { it.id == id } }
+        val next = notes.value.filterNot { it.id == id }
+        val replacement = if (next.isNotEmpty()) next.firstOrNull()?.id else null
+        notes.update { next }
         selectedNoteId.value = null
+        lastOpenedNoteId.value = replacement
         creating.value = false
+        refreshMediaForSelected()
         scheduleSave()
+    }
+
+    fun attachSong(uri: String) {
+        if (uri.isBlank()) return
+        val selected = activeSelectedNote() ?: return
+        updateSelected {
+            if (it.id == selected.id) {
+                it.copy(songUri = uri, updatedAt = System.currentTimeMillis())
+            } else {
+                it
+            }
+        }
+        mediaController.attachSong(uri)
+        scheduleSave()
+    }
+
+    fun toggleSong() {
+        val note = activeSelectedNote() ?: return
+        mediaController.toggleSong(note.songUri)
+    }
+
+    fun seekSong(positionMs: Int) {
+        val note = activeSelectedNote() ?: return
+        mediaController.seekSong(note.songUri, positionMs)
+    }
+
+    fun startRecording() {
+        val note = activeSelectedNote() ?: return
+        val dir = File(getApplication<Application>().filesDir, "recordings")
+        mediaController.startRecording(dir, note.songUri.takeIf { it.isNotBlank() })
+    }
+
+    fun stopRecording(save: Boolean) {
+        val finished = mediaController.stopRecording(save) ?: return
+        val note = activeSelectedNote() ?: return
+        val tag = finished.name
+        updateSelected {
+            it.copy(
+                recordings = listOf(RecordingUi(finished.absolutePath, tag)) + it.recordings,
+                body = appendRecordingMarker(it.body, tag),
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+        scheduleSave()
+    }
+
+    fun playRecording(path: String) {
+        if (path.isBlank()) return
+        mediaController.playRecording(path)
+    }
+
+    fun renameRecording(path: String, tag: String) {
+        val safeTag = tag.trim()
+        if (safeTag.isBlank()) return
+        updateSelectedOrNull { note ->
+            note.copy(
+                recordings = note.recordings.map { rec ->
+                    if (rec.path == path) rec.copy(tag = safeTag) else rec
+                }
+            )
+        } ?: return
+        scheduleSave()
+    }
+
+    fun exportRecording(path: String): Boolean {
+        val source = File(path)
+        if (source.path.isBlank() || !source.exists()) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+        return try {
+            val values = ContentValues().apply {
+                put(MediaStore.Audio.Media.DISPLAY_NAME, source.name)
+                put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
+                put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/The Top Flow")
+            }
+            val uri = getApplication<Application>().contentResolver
+                .insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+                ?: return false
+            getApplication<Application>().contentResolver.openOutputStream(uri)?.use { out ->
+                FileInputStream(source).use { input ->
+                    input.copyTo(out)
+                }
+            } ?: return false
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun updateNoteStyle(
+        font: String,
+        fontSizeSp: Int,
+        noteColor: Int,
+        textColor: Int,
+        accentColor: Int
+    ) {
+        updateSelected {
+            it.copy(
+                font = font.ifBlank { "sans" },
+                fontSizeSp = fontSizeSp.coerceIn(14, 28),
+                noteColor = noteColor,
+                textColor = textColor,
+                accentColor = accentColor,
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+    }
+
+    fun pauseMediaPlayback() {
+        mediaController.pauseAll()
     }
 
     fun flushPendingSave() {
@@ -157,16 +306,41 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.saveNotes(notes.value) }
     }
 
+    private fun activeSelectedNote(): NoteUi? {
+        val id = selectedNoteId.value ?: return null
+        return notes.value.firstOrNull { it.id == id }
+    }
+
     private fun updateSelected(transform: (NoteUi) -> NoteUi) {
-        val id = selectedNoteId.value ?: return
-        notes.update { current -> current.map { if (it.id == id) transform(it) else it } }
+        notes.updateAndGet { current ->
+            val id = selectedNoteId.value
+            if (id == null) return@updateAndGet current
+            current.map { note ->
+                if (note.id == id) transform(note) else note
+            }
+        }
         scheduleSave()
+    }
+
+    private fun updateSelectedOrNull(transform: (NoteUi) -> NoteUi): NoteUi? {
+        val id = selectedNoteId.value ?: return null
+        val updated = notes.updateAndGet { current ->
+            current.map { note ->
+                if (note.id == id) transform(note) else note
+            }
+        }.firstOrNull { it.id == id }
+        return updated
+    }
+
+    private fun refreshMediaForSelected() {
+        val note = activeSelectedNote()
+        mediaController.attachSong(note?.songUri ?: "")
     }
 
     private fun scheduleSave(delayMs: Long = 420) {
         saveJob?.cancel()
         saveJob = viewModelScope.launch {
-            delay(delayMs)
+            kotlinx.coroutines.delay(delayMs)
             repository.saveNotes(notes.value)
         }
     }
@@ -179,7 +353,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private fun scheduleRhymeUpdate(body: String, delayMs: Long = 140) {
         rhymeJob?.cancel()
         rhymeJob = viewModelScope.launch {
-            delay(delayMs)
+            kotlinx.coroutines.delay(delayMs)
             val word = withContext(Dispatchers.Default) { body.activeRhymeWord() }
             if (word.isBlank()) {
                 rhymeSuggestions.value = emptyList()
@@ -207,6 +381,15 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         return trim().split(Regex("[^A-Za-z']+")).lastOrNull { it.isNotBlank() }.orEmpty()
     }
 
+    private fun appendRecordingMarker(body: String, tag: String): String {
+        val marker = "[Voice note: $tag]"
+        return if (body.isBlank()) {
+            marker
+        } else {
+            body.trimEnd() + "\n" + marker + "\n"
+        }
+    }
+
     private data class RawNotesState(
         val notes: List<NoteUi>,
         val selectedNoteId: String?,
@@ -214,6 +397,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val isLoading: Boolean,
         val isCreating: Boolean,
         val rhymeSuggestions: List<String>,
-        val rhymeLoading: Boolean
+        val rhymeLoading: Boolean,
+        val media: MediaUiState,
+        val lastOpenedNoteId: String?
     )
 }

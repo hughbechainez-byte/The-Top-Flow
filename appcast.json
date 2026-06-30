@@ -1,9 +1,15 @@
 {
-  "versionName": "24.2",
-  "notes": "Version 24.2 is a data-safety hotfix that prevents unloaded or empty note state from overwriting an existing notes file, creates a local notes backup before future saves, and restores from that backup if the primary notes file is empty.",
-  "versionCode": 69,
-  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.2-data-safety.apk",
+  "versionName": "24.3",
+  "notes": "Version 24.3 restores attached song playback and seeking, voice recording/playback/rename/export, preview-first note style editing, broader swipe navigation, and keyboard-safe editor actions while keeping the 24.2 note data-safety guards.",
+  "versionCode": 70,
+  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.3-media-style-gestures.apk",
   "versions": [
+    {
+      "versionName": "24.3",
+      "notes": "Version 24.3 restores attached song playback and seeking, voice recording/playback/rename/export, preview-first note style editing, broader swipe navigation, and keyboard-safe editor actions while keeping the 24.2 note data-safety guards.",
+      "versionCode": 70,
+      "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.3-media-style-gestures.apk"
+    },
     {
       "versionName": "24.2",
       "notes": "Version 24.2 is a data-safety hotfix that prevents unloaded or empty note state from overwriting an existing notes file, creates a local notes backup before future saves, and restores from that backup if the primary notes file is empty.",

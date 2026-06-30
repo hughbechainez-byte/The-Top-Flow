@@ -20,7 +20,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.davehq.thetopflow.R
 
-private val NotesFontFamily = FontFamily(Font(R.font.space_grotesk, FontWeight.Normal))
+data class NoteFontSpec(
+    val id: String,
+    val label: String,
+    val family: FontFamily
+)
+
+private fun normalizedNoteFont(fontId: String): String {
+    return when (fontId.lowercase()) {
+        "slim" -> "space_grotesk"
+        "pixel" -> "silkscreen"
+        "terminal" -> "share_tech_mono_regular"
+        else -> fontId.lowercase()
+    }
+}
+
+fun noteFontFamily(fontId: String): FontFamily {
+    return when (normalizedNoteFont(fontId)) {
+        "space_grotesk" -> FontFamily(Font(R.font.space_grotesk, FontWeight.Normal))
+        "share_tech_mono_regular" -> FontFamily(Font(R.font.share_tech_mono_regular, FontWeight.Normal))
+        "silkscreen" -> FontFamily(Font(R.font.silkscreen, FontWeight.Normal))
+        "serif" -> FontFamily.Serif
+        "monospace" -> FontFamily.Monospace
+        else -> FontFamily.SansSerif
+    }
+}
+
+val noteFontOptions: List<NoteFontSpec> = listOf(
+    NoteFontSpec("space_grotesk", "Space Grotesk", FontFamily(Font(R.font.space_grotesk, FontWeight.Normal))),
+    NoteFontSpec("sans", "Sans", FontFamily.SansSerif),
+    NoteFontSpec("serif", "Serif", FontFamily.Serif),
+    NoteFontSpec("monospace", "Monospace", FontFamily.Monospace),
+    NoteFontSpec("share_tech_mono_regular", "Share Tech Mono", FontFamily(Font(R.font.share_tech_mono_regular, FontWeight.Normal))),
+    NoteFontSpec("silkscreen", "Silkscreen", FontFamily(Font(R.font.silkscreen, FontWeight.Normal)))
+)
+
+fun noteFontLabel(fontId: String): String {
+    val normalized = normalizedNoteFont(fontId)
+    return noteFontOptions.firstOrNull { it.id == normalized }?.label
+        ?: noteFontOptions.firstOrNull { it.id == normalizedNoteFont("sans") }?.label
+        ?: "Sans"
+}
+
+fun clampNoteFontSize(fontSizeSp: Int): Int = fontSizeSp.coerceIn(14, 28)
 
 private val NotesDarkScheme = darkColorScheme(
     primary = Color(0xFF84FFEE),
@@ -58,49 +100,49 @@ private val NotesLightScheme = lightColorScheme(
 
 private val NotesTypography = Typography(
     displaySmall = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.SemiBold,
         fontSize = 34.sp,
         lineHeight = 40.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 34.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.Medium,
         fontSize = 18.sp,
         lineHeight = 24.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         lineHeight = 28.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 22.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = NotesFontFamily,
+        fontFamily = noteFontFamily("space_grotesk"),
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp

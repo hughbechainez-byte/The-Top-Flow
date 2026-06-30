@@ -1,3 +1,9 @@
+@file:OptIn(
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalComposeUiApi::class
+)
+
 package com.davehq.thetopflow.ui
 
 import androidx.activity.compose.BackHandler
@@ -7,6 +13,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,58 +25,85 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.metrics.performance.PerformanceMetricsState
+import com.davehq.thetopflow.MediaUiState
 import com.davehq.thetopflow.NotesUiState
 import com.davehq.thetopflow.data.NoteUi
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.max
+import kotlin.math.min
 import java.text.DateFormat
 import java.util.Date
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun NotesRoute(
     state: NotesUiState,
     onCreateNote: () -> Unit,
@@ -78,7 +112,17 @@ fun NotesRoute(
     onSearch: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
-    onDeleteNote: () -> Unit
+    onDeleteNote: () -> Unit,
+    onOpenRecentNote: () -> Unit,
+    onAttachSong: () -> Unit,
+    onToggleSong: () -> Unit,
+    onSeekSong: (Int) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: (Boolean) -> Unit,
+    onPlayRecording: (String) -> Unit,
+    onRenameRecording: (String, String) -> Unit,
+    onExportRecording: (String) -> Boolean,
+    onApplyStyle: (String, Int, Int, Int, Int) -> Unit
 ) {
     val gridState = rememberLazyStaggeredGridState()
     val isScrolling by remember { derivedStateOf { gridState.isScrollInProgress } }
@@ -102,32 +146,46 @@ fun NotesRoute(
                 gridState = gridState,
                 onCreateNote = onCreateNote,
                 onOpenNote = onOpenNote,
-                onSearch = onSearch
+                onSearch = onSearch,
+                onOpenRecentNote = onOpenRecentNote
             )
         } else {
-                NoteEditorScreen(
+            NoteEditorScreen(
                 note = state.selectedNote,
                 isCreating = state.isCreating,
+                media = state.media,
                 rhymeSuggestions = state.rhymeSuggestions,
                 rhymeLoading = state.rhymeLoading,
                 onBack = onCloseEditor,
                 onTitleChange = onTitleChange,
                 onBodyChange = onBodyChange,
-                onDeleteNote = onDeleteNote
+                onDeleteNote = onDeleteNote,
+                onAttachSong = onAttachSong,
+                onToggleSong = onToggleSong,
+                onSeekSong = onSeekSong,
+                onStartRecording = onStartRecording,
+                onStopRecording = onStopRecording,
+                onPlayRecording = onPlayRecording,
+                onRenameRecording = onRenameRecording,
+                onExportRecording = onExportRecording,
+                onApplyStyle = onApplyStyle
             )
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NotesGridScreen(
+@OptIn(ExperimentalFoundationApi::class)
+private fun NotesGridScreen(
     state: NotesUiState,
-    gridState: LazyStaggeredGridState,
+    gridState: androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState,
     onCreateNote: () -> Unit,
     onOpenNote: (String) -> Unit,
-    onSearch: (String) -> Unit
+    onSearch: (String) -> Unit,
+    onOpenRecentNote: () -> Unit
 ) {
+    val density = LocalDensity.current
+    val gesturePx = with(density) { 96.dp.toPx() }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -154,6 +212,13 @@ fun NotesGridScreen(
             }
         },
         bottomBar = {
+            val focusManager = LocalFocusManager.current
+            val keyboard = LocalSoftwareKeyboardController.current
+            val clearInput = { action: () -> Unit ->
+                focusManager.clearFocus(force = true)
+                keyboard?.hide()
+                action()
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,13 +228,13 @@ fun NotesGridScreen(
             ) {
                 FilledTonalButton(
                     modifier = Modifier.testTag("create_note"),
-                    onClick = onCreateNote,
+                    onClick = { clearInput(onCreateNote) },
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
-                    Text("New note", style = MaterialTheme.typography.labelLarge)
+                    Text("New note")
                 }
             }
         },
@@ -179,7 +244,14 @@ fun NotesGridScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .topFlowHorizontalSwipe(
+                        enabled = true,
+                        direction = SwipeDirection.Left,
+                        startZoneFraction = 1f,
+                        thresholdPx = gesturePx,
+                        onSwipe = onOpenRecentNote
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -190,6 +262,7 @@ fun NotesGridScreen(
             }
             return@Scaffold
         }
+
         if (state.visibleNotes.isEmpty()) {
             EmptyNotesState(
                 modifier = Modifier
@@ -200,10 +273,18 @@ fun NotesGridScreen(
             )
             return@Scaffold
         }
+
         LazyVerticalStaggeredGrid(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .topFlowHorizontalSwipe(
+                    enabled = true,
+                    direction = SwipeDirection.Left,
+                    startZoneFraction = 1f,
+                    thresholdPx = gesturePx,
+                    onSwipe = onOpenRecentNote
+                )
                 .testTag("notes_grid"),
             state = gridState,
             columns = StaggeredGridCells.Adaptive(172.dp),
@@ -227,7 +308,7 @@ fun NotesGridScreen(
 }
 
 @Composable
-fun SearchField(
+private fun SearchField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -274,6 +355,11 @@ fun NoteCard(
     onClick: () -> Unit = {}
 ) {
     val accent = Color(note.accentColor)
+    val pageColor = Color(note.noteColor).copy(alpha = 0.24f)
+    val titleColor = readableColor(pageColor, Color(note.textColor), MaterialTheme.colorScheme.onSurface)
+    val bodyColor = readableColor(pageColor, Color(note.textColor), MaterialTheme.colorScheme.onSurfaceVariant)
+    val previewTextStyle = editorBodyStyle(note, bodyColor)
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
@@ -289,7 +375,7 @@ fun NoteCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(pageColor)
                 .border(
                     width = 1.dp,
                     color = if (selected) accent else MaterialTheme.colorScheme.outlineVariant,
@@ -307,8 +393,7 @@ fun NoteCard(
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = note.title.ifBlank { "Untitled" },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = noteFontFamily(note.font), color = titleColor),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -317,8 +402,7 @@ fun NoteCard(
                 Text(
                     text = note.preview,
                     modifier = Modifier.padding(top = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = previewTextStyle,
                     maxLines = 6,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -326,11 +410,24 @@ fun NoteCard(
             Spacer(Modifier.height(16.dp))
             Text(
                 text = "${note.wordCount} words · ${shortDate(note.updatedAt)}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium.copy(color = readableMetadataColor(Color(note.noteColor), titleColor)),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (note.songUri.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Song linked",
+                    style = MaterialTheme.typography.labelSmall.copy(color = accent)
+                )
+            }
+            note.recordings.firstOrNull()?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Voice notes: ${note.recordings.size}",
+                    style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                )
+            }
         }
     }
 }
@@ -339,23 +436,43 @@ fun NoteCard(
 fun NoteEditorScreen(
     note: NoteUi,
     isCreating: Boolean,
+    media: MediaUiState,
     rhymeSuggestions: List<String>,
     rhymeLoading: Boolean,
     onBack: () -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
-    onDeleteNote: () -> Unit
+    onDeleteNote: () -> Unit,
+    onAttachSong: () -> Unit,
+    onToggleSong: () -> Unit,
+    onSeekSong: (Int) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: (Boolean) -> Unit,
+    onPlayRecording: (String) -> Unit,
+    onRenameRecording: (String, String) -> Unit,
+    onExportRecording: (String) -> Boolean,
+    onApplyStyle: (String, Int, Int, Int, Int) -> Unit
 ) {
     BackHandler(onBack = onBack)
     NoteEditor(
         note = note,
         isCreating = isCreating,
+        media = media,
         rhymeSuggestions = rhymeSuggestions,
         rhymeLoading = rhymeLoading,
         onBack = onBack,
         onTitleChange = onTitleChange,
         onBodyChange = onBodyChange,
-        onDeleteNote = onDeleteNote
+        onDeleteNote = onDeleteNote,
+        onAttachSong = onAttachSong,
+        onToggleSong = onToggleSong,
+        onSeekSong = onSeekSong,
+        onStartRecording = onStartRecording,
+        onStopRecording = onStopRecording,
+        onPlayRecording = onPlayRecording,
+        onRenameRecording = onRenameRecording,
+        onExportRecording = onExportRecording,
+        onApplyStyle = onApplyStyle
     )
 }
 
@@ -363,126 +480,601 @@ fun NoteEditorScreen(
 fun NoteEditor(
     note: NoteUi,
     isCreating: Boolean,
+    media: MediaUiState,
     rhymeSuggestions: List<String> = emptyList(),
     rhymeLoading: Boolean = false,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onTitleChange: (String) -> Unit = {},
     onBodyChange: (String) -> Unit = {},
-    onDeleteNote: () -> Unit = {}
+    onDeleteNote: () -> Unit = {},
+    onAttachSong: () -> Unit = {},
+    onToggleSong: () -> Unit = {},
+    onSeekSong: (Int) -> Unit = {},
+    onStartRecording: () -> Unit = {},
+    onStopRecording: (Boolean) -> Unit = {},
+    onPlayRecording: (String) -> Unit = {},
+    onRenameRecording: (String, String) -> Unit = { _, _ -> },
+    onExportRecording: (String) -> Boolean = { false },
+    onApplyStyle: (String, Int, Int, Int, Int) -> Unit = { _, _, _, _, _ -> }
 ) {
-    val accent = Color(note.accentColor)
+    val swipeThresholdPx = with(LocalDensity.current) { 96.dp.toPx() }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    var showStyleSheet by remember { mutableStateOf(false) }
+    var renameRecordingPath by remember { mutableStateOf<String?>(null) }
+    var renameValue by remember { mutableStateOf("") }
+
+    val runAction: (() -> Unit) -> Unit = { action ->
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        action()
+    }
+
+    val pageColor = Color(note.noteColor)
+    val accentColor = Color(note.accentColor)
+    val bodyTextColor = readableColor(pageColor, Color(note.textColor), MaterialTheme.colorScheme.onSurface)
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .topFlowHorizontalSwipe(
+                enabled = true,
+                direction = SwipeDirection.Right,
+                startZoneFraction = 0.4f,
+                thresholdPx = swipeThresholdPx,
+                onSwipe = { runAction { onBack() } }
+            )
+            .background(materialEditorSurface(note.noteColor))
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 12.dp)
+            .imePadding()
             .testTag("note_editor")
             .semantics { contentDescription = "Note editor" }
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedButton(onClick = onBack, modifier = Modifier.testTag("close_editor")) {
-                Text("Notes", style = MaterialTheme.typography.labelLarge)
-            }
-            Spacer(Modifier.weight(1f))
-            AnimatedVisibility(visible = !isCreating) {
-                OutlinedButton(onClick = onDeleteNote, modifier = Modifier.testTag("delete_note")) {
-                    Text("Delete", style = MaterialTheme.typography.labelLarge)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = { runAction(onBack) }, modifier = Modifier.testTag("close_editor")) {
+                        Text("Notes")
+                    }
+                    Spacer(Modifier.weight(1f))
+                    OutlinedButton(onClick = { runAction { showStyleSheet = true } }, modifier = Modifier.testTag("style_editor")) {
+                        Text("Style")
+                    }
+                    AnimatedVisibility(visible = !isCreating) {
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = { runAction(onDeleteNote) }, modifier = Modifier.testTag("delete_note")) {
+                            Text("Delete")
+                        }
+                    }
                 }
+            }
+            item {
+                BasicTextField(
+                    value = note.title,
+                    onValueChange = onTitleChange,
+                    textStyle = editorTitleStyle(note, bodyTextColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("editor_title")
+                        .semantics { contentDescription = "Note title" },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    singleLine = false,
+                    decorationBox = { innerTextField ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (note.title.isBlank()) {
+                                Text(
+                                    text = "Untitled",
+                                    style = editorTitleStyle(note, bodyTextColor.copy(alpha = 0.5f))
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(accentColor)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "${note.wordCount} words · ${shortDate(note.updatedAt)}",
+                        style = MaterialTheme.typography.labelLarge.copy(color = readableMetadataColor(pageColor, bodyTextColor)),
+                        maxLines = 1
+                    )
+                }
+            }
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+            item {
+                MediaPanel(
+                    note = note,
+                    media = media,
+                    onAttach = { runAction(onAttachSong) },
+                    onToggleSong = { runAction(onToggleSong) },
+                    onSeekSong = onSeekSong
+                )
+            }
+            item {
+                VoicePanel(
+                    note = note,
+                    media = media,
+                    onStartRecording = { runAction(onStartRecording) },
+                onStopRecording = { shouldSave -> runAction { onStopRecording(shouldSave) } },
+                onPlayRecording = { path -> runAction { onPlayRecording(path) } },
+                onRename = { path, tag -> runAction { renameRecordingPath = path; renameValue = tag } },
+                onExport = { path ->
+                    var exported = false
+                    runAction { exported = onExportRecording(path) }
+                    exported
+                }
+            )
+        }
+            item {
+                RhymeSuggestionRow(
+                    suggestions = rhymeSuggestions,
+                    loading = rhymeLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    onInsertWord = { insertion ->
+                        runAction {
+                            onBodyChange(note.body + insertion)
+                        }
+                    }
+                )
+            }
+            item {
+                BasicTextField(
+                    value = note.body,
+                    onValueChange = onBodyChange,
+                    textStyle = editorBodyStyle(note, bodyTextColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("editor_body")
+                        .semantics { contentDescription = "Note body" },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    decorationBox = { innerTextField ->
+                        Box(Modifier.fillMaxWidth()) {
+                            if (note.body.isBlank()) {
+                                Text(
+                                    text = "Start writing...",
+                                    style = editorBodyStyle(note, bodyTextColor.copy(alpha = 0.45f)),
+                                    color = bodyTextColor.copy(alpha = 0.45f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
             }
         }
-        Spacer(Modifier.height(22.dp))
-        BasicTextField(
-            value = note.title,
-            onValueChange = onTitleChange,
-            textStyle = MaterialTheme.typography.headlineMedium.copy(color = MaterialTheme.colorScheme.onBackground),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("editor_title")
-                .semantics { contentDescription = "Note title" },
-            singleLine = false,
-            decorationBox = { innerTextField ->
-                Box(contentAlignment = Alignment.CenterStart) {
-                    if (note.title.isBlank()) {
-                        Text(
-                            text = "Untitled",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    innerTextField()
+    }
+
+    if (showStyleSheet) {
+        StyleEditorSheet(
+            note = note,
+            onDismiss = { runAction { showStyleSheet = false } },
+            onApply = { font, size, page, text, accent ->
+                runAction {
+                    onApplyStyle(font, size, page, text, accent)
+                    showStyleSheet = false
                 }
-            }
+            },
+            onCancel = { runAction { showStyleSheet = false } }
         )
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(accent)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "${note.wordCount} words · ${shortDate(note.updatedAt)}",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-        }
-        Spacer(Modifier.height(18.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Spacer(Modifier.height(18.dp))
-        RhymeSuggestionRow(
-            suggestions = rhymeSuggestions,
-            loading = rhymeLoading,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(18.dp))
-        BasicTextField(
-            value = note.body,
-            onValueChange = onBodyChange,
-            textStyle = editorBodyStyle(note),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .testTag("editor_body")
-                .semantics { contentDescription = "Note body" },
-            decorationBox = { innerTextField ->
-                Box(Modifier.fillMaxSize()) {
-                    if (note.body.isBlank()) {
-                        Text(
-                            text = "Start writing...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    innerTextField()
-                }
-            }
+    }
+
+    if (renameRecordingPath != null) {
+        RenameRecordingDialog(
+            open = true,
+            initialTag = renameValue,
+            onConfirm = { newTag ->
+                renameRecordingPath?.let { onRenameRecording(it, newTag) }
+                renameRecordingPath = null
+                renameValue = ""
+            },
+            onDismiss = {
+                renameRecordingPath = null
+                renameValue = ""
+            },
+            onTagChange = { renameValue = it }
         )
     }
 }
 
 @Composable
-private fun editorBodyStyle(note: NoteUi): TextStyle {
-    return MaterialTheme.typography.bodyLarge.copy(
-        color = MaterialTheme.colorScheme.onBackground,
-        fontSize = note.fontSizeSp.coerceIn(14, 28).sp,
-        lineHeight = (note.fontSizeSp.coerceIn(14, 28) + 10).sp
-    )
+private fun MediaPanel(
+    note: NoteUi,
+    media: MediaUiState,
+    onAttach: () -> Unit,
+    onToggleSong: () -> Unit,
+    onSeekSong: (Int) -> Unit
+) {
+    Surface(
+        color = Color(note.noteColor).copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, Color(note.accentColor))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Song", style = MaterialTheme.typography.titleMedium, color = Color(note.accentColor))
+                Text(
+                    text = if (note.songUri.isBlank()) "No song attached" else "Attached",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = onAttach) { Text("Attach") }
+                OutlinedButton(onClick = onToggleSong, enabled = note.songUri.isNotBlank()) {
+                    Text(if (media.songPlaying) "Pause" else "Play")
+                }
+            }
+            val sliderRange = if (media.songDurationMs <= 0) {
+                0f
+            } else {
+                (media.songPositionMs.toFloat() / media.songDurationMs.toFloat()).coerceIn(0f, 1f)
+            }
+            var pendingSeek by remember { mutableFloatStateOf(sliderRange) }
+            LaunchedEffect(sliderRange) {
+                pendingSeek = sliderRange
+            }
+            Slider(
+                value = pendingSeek,
+                onValueChange = { pendingSeek = it },
+                onValueChangeFinished = {
+                    val targetMs = (pendingSeek * media.songDurationMs).roundToInt()
+                    onSeekSong(targetMs)
+                },
+                enabled = media.songDurationMs > 0 && note.songUri.isNotBlank(),
+                colors = SliderDefaults.colors(),
+                valueRange = 0f..1f
+            )
+            Text(
+                text = "${formatDuration(media.songPositionMs)} / ${formatDuration(media.songDurationMs)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun VoicePanel(
+    note: NoteUi,
+    media: MediaUiState,
+    onStartRecording: () -> Unit,
+    onStopRecording: (Boolean) -> Unit,
+    onPlayRecording: (String) -> Unit,
+    onRename: (String, String) -> Unit,
+    onExport: (String) -> Boolean
+) {
+    Surface(
+        color = Color(note.noteColor).copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, Color(note.accentColor))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Voice", style = MaterialTheme.typography.titleMedium, color = Color(note.accentColor))
+            if (media.recordingActive) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Recording", style = MaterialTheme.typography.labelLarge)
+                    OutlinedButton(onClick = { onStopRecording(true) }) { Text("Stop + Save") }
+                    OutlinedButton(onClick = { onStopRecording(false) }) { Text("Cancel") }
+                }
+                Text("elapsed ${formatDuration(media.recordingElapsedMs)}", style = MaterialTheme.typography.labelMedium)
+            } else {
+                OutlinedButton(onClick = onStartRecording) { Text("Record") }
+            }
+            if (note.recordings.isEmpty()) {
+                Text(
+                    text = "No recordings yet",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            note.recordings.forEach { recording ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        recording.tag.ifBlank { "Recording" },
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    val isPlaying = media.recordingPlaybackActive && media.recordingPlaybackPath == recording.path
+                    OutlinedButton(onClick = { onPlayRecording(recording.path) }) {
+                        Text(if (isPlaying) "Stop" else "Play")
+                    }
+                    OutlinedButton(onClick = { onRename(recording.path, recording.tag) }) { Text("Rename") }
+                    OutlinedButton(onClick = { onExport(recording.path) }) { Text("Export") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RenameRecordingDialog(
+    open: Boolean,
+    initialTag: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onTagChange: (String) -> Unit
+) {
+    if (!open) return
+    var text by remember(initialTag) { mutableStateOf(initialTag) }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val confirmWithDismiss = { tag: String ->
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        onConfirm(tag.trim())
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Rename recording", style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = {
+                        text = it
+                        onTagChange(it)
+                    }
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.align(Alignment.End)) {
+                    OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+                    OutlinedButton(onClick = { confirmWithDismiss(text) }) { Text("Save") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StyleEditorSheet(
+    note: NoteUi,
+    onDismiss: () -> Unit,
+    onApply: (String, Int, Int, Int, Int) -> Unit,
+    onCancel: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var draftFont by remember(note.id) { mutableStateOf(note.font) }
+    var draftFontSize by remember(note.id) { mutableIntStateOf(note.fontSizeSp) }
+    var draftNoteColor by remember(note.id) { mutableIntStateOf(note.noteColor) }
+    var draftTextColor by remember(note.id) { mutableIntStateOf(note.textColor) }
+    var draftAccentColor by remember(note.id) { mutableIntStateOf(note.accentColor) }
+    var draftColorTarget by remember { mutableStateOf("page") }
+
+    fun colorForTarget() = when (draftColorTarget) {
+        "text" -> draftTextColor
+        "accent" -> draftAccentColor
+        else -> draftNoteColor
+    }
+
+    fun setColorForTarget(nextColor: Int) {
+        when (draftColorTarget) {
+            "text" -> draftTextColor = nextColor
+            "accent" -> draftAccentColor = nextColor
+            else -> draftNoteColor = nextColor
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                onDismiss()
+            }
+        },
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Note Style", style = MaterialTheme.typography.titleLarge)
+            Text("Preview", style = MaterialTheme.typography.labelLarge)
+            Surface(
+                color = Color(draftNoteColor).copy(alpha = 0.12f),
+                shape = MaterialTheme.shapes.medium,
+                border = BorderStroke(1.dp, Color(draftAccentColor))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "The Top Flow",
+                        style = editorTitleStyle(
+                            note.copy(font = draftFont, fontSizeSp = draftFontSize, noteColor = draftNoteColor, textColor = draftTextColor, accentColor = draftAccentColor),
+                            Color(draftTextColor)
+                        ),
+                        color = Color(draftTextColor)
+                    )
+                    Text(
+                        "whisper my name",
+                        style = editorBodyStyle(
+                            note.copy(font = draftFont, fontSizeSp = draftFontSize, noteColor = draftNoteColor, textColor = draftTextColor, accentColor = draftAccentColor),
+                            Color(draftTextColor)
+                        ),
+                        color = Color(draftTextColor)
+                    )
+                }
+            }
+            Text("Font", style = MaterialTheme.typography.labelLarge)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(noteFontOptions) { spec ->
+                    val selected = spec.id == draftFont
+                    OutlinedButton(
+                        onClick = { draftFont = spec.id },
+                        colors = if (selected) {
+                            ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        } else {
+                            ButtonDefaults.outlinedButtonColors()
+                        }
+                    ) {
+                        Text(spec.label, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Size ${draftFontSize}sp", style = MaterialTheme.typography.labelLarge)
+                Slider(
+                    value = draftFontSize.toFloat(),
+                    onValueChange = { draftFontSize = it.toInt().coerceIn(14, 28) },
+                    valueRange = 14f..28f,
+                    steps = 14
+                )
+            }
+            Text("Color target", style = MaterialTheme.typography.labelLarge)
+            ColorTargetTabs(
+                selected = draftColorTarget,
+                onSelect = { draftColorTarget = it }
+            )
+            ColorPickerInputs(
+                color = colorForTarget(),
+                accent = draftAccentColor,
+                onChange = { setColorForTarget(it) }
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "${noteFontLabel(draftFont)} • ${draftFontSize}sp",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        " #${colorToHex(colorForTarget())}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                FilledTonalButton(
+                    onClick = { onApply(draftFont, draftFontSize, draftNoteColor, draftTextColor, draftAccentColor) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Apply")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorTargetTabs(
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        listOf("page", "text", "accent").forEach { target ->
+            val isSelected = selected == target
+            OutlinedButton(
+                onClick = { onSelect(target) },
+                colors = if (isSelected) {
+                    ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = target.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorPickerInputs(
+    color: Int,
+    accent: Int,
+    onChange: (Int) -> Unit
+) {
+    val r = (color shr 16) and 0xff
+    val g = (color shr 8) and 0xff
+    val b = color and 0xff
+    fun opaqueColor(red: Int = r, green: Int = g, blue: Int = b): Int {
+        return (0xFF shl 24) or
+            ((red.coerceIn(0, 255) and 0xFF) shl 16) or
+            ((green.coerceIn(0, 255) and 0xFF) shl 8) or
+            (blue.coerceIn(0, 255) and 0xFF)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Text("Red ${r}", style = MaterialTheme.typography.labelMedium)
+        Slider(
+            value = r.toFloat(),
+            onValueChange = { onChange(opaqueColor(red = it.toInt())) },
+            valueRange = 0f..255f
+        )
+        Text("Green ${g}", style = MaterialTheme.typography.labelMedium)
+        Slider(
+            value = g.toFloat(),
+            onValueChange = { onChange(opaqueColor(green = it.toInt())) },
+            valueRange = 0f..255f
+        )
+        Text("Blue ${b}", style = MaterialTheme.typography.labelMedium)
+        Slider(
+            value = b.toFloat(),
+            onValueChange = { onChange(opaqueColor(blue = it.toInt())) },
+            valueRange = 0f..255f
+        )
+
+        val swatches = listOf(
+            0xFF0ECDBE.toInt(),
+            0xFF080C0E.toInt(),
+            0xFF84FFEE.toInt(),
+            0xFF6C63FF.toInt(),
+            0xFFFFC875.toInt(),
+            0xFFFF8A80.toInt(),
+            0xFFFFFFFF.toInt(),
+            0xFF000000.toInt()
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            swatches.forEach { swatch ->
+                val selected = swatch == color
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color(swatch))
+                        .border(
+                            BorderStroke(if (selected) 2.dp else 1.dp, Color(accent)),
+                            CircleShape
+                        )
+                        .clickable { onChange(swatch) }
+                )
+            }
+        }
+    }
 }
 
 @Composable
 private fun RhymeSuggestionRow(
     suggestions: List<String>,
     loading: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onInsertWord: (String) -> Unit = {}
 ) {
     Surface(
         modifier = modifier.testTag("rhyme_suggestions"),
@@ -492,24 +1084,25 @@ private fun RhymeSuggestionRow(
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(
-                text = if (loading) "Rhyme engine loading" else "Rhymes",
+                text = if (loading) "Rhyme engine loading" else "Rhyme Suggestions",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(8.dp))
             if (!loading && suggestions.isEmpty()) {
                 Text(
-                    text = "Type a word to see offline rhymes.",
+                    text = "Type a word to see rhymes.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(suggestions, key = { it }) { word ->
+                    items(suggestions) { word ->
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
                             color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.clickable { onInsertWord("$word ") }
                         ) {
                             Text(
                                 text = word,
@@ -531,6 +1124,13 @@ private fun EmptyNotesState(
     onCreateNote: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val runAction: (() -> Unit) -> Unit = { action ->
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        action()
+    }
     Box(modifier = modifier.padding(24.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -546,8 +1146,8 @@ private fun EmptyNotesState(
             )
             if (!isSearching) {
                 Spacer(Modifier.height(18.dp))
-                FilledTonalButton(onClick = onCreateNote) {
-                    Text("New note", style = MaterialTheme.typography.labelLarge)
+                FilledTonalButton(onClick = { runAction(onCreateNote) }) {
+                    Text("New note")
                 }
             }
         }
@@ -570,6 +1170,135 @@ private fun JankStateLabels(screenLabel: String, isScrolling: Boolean) {
     }
 }
 
+@Composable
+private fun editorTitleStyle(note: NoteUi, color: Color): androidx.compose.ui.text.TextStyle {
+    val textSize = note.fontSizeSp.coerceIn(14, 28).sp
+    return androidx.compose.ui.text.TextStyle(
+        fontFamily = noteFontFamily(note.font),
+        fontSize = (note.fontSizeSp + 8).sp,
+        lineHeight = (note.fontSizeSp + 12).sp,
+        color = color
+    )
+}
+
+@Composable
+private fun editorBodyStyle(note: NoteUi, color: Color): androidx.compose.ui.text.TextStyle {
+    val textSize = note.fontSizeSp.coerceIn(14, 28).sp
+    return androidx.compose.ui.text.TextStyle(
+        fontFamily = noteFontFamily(note.font),
+        color = color,
+        fontSize = textSize,
+        lineHeight = (note.fontSizeSp.coerceIn(14, 28) + 10).sp
+    )
+}
+
+private fun materialEditorSurface(noteColor: Int): Color = Color(noteColor).copy(alpha = 0.06f)
+
+private fun readableColor(pageColor: Color, textColor: Color, fallback: Color): Color {
+    return if (colorContrastRatio(pageColor, textColor) >= 2f) textColor else fallback
+}
+
+private fun readableMetadataColor(pageColor: Color, textColor: Color): Color {
+    return if (colorContrastRatio(pageColor, textColor) >= 1.4f) textColor else Color.White
+}
+
+private fun colorContrastRatio(a: Color, b: Color): Float {
+    val l1 = relativeLuminance(a) + 0.05f
+    val l2 = relativeLuminance(b) + 0.05f
+    val max = max(l1, l2)
+    val min = min(l1, l2)
+    return max / min
+}
+
+private fun relativeLuminance(color: Color): Float {
+    fun toLinear(channel: Float): Float {
+        return if (channel <= 0.03928f) {
+            channel / 12.92f
+        } else {
+            ((channel + 0.055f) / 1.055f).pow(2.4f)
+        }
+    }
+
+    return 0.2126f * toLinear(color.red) +
+        0.7152f * toLinear(color.green) +
+        0.0722f * toLinear(color.blue)
+}
+
+private fun formatDuration(ms: Int): String {
+    val sec = (ms / 1000).coerceAtLeast(0)
+    val minutes = sec / 60
+    val seconds = sec % 60
+    return "$minutes:${seconds.toString().padStart(2, '0')}"
+}
+
 private fun shortDate(timestamp: Long): String {
     return DateFormat.getDateInstance(DateFormat.SHORT).format(Date(timestamp))
+}
+
+private fun colorToHex(color: Int): String {
+    val noAlpha = color and 0x00FFFFFF
+    return noAlpha.toString(16).uppercase().padStart(6, '0')
+}
+
+enum class SwipeDirection { Left, Right }
+
+@Composable
+private fun Modifier.topFlowHorizontalSwipe(
+    enabled: Boolean,
+    direction: SwipeDirection,
+    startZoneFraction: Float,
+    thresholdPx: Float,
+    onSwipe: () -> Unit
+): Modifier {
+    if (!enabled) return this
+    val isRight = direction == SwipeDirection.Right
+    val dragOffset = remember { mutableFloatStateOf(0f) }
+    val isTracking = remember { mutableStateOf(false) }
+    val totalDx = remember { mutableFloatStateOf(0f) }
+    val totalDy = remember { mutableFloatStateOf(0f) }
+
+    return this
+        .offset { IntOffset(dragOffset.floatValue.roundToInt(), 0) }
+        .pointerInput(enabled, direction, startZoneFraction, thresholdPx) {
+            if (!enabled) return@pointerInput
+            detectDragGestures(
+                onDragStart = { start ->
+                    val width = size.width.toFloat().coerceAtLeast(1f)
+                    totalDx.floatValue = 0f
+                    totalDy.floatValue = 0f
+                    isTracking.value = false
+                    if (isRight && start.x > width * startZoneFraction) return@detectDragGestures
+                    if (!isRight && width - start.x > width * startZoneFraction) return@detectDragGestures
+                    isTracking.value = true
+                },
+                onDrag = { change, dragAmount ->
+                    if (!isTracking.value) return@detectDragGestures
+                    totalDx.floatValue += dragAmount.x
+                    totalDy.floatValue += dragAmount.y
+                    val absDx = abs(totalDx.floatValue)
+                    val absDy = abs(totalDy.floatValue)
+                    if (absDy * 1.25f > absDx) {
+                        isTracking.value = false
+                        dragOffset.floatValue = 0f
+                        return@detectDragGestures
+                    }
+                    val directionalDrag = if (isRight) dragAmount.x else -dragAmount.x
+                    if (absDx > absDy * 1.25f && directionalDrag > 0f) {
+                        val nextMagnitude = (abs(dragOffset.floatValue) + directionalDrag)
+                            .coerceIn(0f, thresholdPx * 1.25f)
+                        dragOffset.floatValue = if (isRight) nextMagnitude else -nextMagnitude
+                        change.consume()
+                    }
+                },
+                onDragEnd = {
+                    if (abs(dragOffset.floatValue) >= thresholdPx) onSwipe()
+                    dragOffset.floatValue = 0f
+                    isTracking.value = false
+                },
+                onDragCancel = {
+                    dragOffset.floatValue = 0f
+                    isTracking.value = false
+                }
+            )
+        }
 }
