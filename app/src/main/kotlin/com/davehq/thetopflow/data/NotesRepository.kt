@@ -73,11 +73,16 @@ class NotesRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val notesFile = File(application.filesDir, "notes.json")
+    private val backupFile = File(application.filesDir, "notes.backup.json")
 
     suspend fun loadNotes(): List<NoteUi> = withContext(ioDispatcher) {
-        if (!notesFile.exists()) return@withContext emptyList()
+        val sourceFile = when {
+            notesFile.exists() && notesFile.length() > 2L -> notesFile
+            backupFile.exists() && backupFile.length() > 2L -> backupFile
+            else -> return@withContext emptyList()
+        }
         runCatching {
-            val raw = notesFile.readText(StandardCharsets.UTF_8)
+            val raw = sourceFile.readText(StandardCharsets.UTF_8)
             val arr = JSONArray(raw)
             buildList {
                 for (index in 0 until arr.length()) {
@@ -88,6 +93,12 @@ class NotesRepository(
     }
 
     suspend fun saveNotes(notes: List<NoteUi>) = withContext(ioDispatcher) {
+        if (notes.isEmpty() && notesFile.exists() && notesFile.length() > 2L) {
+            return@withContext
+        }
+        if (notesFile.exists() && notesFile.length() > 2L) {
+            runCatching { notesFile.copyTo(backupFile, overwrite = true) }
+        }
         val arr = JSONArray()
         notes.forEach { arr.put(it.toJson()) }
         notesFile.writeText(arr.toString(2), StandardCharsets.UTF_8)

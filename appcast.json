@@ -1,14 +1,14 @@
 {
-  "versionName": "24.1",
-  "notes": "Version 24.1 introduces a Material 3 Compose note-taking stack with a stable Theme pipeline, immutable note state, improved typography and text rendering controls, and performance instrumentation hooks for 120 Hz-ready UI polish.",
-  "versionCode": 67,
-  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.1-final.apk",
+  "versionName": "24.2",
+  "notes": "Version 24.2 is a data-safety hotfix that prevents unloaded or empty note state from overwriting an existing notes file, creates a local notes backup before future saves, and restores from that backup if the primary notes file is empty.",
+  "versionCode": 69,
+  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.2-data-safety.apk",
   "versions": [
     {
-      "versionName": "24.1",
-      "notes": "Version 24.1 introduces a Material 3 Compose note-taking stack with a stable Theme pipeline, immutable note state, improved typography and text rendering controls, and performance instrumentation hooks for 120 Hz-ready UI polish.",
-      "versionCode": 67,
-      "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.1-final.apk"
+      "versionName": "24.2",
+      "notes": "Version 24.2 is a data-safety hotfix that prevents unloaded or empty note state from overwriting an existing notes file, creates a local notes backup before future saves, and restores from that backup if the primary notes file is empty.",
+      "versionCode": 69,
+      "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.2-data-safety.apk"
     },
     {
       "versionName": "24.0",

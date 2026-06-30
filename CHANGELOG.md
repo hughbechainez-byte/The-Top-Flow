@@ -2,6 +2,7 @@
 
 ## 2026-06-29
 
+- Released 24.2 as a data-safety hotfix after 24.1 exposed a destructive save path: saves are blocked until notes finish loading, empty state cannot overwrite an existing non-empty `notes.json`, `notes.backup.json` is created before future saves, backup fallback is used when the primary file is empty, and 24.1 was removed from the updater manifest.
 - Built 24.1 as a Material 3 Compose note-taking foundation: Kotlin `ComponentActivity` host, single `NotesTheme`, Compose-only note text/editor rendering, staggered note grid, immutable `NoteUi` state via `StateFlow`, off-main storage/search/rhyme paths, debug JankStats state labels, Macrobenchmark/Baseline Profile wiring, generated Baseline Profile, and screenshot tests for note cards/editor across light/dark and font scale coverage. APK was packaged locally only; appcast/update manifests were not changed.
 - Ported the repository to GitHub at `hughbechainez-byte/The-Top-Flow`, kept GitLab as a backup remote, and drafted the 24.2 GitHub Releases/appcast migration plan without publishing 24.1 through the app updater.
 - Released 24.0 as the completed pure-black OLED UI foundation milestone, retaining the motion/menu/Notes/editor/dock overhaul, runtime-used rhyme acceleration assets, size gate compliance, temp-hosted APK, and final Desktop report.

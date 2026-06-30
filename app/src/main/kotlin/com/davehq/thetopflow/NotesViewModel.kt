@@ -44,6 +44,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val rhymeLoading = MutableStateFlow(true)
     private var saveJob: Job? = null
     private var rhymeJob: Job? = null
+    private var notesLoaded = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<NotesUiState> = combine(
@@ -98,6 +99,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val loaded = repository.loadNotes()
             notes.value = loaded
+            notesLoaded = true
             loading.value = false
             if (loaded.any { it.id.startsWith("legacy-") }) scheduleSave(delayMs = 0)
         }
@@ -150,6 +152,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun flushPendingSave() {
+        if (!notesLoaded) return
         saveJob?.cancel()
         viewModelScope.launch { repository.saveNotes(notes.value) }
     }
