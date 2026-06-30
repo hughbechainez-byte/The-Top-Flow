@@ -1,9 +1,15 @@
 {
-  "versionName": "24.4",
-  "notes": "Version 24.4 stabilizes editor typing, moves song and voice controls into collapsed panels below the note body, removes the old style-preview phrase, and rebuilds style editing with focused submenus, a wheel-style color picker, saved note defaults, and menu color controls.",
-  "versionCode": 71,
-  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.4-editor-style-fix.apk",
+  "versionName": "24.5",
+  "notes": "Version 24.5 restores app update entry points, shows version on the Notes screen, adds persistent panel ordering with rhyme and media controls stacked below the note text, and refines menu/selection flows.",
+  "versionCode": 72,
+  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.5-editor-menu-layout.apk",
   "versions": [
+    {
+      "versionName": "24.5",
+      "notes": "Version 24.5 restores app update entry points, shows version on the Notes screen, adds persistent panel ordering with rhyme and media controls stacked below the note text, and refines menu/selection flows.",
+      "versionCode": 72,
+      "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-24.5-editor-menu-layout.apk"
+    },
     {
       "versionName": "24.4",
       "notes": "Version 24.4 stabilizes editor typing, moves song and voice controls into collapsed panels below the note body, removes the old style-preview phrase, and rebuilds style editing with focused submenus, a wheel-style color picker, saved note defaults, and menu color controls.",
