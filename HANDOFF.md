@@ -60,6 +60,10 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 24.1 is a Material 3 Compose note-taking foundation build. `MainActivity.kt` owns the live `setContent` host, `NotesTheme` provides one Material 3 color/typography/shape system with dynamic dark support, `NotesScreens.kt` renders cards/search/editor/rhyme chips with Compose text and `BasicTextField`, and `NotesViewModel.kt` exposes immutable UI state through `StateFlow` while moving storage/search/rhyme work off the main thread. Macrobenchmark and screenshot test modules are present, and `app/src/release/generated/baselineProfiles/baseline-prof.txt` was generated from the release interactions. This build was packaged locally only; do not push JSONBlob/appcast until Dave directs it.
 
+The repository is now ported to GitHub at `https://github.com/hughbechainez-byte/The-Top-Flow`. Local `origin` points to GitHub and the old GitLab remote is retained as `gitlab`. Both GitHub `main` and `the-top-flow` currently point to commit `a2d02b9`.
+
+Do not publish 24.1 through appcast unless Dave explicitly accepts its feature-parity caveat. The existing updater cannot make 24.1 available only to users below 24.0 because it only filters by `versionCode`; 24.2 should add source-version gating and switch durable delivery to GitHub Releases.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -74,6 +78,8 @@ tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 Latest published build: 24.0 / versionCode 66 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
 
 Latest local-only build: 24.1 / versionCode 67 passed `assembleRelease`, `assembleDebug`, screenshot instrumentation tests on the local emulator, generated a release Baseline Profile, and passed the active-source banned-rendering scan.
+
+24.2 update-delivery plan: see `ROADMAP_24_2_GITHUB_UPDATES.md`.
 
 ## Important Files
 

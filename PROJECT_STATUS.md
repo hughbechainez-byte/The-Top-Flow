@@ -65,8 +65,8 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Development Priority
 
-24.1 local packaging is complete without changing JSONBlob/appcast. Current priority is validating the Compose host on Dave's Pixel, then porting recording/playback/settings/update surfaces into the same Material 3 Compose foundation.
+24.1 local packaging is complete without changing JSONBlob/appcast. The repository has been ported to GitHub at `https://github.com/hughbechainez-byte/The-Top-Flow`; `origin` now points to GitHub and `gitlab` is retained as the old remote. Current priority is 24.2: restore full app feature parity in the Compose host and move update delivery to GitHub Releases plus the GitHub raw appcast.
 
 ## Next Milestone
 
-Next: run Layout Inspector and physical 120 Hz Macrobenchmark/JankStats validation, then continue the full-feature Compose port.
+Next: implement the 24.2 GitHub update foundation, run Layout Inspector and physical 120 Hz Macrobenchmark/JankStats validation, then continue the full-feature Compose port.

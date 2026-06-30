@@ -3,6 +3,7 @@
 ## 2026-06-29
 
 - Built 24.1 as a Material 3 Compose note-taking foundation: Kotlin `ComponentActivity` host, single `NotesTheme`, Compose-only note text/editor rendering, staggered note grid, immutable `NoteUi` state via `StateFlow`, off-main storage/search/rhyme paths, debug JankStats state labels, Macrobenchmark/Baseline Profile wiring, generated Baseline Profile, and screenshot tests for note cards/editor across light/dark and font scale coverage. APK was packaged locally only; appcast/update manifests were not changed.
+- Ported the repository to GitHub at `hughbechainez-byte/The-Top-Flow`, kept GitLab as a backup remote, and drafted the 24.2 GitHub Releases/appcast migration plan without publishing 24.1 through the app updater.
 - Released 24.0 as the completed pure-black OLED UI foundation milestone, retaining the motion/menu/Notes/editor/dock overhaul, runtime-used rhyme acceleration assets, size gate compliance, temp-hosted APK, and final Desktop report.
 - Released 23.9 with final pure-black chrome cleanup, black command-surface cards in remaining generic chrome paths, and a local laptop QA plan for crash, screenshot, and jank testing without running those tests yet.
 - Released 23.8 with a runtime-used uncompressed prepared rhyme index, a default expanded-rhyme hot cache, scorer/TSV fallbacks, and release APK size above the required 2x target.

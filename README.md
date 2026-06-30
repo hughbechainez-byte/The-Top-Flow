@@ -4,6 +4,7 @@ Native Android note app for songwriting on GrapheneOS/Android.
 
 Current local build: `24.1`.
 Current milestone: Material 3 Compose note-taking host foundation complete.
+GitHub source: `https://github.com/hughbechainez-byte/The-Top-Flow`
 
 ## Project Record
 
@@ -25,10 +26,12 @@ $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
 
 ## Update Hosting
 
-The app checks this temporary manifest:
+Installed builds through 24.1 still check this temporary manifest:
 
 `https://jsonblob.com/api/jsonBlob/019f13c7-dc3f-7cf2-bf88-038a846852bd`
 
-Publish a newer signed APK and update that JSON with a higher `versionCode`. The original intended GitLab raw manifest remains suitable once GitLab credentials are available:
+24.2 should switch the primary appcast to the GitHub raw manifest:
 
-`https://gitlab.com/davehq/the-top-flow/-/raw/the-top-flow/appcast.json`
+`https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/appcast.json`
+
+Future APKs should be attached to GitHub Releases and referenced from `appcast.json`.
