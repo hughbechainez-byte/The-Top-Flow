@@ -2,8 +2,8 @@
 
 Native Android note app for songwriting on GrapheneOS/Android.
 
-Current local build: `24.0`.
-Current milestone: 24.0 pure-black motion foundation complete.
+Current local build: `24.1`.
+Current milestone: Material 3 Compose note-taking host foundation complete.
 
 ## Project Record
 
@@ -20,7 +20,7 @@ Future Codex sessions should start with:
 $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot'
 $env:ANDROID_HOME="$PWD\android-sdk"
 $env:ANDROID_SDK_ROOT="$PWD\android-sdk"
-tools\gradle-8.10.2\bin\gradle.bat assembleRelease
+.\gradlew.bat assembleRelease
 ```
 
 ## Update Hosting

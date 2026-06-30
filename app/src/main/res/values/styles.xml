@@ -13,14 +13,7 @@
         <item name="android:textColorPrimary">@color/topflow_text_primary</item>
         <item name="android:textColorSecondary">@color/topflow_text_secondary</item>
         <item name="android:buttonStyle">@style/Widget.TopFlow.Button</item>
-        <item name="android:editTextStyle">@style/Widget.TopFlow.EditText</item>
-        <item name="android:textViewStyle">@style/Widget.TopFlow.TextView</item>
         <item name="android:windowNoTitle">true</item>
-    </style>
-
-    <style name="Widget.TopFlow.TextView" parent="android:style/Widget.TextView">
-        <item name="android:textColor">@color/topflow_text_primary</item>
-        <item name="android:fontFamily">sans-serif-light</item>
     </style>
 
     <style name="Widget.TopFlow.Button" parent="android:style/Widget.Button">
@@ -33,16 +26,6 @@
         <item name="android:paddingRight">@dimen/topflow_space_lg</item>
         <item name="android:paddingBottom">@dimen/topflow_space_md</item>
         <item name="android:textAllCaps">false</item>
-    </style>
-
-    <style name="Widget.TopFlow.EditText" parent="android:style/Widget.EditText">
-        <item name="android:background">@drawable/bg_text_field</item>
-        <item name="android:textColor">@color/topflow_text_primary</item>
-        <item name="android:textColorHint">@color/topflow_text_tertiary</item>
-        <item name="android:paddingLeft">@dimen/topflow_space_md</item>
-        <item name="android:paddingTop">@dimen/topflow_space_md</item>
-        <item name="android:paddingRight">@dimen/topflow_space_md</item>
-        <item name="android:paddingBottom">@dimen/topflow_space_md</item>
     </style>
 
     <style name="TextAppearance.TopFlow.Title" parent="android:style/TextAppearance.Material">

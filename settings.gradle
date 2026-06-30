@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "The Top Flow"
 include ":app"
+include ":macrobenchmark"

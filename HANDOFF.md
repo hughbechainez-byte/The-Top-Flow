@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-The Top Flow is a native Android songwriting notes app. It is still a single-activity Java app for core workflows, but 21.0 extracts rhyme logic into a dedicated offline `RhymeEngine`, adds a generated pronunciation index asset, and replaces the visible shell with a more distinct premium studio toolbar/dock/editor/rhyme panel structure.
+The Top Flow is a native Android songwriting notes app. The 24.1 active launcher is now a Kotlin `ComponentActivity` Compose note-taking host, while the previous Java UI is preserved under `legacy/` for reference during the remaining feature ports. The 21.0 rhyme logic remains extracted into a dedicated offline `RhymeEngine` with generated pronunciation/rhyme assets.
 
 Post-21.0 Rebuild A adds the foundation for the next UI rebuild: Kotlin, Compose, Material 3, dynamic dark theming, 21.x resource tokens, and Java-native presentation helpers. Rebuild B wires existing Java notes/media/rhyme/font surfaces into that foundation. Rebuild C applies the live composition pass: bottom dock, compact top bar, OLED/indigo/mint surfaces, quieter rows, softer backdrop, and polished sheets.
 
@@ -58,6 +58,8 @@ The active milestone is now 22.1 to 23.0: a premium UI transformation. The chose
 
 24.0 completes the 23.1 to 24.0 pure-black OLED UI foundation milestone. It packages the pure-black backdrop, shared motion foundation, menu/modal surfaces, Notes dashboard, editor/rhyme surfaces, dock/gesture polish, runtime-used rhyme acceleration assets, local QA plan, final Desktop report, and appcast publication as the completed release.
 
+24.1 is a Material 3 Compose note-taking foundation build. `MainActivity.kt` owns the live `setContent` host, `NotesTheme` provides one Material 3 color/typography/shape system with dynamic dark support, `NotesScreens.kt` renders cards/search/editor/rhyme chips with Compose text and `BasicTextField`, and `NotesViewModel.kt` exposes immutable UI state through `StateFlow` while moving storage/search/rhyme work off the main thread. Macrobenchmark and screenshot test modules are present, and `app/src/release/generated/baselineProfiles/baseline-prof.txt` was generated from the release interactions. This build was packaged locally only; do not push JSONBlob/appcast until Dave directs it.
+
 ## Build / Run
 
 Known build command from `README.md`:
@@ -70,6 +72,8 @@ tools\gradle-8.10.2\bin\gradle.bat assembleRelease
 ```
 
 Latest published build: 24.0 / versionCode 66 passed `tools\rhyme_quality_check.py` and `assembleRelease`.
+
+Latest local-only build: 24.1 / versionCode 67 passed `assembleRelease`, `assembleDebug`, screenshot instrumentation tests on the local emulator, generated a release Baseline Profile, and passed the active-source banned-rendering scan.
 
 ## Important Files
 

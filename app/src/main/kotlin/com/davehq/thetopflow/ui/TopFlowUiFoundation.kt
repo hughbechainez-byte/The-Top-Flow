@@ -1,9 +1,6 @@
 package com.davehq.thetopflow.ui
 
 import android.os.Build
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,14 +30,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -124,33 +117,8 @@ fun StudioBackdrop(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        palette.oled,
-                        palette.deepIndigo.copy(alpha = 0.62f),
-                        palette.oled
-                    )
-                )
-            )
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 32.dp, end = 20.dp)
-                .size(180.dp)
-                .blur(38.dp)
-                .background(palette.mint.copy(alpha = 0.12f), CircleShape)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(bottom = 72.dp)
-                .size(220.dp)
-                .blur(46.dp)
-                .background(palette.cyan.copy(alpha = 0.10f), CircleShape)
-        )
-    }
+            .background(palette.oled)
+    )
 }
 
 @Composable
@@ -255,15 +223,8 @@ fun StudioCommand(
     onClick: () -> Unit = {}
 ) {
     val palette = StudioPalette()
-    val targetScale = if (selected) 1.02f else 1f
-    val scale by animateFloatAsState(
-        targetValue = targetScale,
-        animationSpec = tween(TopFlowMotion.Standard, easing = FastOutSlowInEasing),
-        label = "studio-command-scale"
-    )
     Surface(
         modifier = modifier
-            .scale(scale)
             .height(52.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },

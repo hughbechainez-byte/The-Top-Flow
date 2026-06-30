@@ -47,7 +47,7 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 - 23.8 clears the functional APK-size gate with runtime-used rhyme acceleration data: an uncompressed prepared index tried before TSV fallback and a default expanded-rhyme hot cache, both loaded on the existing rhyme background path with scorer fallbacks preserved.
 - 23.9 performs final acceptance polish by converting remaining generic chrome/card surfaces to the pure-black command-surface language and adds a local QA plan for future laptop-based crash, screenshot, and jank validation without running emulator/device tests yet.
 - 24.0 completes the pure-black OLED UI foundation milestone with the 23.1-23.9 UI, motion, dock, menu, Notes, editor, and rhyme acceleration work packaged as the final release line.
-- Compose and Material 3 are enabled, but the live app is still mostly a Java view tree; the 22.1 to 23.0 milestone should progressively move visible shell, notes, editor, sheets, settings, and preload surfaces into a premium Compose-led interface while preserving storage/rhyme/media behavior.
+- 24.1 moves the active note-taking surface to a Kotlin `ComponentActivity` + `setContent` host with a single Material 3 `NotesTheme`, Compose-rendered note cards/editor/search, immutable `NoteUi` models from a `StateFlow` ViewModel, off-main note IO/search/rhyme work, debug JankStats state labels, Macrobenchmark interactions, screenshot tests, and a generated release Baseline Profile.
 - Rhyme settings for strictness, maximum suggestions, rhyme row visibility, exact-only mode, slang inclusion, and removed suggestions.
 - Song attachment and playback controls.
 - Voice recording, playback, rename, and save-to-disk support.
@@ -55,18 +55,18 @@ Native Android songwriting notes app for GrapheneOS/Android. The app helps captu
 
 ## Current Known Issues
 
-- Most app behavior still lives in one large `MainActivity.java`, so changes outside rhyme/UI should remain carefully scoped.
-- The 21.0 rhyme system is now extracted into `RhymeEngine.java`, but legacy rhyme helpers still remain in `MainActivity.java` and should be removed only after device validation.
+- The 24.1 live launcher is now the Compose note-taking host; legacy Java UI files are preserved under `legacy/` for reference while recording/playback/settings/update surfaces are ported into Compose.
+- The 21.0 rhyme system is extracted into `RhymeEngine.java`; 24.1 reuses it from the Compose ViewModel on background dispatchers.
 - A focused rhyme regression check exists at `tools/rhyme_quality_check.py`, including `my/try`, `yours`, `out`, slang, phrase, and known bad-match cases.
 - In-app update metadata points to the current JSONBlob appcast, but install flow still needs device verification on Pixel 10 Pro.
 - JSONBlob/temp.sh/tmpfiles are temporary hosts; durable update hosting is still needed. The original JSONBlob manifest returned 404 during 23.1 release work, so 23.1+ points at replacement temporary blob `019f13c7-dc3f-7cf2-bf88-038a846852bd`.
-- Rebuild B is still a Java-runtime bridge; the live app is not fully Compose yet.
 - Published 23.0 / versionCode 56 could crash on startup from `ViewTreeLifecycleOwner not found`; 23.1 supersedes it with the lifecycle host fix and pure-black backdrop.
+- 24.1 passed emulator screenshot tests and release packaging, but Layout Inspector recomposition verification and physical 120 Hz Pixel frame-budget validation still need to be run on the target device.
 
 ## Current Development Priority
 
-24.0 release packaging is complete on the replacement JSONBlob/appcast line. Current priority is post-24.0 durable hosting and measured local QA setup.
+24.1 local packaging is complete without changing JSONBlob/appcast. Current priority is validating the Compose host on Dave's Pixel, then porting recording/playback/settings/update surfaces into the same Material 3 Compose foundation.
 
 ## Next Milestone
 
-Next: replace temporary hosting with durable hosting and run the planned emulator/screenshot/jank QA once Dave approves.
+Next: run Layout Inspector and physical 120 Hz Macrobenchmark/JankStats validation, then continue the full-feature Compose port.
