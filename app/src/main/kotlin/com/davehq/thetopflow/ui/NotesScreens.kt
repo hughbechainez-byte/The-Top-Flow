@@ -7,9 +7,6 @@
 package com.davehq.thetopflow.ui
 
 import androidx.activity.compose.BackHandler
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -49,6 +46,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -61,6 +59,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -105,6 +104,9 @@ import androidx.metrics.performance.PerformanceMetricsState
 import com.davehq.thetopflow.BuildConfig
 import com.davehq.thetopflow.MediaUiState
 import com.davehq.thetopflow.NotesUiState
+import com.davehq.thetopflow.TopFlowUpdate
+import com.davehq.thetopflow.TopFlowUpdateCheckResult
+import com.davehq.thetopflow.TopFlowUpdateManager
 import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.StyleDefaults
 import kotlinx.coroutines.launch
@@ -139,6 +141,43 @@ fun NotesRoute(
     onExportRecording: (String) -> Boolean,
     onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit
 ) {
+    val context = LocalContext.current
+    val updateManager = remember(context) { TopFlowUpdateManager(context.applicationContext) }
+    val scope = rememberCoroutineScope()
+    var updateState by remember { mutableStateOf<TopFlowUpdateUiState>(TopFlowUpdateUiState.Idle) }
+    val checkForUpdate = {
+        if (!updateState.isBusy()) {
+            updateState = TopFlowUpdateUiState.Checking
+            scope.launch {
+                updateState = runCatching { updateManager.checkForUpdate() }
+                    .fold(
+                        onSuccess = { result ->
+                            when (result) {
+                                is TopFlowUpdateCheckResult.UpdateAvailable ->
+                                    TopFlowUpdateUiState.Available(result.update)
+                                is TopFlowUpdateCheckResult.NoUpdate ->
+                                    TopFlowUpdateUiState.NoUpdate(result.currentVersionName)
+                            }
+                        },
+                        onFailure = { error ->
+                            TopFlowUpdateUiState.Error(error.message ?: "Could not check for updates.")
+                        }
+                    )
+            }
+        }
+    }
+    val installUpdate: (TopFlowUpdate) -> Unit = { update ->
+        if (!updateState.isBusy()) {
+            updateState = TopFlowUpdateUiState.Downloading(update)
+            scope.launch {
+                runCatching { updateManager.downloadAndInstall(update) }
+                    .onSuccess { updateState = TopFlowUpdateUiState.Idle }
+                    .onFailure { error ->
+                        updateState = TopFlowUpdateUiState.Error(error.message ?: "Could not install update.")
+                    }
+            }
+        }
+    }
     val gridState = rememberLazyStaggeredGridState()
     val isScrolling by remember { derivedStateOf { gridState.isScrollInProgress } }
     val screenLabel = when {
@@ -162,7 +201,8 @@ fun NotesRoute(
                 onCreateNote = onCreateNote,
                 onOpenNote = onOpenNote,
                 onSearch = onSearch,
-                onOpenRecentNote = onOpenRecentNote
+                onOpenRecentNote = onOpenRecentNote,
+                onCheckForUpdate = checkForUpdate
             )
         } else {
             NoteEditorScreen(
@@ -186,9 +226,15 @@ fun NotesRoute(
                 onPlayRecording = onPlayRecording,
                 onRenameRecording = onRenameRecording,
                 onExportRecording = onExportRecording,
-                onApplyStyle = onApplyStyle
+                onApplyStyle = onApplyStyle,
+                onCheckForUpdate = checkForUpdate
             )
         }
+        TopFlowUpdateDialog(
+            state = updateState,
+            onDismiss = { updateState = TopFlowUpdateUiState.Idle },
+            onInstall = installUpdate
+        )
     }
 }
 
@@ -200,7 +246,8 @@ private fun NotesGridScreen(
     onCreateNote: () -> Unit,
     onOpenNote: (String) -> Unit,
     onSearch: (String) -> Unit,
-    onOpenRecentNote: () -> Unit
+    onOpenRecentNote: () -> Unit,
+    onCheckForUpdate: () -> Unit
 ) {
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -269,7 +316,7 @@ private fun NotesGridScreen(
                                 text = { Text("Check for app update") },
                                 onClick = {
                                     showMainMenu = false
-                                    runMainAction { launchTopFlowUpdate(context) }
+                                    runMainAction(onCheckForUpdate)
                                 }
                             )
                         }
@@ -530,7 +577,8 @@ fun NoteEditorScreen(
     onPlayRecording: (String) -> Unit,
     onRenameRecording: (String, String) -> Unit,
     onExportRecording: (String) -> Boolean,
-    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit,
+    onCheckForUpdate: () -> Unit
 ) {
     BackHandler(onBack = onBack)
     NoteEditor(
@@ -554,7 +602,8 @@ fun NoteEditorScreen(
         onPlayRecording = onPlayRecording,
         onRenameRecording = onRenameRecording,
         onExportRecording = onExportRecording,
-        onApplyStyle = onApplyStyle
+        onApplyStyle = onApplyStyle,
+        onCheckForUpdate = onCheckForUpdate
     )
 }
 
@@ -581,7 +630,8 @@ fun NoteEditor(
     onPlayRecording: (String) -> Unit = {},
     onRenameRecording: (String, String) -> Unit = { _, _ -> },
     onExportRecording: (String) -> Boolean = { false },
-    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit = { _, _, _, _, _, _, _, _ -> }
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit = { _, _, _, _, _, _, _, _ -> },
+    onCheckForUpdate: () -> Unit = {}
 ) {
     val swipeThresholdPx = with(LocalDensity.current) { 96.dp.toPx() }
     val focusManager = LocalFocusManager.current
@@ -679,7 +729,7 @@ fun NoteEditor(
                                 text = { Text("Check for app update") },
                                 onClick = {
                                     showEditorMenu = false
-                                    runAction { launchTopFlowUpdate(context) }
+                                    runAction(onCheckForUpdate)
                                 }
                             )
                         }
@@ -733,6 +783,18 @@ fun NoteEditor(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             item {
+                RhymeSuggestionRow(
+                    suggestions = rhymeSuggestions,
+                    loading = rhymeLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    onInsertWord = { insertion ->
+                        val next = draftBody + insertion
+                        draftBody = next
+                        onBodyChange(next)
+                    }
+                )
+            }
+            item {
                 BasicTextField(
                     value = draftBody,
                     onValueChange = {
@@ -757,18 +819,6 @@ fun NoteEditor(
                             }
                             innerTextField()
                         }
-                    }
-                )
-            }
-            item {
-                RhymeSuggestionRow(
-                    suggestions = rhymeSuggestions,
-                    loading = rhymeLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                    onInsertWord = { insertion ->
-                        val next = draftBody + insertion
-                        draftBody = next
-                        onBodyChange(next)
                     }
                 )
             }
@@ -1555,21 +1605,105 @@ private fun colorToHex(color: Int): String {
     return noAlpha.toString(16).uppercase().padStart(6, '0')
 }
 
-private fun launchTopFlowUpdate(context: Context) {
-    runCatching {
-        val updateUri = if (BuildConfig.UPDATE_MANIFEST_URL.isNotBlank()) {
-            BuildConfig.UPDATE_MANIFEST_URL
-        } else {
-            "https://github.com/hughbechainez-byte/The-Top-Flow/releases/latest"
-        }
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUri)).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    }
+enum class SwipeDirection { Left, Right }
+
+private sealed class TopFlowUpdateUiState {
+    data object Idle : TopFlowUpdateUiState()
+    data object Checking : TopFlowUpdateUiState()
+    data class Available(val update: TopFlowUpdate) : TopFlowUpdateUiState()
+    data class Downloading(val update: TopFlowUpdate) : TopFlowUpdateUiState()
+    data class NoUpdate(val versionName: String) : TopFlowUpdateUiState()
+    data class Error(val message: String) : TopFlowUpdateUiState()
 }
 
-enum class SwipeDirection { Left, Right }
+private fun TopFlowUpdateUiState.isBusy(): Boolean {
+    return this is TopFlowUpdateUiState.Checking || this is TopFlowUpdateUiState.Downloading
+}
+
+@Composable
+private fun TopFlowUpdateDialog(
+    state: TopFlowUpdateUiState,
+    onDismiss: () -> Unit,
+    onInstall: (TopFlowUpdate) -> Unit
+) {
+    when (state) {
+        TopFlowUpdateUiState.Idle -> Unit
+        TopFlowUpdateUiState.Checking -> {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Checking for updates") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text("Looking for the newest build.")
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+        is TopFlowUpdateUiState.Available -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("Update found") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Version ${state.update.versionName} is available.")
+                        if (state.update.notes.isNotBlank()) {
+                            Text(state.update.notes)
+                        }
+                    }
+                },
+                confirmButton = {
+                    FilledTonalButton(onClick = { onInstall(state.update) }) {
+                        Text("Install")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = onDismiss) {
+                        Text("Not now")
+                    }
+                }
+            )
+        }
+        is TopFlowUpdateUiState.Downloading -> {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Downloading update") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text("Preparing version ${state.update.versionName}.")
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+        is TopFlowUpdateUiState.NoUpdate -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("No update found") },
+                text = { Text("Version ${state.versionName} is already current.") },
+                confirmButton = {
+                    FilledTonalButton(onClick = onDismiss) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        is TopFlowUpdateUiState.Error -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("Update check failed") },
+                text = { Text(state.message) },
+                confirmButton = {
+                    FilledTonalButton(onClick = onDismiss) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+    }
+}
 
 @Composable
 private fun Modifier.topFlowHorizontalSwipe(

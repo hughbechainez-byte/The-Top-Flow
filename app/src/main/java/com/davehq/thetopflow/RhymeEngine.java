@@ -416,7 +416,7 @@ final class RhymeEngine {
     private boolean isFastHotCacheEligible(int limit, int maxCandidates, Options options) {
         if (options == null) return false;
         if (maxCandidates != FAST_HOT_CACHE_MAX_CANDIDATES) return false;
-        if (limit < 1 || limit > FAST_HOT_CACHE_LIMIT) return false;
+        if (limit < 1) return false;
         if (!"Balanced".equals(options.strictness)) return false;
         if (options.exactOnly || !options.includeSlang) return false;
         return options.removed == null || options.removed.isEmpty();

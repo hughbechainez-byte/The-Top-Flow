@@ -1,9 +1,15 @@
 {
-  "versionName": "25.2",
-  "notes": "Version 25.2 fixes update-check behavior so the app opens GitHub Releases instead of the raw appcast JSON page.",
-  "versionCode": 77,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.2/the-top-flow-25.2-check-for-update-fix.apk",
+  "versionName": "25.3",
+  "notes": "Version 25.3 restores visible rhyme suggestions by allowing the fast rhyme cache to answer the editor's request size and moving the rhyme strip above the note body.",
+  "versionCode": 78,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.3/the-top-flow-25.3-rhyme-suggestions-fix.apk",
   "versions": [
+    {
+      "versionName": "25.3",
+      "notes": "Version 25.3 restores visible rhyme suggestions by allowing the fast rhyme cache to answer the editor's request size and moving the rhyme strip above the note body.",
+      "versionCode": 78,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.3/the-top-flow-25.3-rhyme-suggestions-fix.apk"
+    },
     {
       "versionName": "25.2",
       "notes": "Version 25.2 fixes update-check behavior so the app opens GitHub Releases instead of the raw appcast JSON page.",
