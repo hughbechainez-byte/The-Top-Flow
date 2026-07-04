@@ -24,6 +24,15 @@ REQUIRED_HIP_HOP_ALIAS = {
     "shorty": "shawty",
     "wanting": "wanna",
 }
+REQUIRED_PHRASE_ENDINGS = {
+    "cap": ["rap", "trap", "no cap"],
+    "real": ["feel", "for real", "keep it real"],
+    "me": ["free", "on me", "homie"],
+    "outside": ["inside", "ride", "slide"],
+    "inside": ["outside", "ride", "slide"],
+    "tonight": ["night", "all night", "moonlight"],
+    "bars": ["stars", "barz", "guitars"],
+}
 
 
 def read_string(data: bytes, offset: int) -> str:
@@ -100,6 +109,12 @@ def main() -> None:
             raise SystemExit(f"missing hip-hop alias row: {alias}")
         if canonical not in rows[alias][:3]:
             raise SystemExit(f"alias row {alias} should include {canonical} in top3: {rows[alias]}")
+    for word, required_candidates in REQUIRED_PHRASE_ENDINGS.items():
+        if word not in rows:
+            raise SystemExit(f"missing phrase-ending row: {word}")
+        for candidate in required_candidates:
+            if candidate not in rows[word]:
+                raise SystemExit(f"phrase-ending row {word} missing {candidate}: {rows[word]}")
     print(f"rhyme_candidates_v2 valid with {len(rows)} rows")
 
 

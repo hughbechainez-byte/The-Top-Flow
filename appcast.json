@@ -1,9 +1,15 @@
 {
-  "versionName": "28.3",
-  "notes": "Version 28.3 adds privacy-safe V2 miss telemetry so fallback paths report hashed word IDs, shape buckets, miss/short counters, and fallback-after-miss totals without logging raw lyrics.",
-  "versionCode": 96,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.3/the-top-flow-28.3-v2-miss-telemetry.apk",
+  "versionName": "28.4",
+  "notes": "Version 28.4 adds local V2 phrase-ending rows for common hip-hop line endings like cap, real, me, outside, inside, tonight, bars, and beat so useful rap phrases and rhymes appear instantly without legacy fallback.",
+  "versionCode": 97,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.4/the-top-flow-28.4-phrase-ending-candidates.apk",
   "versions": [
+    {
+      "versionName": "28.4",
+      "notes": "Version 28.4 adds local V2 phrase-ending rows for common hip-hop line endings like cap, real, me, outside, inside, tonight, bars, and beat so useful rap phrases and rhymes appear instantly without legacy fallback.",
+      "versionCode": 97,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.4/the-top-flow-28.4-phrase-ending-candidates.apk"
+    },
     {
       "versionName": "28.3",
       "notes": "Version 28.3 adds privacy-safe V2 miss telemetry so fallback paths report hashed word IDs, shape buckets, miss/short counters, and fallback-after-miss totals without logging raw lyrics.",

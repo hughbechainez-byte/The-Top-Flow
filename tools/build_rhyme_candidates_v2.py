@@ -37,6 +37,17 @@ PREFERRED_HIP_HOP_ALIAS_ROWS = {
     "stacking",
 }
 
+HIP_HOP_PHRASE_ENDING_ROWS = {
+    "bars": ["stars", "cars", "mars", "scars", "barz", "guitars", "jars", "ours", "powers", "flowers", "towers", "hours"],
+    "beat": ["heat", "street", "feet", "seat", "sweet", "meet", "feat", "repeat", "elite", "concrete", "heartbeat", "backbeat"],
+    "cap": ["rap", "trap", "snap", "clap", "strap", "map", "lap", "gap", "no cap", "backpack", "black cap", "nightcap"],
+    "inside": ["outside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],
+    "me": ["free", "see", "be", "key", "three", "tree", "agree", "on me", "for me", "with me", "homie", "lowkey"],
+    "outside": ["inside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],
+    "real": ["feel", "deal", "steel", "wheel", "appeal", "conceal", "reveal", "heal", "for real", "keep it real", "surreal", "peel"],
+    "tonight": ["night", "light", "right", "fight", "write", "bright", "sight", "alright", "all night", "tonite", "spotlight", "moonlight"],
+}
+
 
 def normalize_word(word: str) -> str:
     return re.sub(r"[^a-z']", "", (word or "").lower()).strip("'")
@@ -67,6 +78,7 @@ def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path):
             if word in rows and len(candidates) > len(rows[word]):
                 rows[word] = candidates
     apply_hip_hop_alias_rows(rows)
+    apply_hip_hop_phrase_rows(rows)
     return sorted(rows.items(), key=lambda item: item[0])
 
 
@@ -91,6 +103,22 @@ def apply_hip_hop_alias_rows(rows: dict[str, list[str]]) -> None:
                 break
         if len(suggestions) >= 4:
             rows[alias] = suggestions
+
+
+def apply_hip_hop_phrase_rows(rows: dict[str, list[str]]) -> None:
+    for word, candidates in HIP_HOP_PHRASE_ENDING_ROWS.items():
+        suggestions = []
+        seen = {word}
+        for candidate in candidates:
+            candidate_key = normalize_word(candidate)
+            if not candidate_key or candidate_key in seen:
+                continue
+            suggestions.append(candidate)
+            seen.add(candidate_key)
+            if len(suggestions) >= MAX_CANDIDATES:
+                break
+        if len(suggestions) >= 4:
+            rows[word] = suggestions
 
 
 def build_binary(rows, output: pathlib.Path, debug_tsv: pathlib.Path) -> int:
