@@ -22,6 +22,10 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <receiver
+            android:name=".TopFlowInstallResultReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

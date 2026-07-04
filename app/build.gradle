@@ -5,8 +5,8 @@ plugins {
     id "androidx.baselineprofile"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "92").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "27.4").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "94").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "28.1").toString()
 def topFlowDebuggable = (findProperty("TOP_FLOW_DEBUGGABLE") ?: "false").toString().toBoolean()
 
 android {

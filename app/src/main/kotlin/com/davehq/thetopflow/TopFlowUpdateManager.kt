@@ -2,7 +2,10 @@ package com.davehq.thetopflow
 
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.FileProvider
+import android.app.PendingIntent
+import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -141,19 +144,47 @@ class TopFlowUpdateManager(private val context: Context) {
     }
 
     private fun installApk(preparedUpdate: TopFlowPreparedUpdate) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${BuildConfig.APPLICATION_ID}.files",
-            preparedUpdate.apk
-        )
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-            setDataAndType(uri, APK_MIME_TYPE)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-            putExtra(Intent.EXTRA_RETURN_RESULT, true)
+        val installer = context.packageManager.packageInstaller
+        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
+            setAppPackageName(BuildConfig.APPLICATION_ID)
+            setInstallReason(PackageManager.INSTALL_REASON_USER)
         }
-        context.startActivity(intent)
+        var session: PackageInstaller.Session? = null
+        var sessionId = -1
+        try {
+            sessionId = installer.createSession(params)
+            session = installer.openSession(sessionId)
+            preparedUpdate.apk.inputStream().use { input ->
+                session.openWrite(preparedUpdate.apk.name, 0, preparedUpdate.apk.length()).use { output ->
+                    input.copyTo(output)
+                    session.fsync(output)
+                }
+            }
+            val statusIntent = Intent(context, TopFlowInstallResultReceiver::class.java).apply {
+                action = TopFlowInstallResultReceiver.ACTION_INSTALL_STATUS
+                putExtra(TopFlowInstallResultReceiver.EXTRA_VERSION_NAME, preparedUpdate.update.versionName)
+            }
+            val statusReceiver = PendingIntent.getBroadcast(
+                context,
+                sessionId,
+                statusIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or mutablePendingIntentFlag()
+            )
+            session.commit(statusReceiver.intentSender)
+            session.close()
+            session = null
+        } catch (error: Exception) {
+            runCatching {
+                if (session != null) {
+                    session.abandon()
+                } else if (sessionId > 0) {
+                    installer.abandonSession(sessionId)
+                }
+            }
+            error("Could not start the in-app installer: ${error.message ?: "unknown install error"}")
+        } finally {
+            runCatching { session?.close() }
+        }
     }
 
     private fun openConnection(url: String): HttpURLConnection {
@@ -186,6 +217,12 @@ class TopFlowUpdateManager(private val context: Context) {
         private const val FALLBACK_APPCAST_URL = "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/appcast.json"
         private const val NETWORK_TIMEOUT_MS = 20_000
         private const val MIN_APK_BYTES = 64 * 1024
-        private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+        private fun mutablePendingIntentFlag(): Int {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0
+            }
+        }
     }
 }

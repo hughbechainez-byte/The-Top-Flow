@@ -32,6 +32,7 @@ final class RhymeEngine {
     private static final int EXPANDED_HOT_CACHE_MAX_CANDIDATES = 720;
     private static final int EXPANDED_HOT_CACHE_LIMIT = 12;
     private static final long LEGACY_FULL_ENGINE_DEFER_MS = 1800L;
+    private static final boolean LEGACY_EXPANDED_TEXT_CACHE_ENABLED = false;
     private static final int BUCKET_EXACT = 0;
     private static final int BUCKET_NEAR = 1;
     private static final int BUCKET_SLANT = 2;
@@ -340,15 +341,20 @@ final class RhymeEngine {
         try {
             expandedHotCache.clear();
             long start = System.currentTimeMillis();
-            expandedHotCacheReady = loadHotCache(
-                    EXPANDED_HOT_CACHE_ASSET,
-                    EXPANDED_HOT_CACHE_HEADER,
-                    EXPANDED_HOT_CACHE_MAX_CANDIDATES,
-                    EXPANDED_HOT_CACHE_LIMIT,
-                    expandedHotCache
-            );
+            if (LEGACY_EXPANDED_TEXT_CACHE_ENABLED) {
+                expandedHotCacheReady = loadHotCache(
+                        EXPANDED_HOT_CACHE_ASSET,
+                        EXPANDED_HOT_CACHE_HEADER,
+                        EXPANDED_HOT_CACHE_MAX_CANDIDATES,
+                        EXPANDED_HOT_CACHE_LIMIT,
+                        expandedHotCache
+                );
+            } else {
+                expandedHotCacheReady = false;
+            }
             expandedCacheLoadMs = System.currentTimeMillis() - start;
-            Log.d(TAG, "rhyme_trace stage=expanded_cache_ready rows=" + expandedHotCache.size()
+            Log.d(TAG, "rhyme_trace stage=" + (LEGACY_EXPANDED_TEXT_CACHE_ENABLED ? "expanded_cache_ready" : "expanded_cache_skipped_v2_overlay")
+                    + " rows=" + expandedHotCache.size()
                     + " ms=" + expandedCacheLoadMs);
         } finally {
             Trace.endSection();
