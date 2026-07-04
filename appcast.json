@@ -1,9 +1,15 @@
 {
-  "versionName": "25.5",
-  "notes": "Version 25.5 starts the active-line rhyme dock: the editor tracks the body cursor line, places rhyme chips near the active writing line, and inserts selected rhyme words at the cursor.",
-  "versionCode": 80,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.5/the-top-flow-25.5-active-line-rhyme-dock.apk",
+  "versionName": "25.6",
+  "notes": "Version 25.6 stabilizes the active-line rhyme dock so it stays under the current final line while falling back below measured text when editing earlier lines.",
+  "versionCode": 81,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.6/the-top-flow-25.6-active-line-dock-stability.apk",
   "versions": [
+    {
+      "versionName": "25.6",
+      "notes": "Version 25.6 stabilizes the active-line rhyme dock so it stays under the current final line while falling back below measured text when editing earlier lines.",
+      "versionCode": 81,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.6/the-top-flow-25.6-active-line-dock-stability.apk"
+    },
     {
       "versionName": "25.5",
       "notes": "Version 25.5 starts the active-line rhyme dock: the editor tracks the body cursor line, places rhyme chips near the active writing line, and inserts selected rhyme words at the cursor.",

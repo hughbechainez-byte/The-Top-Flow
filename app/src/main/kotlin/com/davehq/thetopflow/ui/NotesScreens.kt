@@ -1622,8 +1622,14 @@ private fun activeLineRhymeOffset(layout: TextLayoutResult?, selection: TextRang
         val textLength = result.layoutInput.text.length
         val cursor = selection.end.coerceIn(0, textLength)
         val line = result.getLineForOffset(cursor)
-        val lineBottom = result.getLineBottom(line) + 8.dp.toPx()
-        lineBottom.coerceIn(0f, 420.dp.toPx()).toDp()
+        val maxOffset = 420.dp.toPx()
+        val dockUnderCurrentLine = line >= result.lineCount - 1
+        val target = if (dockUnderCurrentLine) {
+            result.getLineBottom(line) + 8.dp.toPx()
+        } else {
+            result.size.height + 8.dp.toPx()
+        }
+        target.coerceIn(48.dp.toPx(), maxOffset).toDp()
     }
 
 private fun TextFieldValue.insertAtSelection(insertion: String): TextFieldValue {
