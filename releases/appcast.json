@@ -1,9 +1,15 @@
 {
-  "versionName": "26.2",
-  "notes": "Version 26.2 adds a V2 candidate lookup performance harness and runtime timing traces so the candidate-table path has measurable p50/p95 before production routing.",
-  "versionCode": 87,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.2/the-top-flow-26.2-v2-performance-harness.apk",
+  "versionName": "27.0",
+  "notes": "Version 27.0 routes default editor rhyme suggestions through the local V2 candidate table first, lowers the V2-ready editor debounce, and keeps the existing rhyme engine as fallback when V2 cannot answer enough suggestions.",
+  "versionCode": 88,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.0/the-top-flow-27.0-v2-production-route.apk",
   "versions": [
+    {
+      "versionName": "27.0",
+      "notes": "Version 27.0 routes default editor rhyme suggestions through the local V2 candidate table first, lowers the V2-ready editor debounce, and keeps the existing rhyme engine as fallback when V2 cannot answer enough suggestions.",
+      "versionCode": 88,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.0/the-top-flow-27.0-v2-production-route.apk"
+    },
     {
       "versionName": "26.2",
       "notes": "Version 26.2 adds a V2 candidate lookup performance harness and runtime timing traces so the candidate-table path has measurable p50/p95 before production routing.",

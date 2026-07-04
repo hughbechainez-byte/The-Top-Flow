@@ -11,6 +11,7 @@ import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.NotesRepository
 import com.davehq.thetopflow.data.RecordingUi
 import com.davehq.thetopflow.data.StyleDefaults
+import com.davehq.thetopflow.rhyme.RhymeEngine2
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,6 +47,7 @@ data class NotesUiState(
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = NotesRepository(application)
     private val rhymeEngine = RhymeEngine(application)
+    private val rhymeEngine2 = RhymeEngine2(application)
     private val mediaController = TopFlowMediaController(application)
     private val notes = MutableStateFlow<List<NoteUi>>(emptyList())
     private val selectedNoteId = MutableStateFlow<String?>(null)
@@ -59,6 +61,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private var saveJob: Job? = null
     private var rhymeJob: Job? = null
     private var notesLoaded = false
+    @Volatile private var rhymeEngine2Ready = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<NotesUiState> = combine(
@@ -117,6 +120,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotesUiState())
 
     init {
+        viewModelScope.launch {
+            rhymeEngine2Ready = withContext(Dispatchers.IO) { rhymeEngine2.load() }
+            if (rhymeEngine2Ready) {
+                rhymeLoading.value = false
+                refreshRhymesForSelected()
+            }
+        }
         rhymeEngine.loadAsync(object : RhymeEngine.LoadCallbacks {
             override fun onFastReady() {
                 viewModelScope.launch {
@@ -410,30 +420,48 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             val word = withContext(Dispatchers.Default) { body.activeRhymeWord() }
             if (word.length < 2) {
                 rhymeSuggestions.value = emptyList()
-                rhymeLoading.value = !rhymeEngine.isFastReady() && !rhymeEngine.isReady()
+                rhymeLoading.value = !isAnyRhymeEngineReady()
                 return@launch
             }
-            if (!rhymeEngine.isFastReady() && !rhymeEngine.isReady()) {
+            if (!isAnyRhymeEngineReady()) {
                 rhymeLoading.value = true
                 return@launch
             }
             val suggestions = withContext(Dispatchers.Default) {
-                runCatching {
-                    rhymeEngine.suggest(
-                        word,
-                        8,
-                        360,
-                        RhymeEngine.Options("Balanced", false, true, emptySet(), body)
-                    )
-                }.getOrDefault(emptyList())
+                suggestRhymes(word, body)
             }
-            rhymeLoading.value = !rhymeEngine.isFastReady() && !rhymeEngine.isReady()
+            rhymeLoading.value = !isAnyRhymeEngineReady()
             rhymeSuggestions.value = suggestions
         }
     }
 
     private fun defaultRhymeDelayMs(): Long {
-        return if (rhymeEngine.isFastReady()) 50L else 140L
+        return if (rhymeEngine2Ready) 20L else if (rhymeEngine.isFastReady()) 50L else 140L
+    }
+
+    private fun isAnyRhymeEngineReady(): Boolean {
+        return rhymeEngine2Ready || rhymeEngine.isFastReady() || rhymeEngine.isReady()
+    }
+
+    private fun suggestRhymes(word: String, body: String): List<String> {
+        if (rhymeEngine2Ready) {
+            val v2 = runCatching {
+                rhymeEngine2.suggest(word, 8)
+                    .map { it.word }
+                    .distinct()
+            }.getOrDefault(emptyList())
+            if (v2.size >= 4) {
+                return v2
+            }
+        }
+        return runCatching {
+            rhymeEngine.suggest(
+                word,
+                8,
+                360,
+                RhymeEngine.Options("Balanced", false, true, emptySet(), body)
+            )
+        }.getOrDefault(emptyList())
     }
 
     private fun String.activeRhymeWord(): String {
