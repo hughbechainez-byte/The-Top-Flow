@@ -2,13 +2,13 @@
   "versionName": "25.0",
   "notes": "Version 25.0 adds the offline rhyme-engine V2 data foundation (tflex binary asset, slang seed file, and validation tooling) while keeping rhyme behavior unchanged.",
   "versionCode": 75,
-  "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-25.0-rhyme-engine-v2-foundation.apk",
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.0/the-top-flow-25.0-rhyme-engine-v2-foundation.apk",
   "versions": [
     {
       "versionName": "25.0",
       "notes": "Version 25.0 adds the offline rhyme-engine V2 data foundation (tflex binary asset, slang seed file, and validation tooling) while keeping rhyme behavior unchanged.",
       "versionCode": 75,
-      "apkUrl": "https://raw.githubusercontent.com/hughbechainez-byte/The-Top-Flow/main/releases/the-top-flow-25.0-rhyme-engine-v2-foundation.apk"
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.0/the-top-flow-25.0-rhyme-engine-v2-foundation.apk"
     },
     {
       "versionName": "24.5",
