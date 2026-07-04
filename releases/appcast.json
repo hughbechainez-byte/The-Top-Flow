@@ -1,9 +1,15 @@
 {
-  "versionName": "25.7",
-  "notes": "Version 25.7 tightens the fast-rhyme contract with real binary-cache trace counts, accurate suggestion-count logging, and a validator proving the editor request stays cache eligible.",
-  "versionCode": 82,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.7/the-top-flow-25.7-fast-cache-contract.apk",
+  "versionName": "25.8",
+  "notes": "Version 25.8 expands instant hip-hop rhyme coverage with more slang/common writing seeds, regenerated 32k-row fast cache, regenerated 22k-row expanded cache, and stricter cache validation.",
+  "versionCode": 83,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.8/the-top-flow-25.8-hot-cache-expansion.apk",
   "versions": [
+    {
+      "versionName": "25.8",
+      "notes": "Version 25.8 expands instant hip-hop rhyme coverage with more slang/common writing seeds, regenerated 32k-row fast cache, regenerated 22k-row expanded cache, and stricter cache validation.",
+      "versionCode": 83,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.8/the-top-flow-25.8-hot-cache-expansion.apk"
+    },
     {
       "versionName": "25.7",
       "notes": "Version 25.7 tightens the fast-rhyme contract with real binary-cache trace counts, accurate suggestion-count logging, and a validator proving the editor request stays cache eligible.",

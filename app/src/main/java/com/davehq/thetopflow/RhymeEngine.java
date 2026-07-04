@@ -785,6 +785,22 @@ final class RhymeEngine {
         if (w.endsWith("ing") && w.length() > 4) return guessedOnsetPhones(w.substring(0, w.length() - 3)) + " IH0 N";
         if (w.endsWith("in") && w.length() > 3) return guessedOnsetPhones(w.substring(0, w.length() - 2)) + " IH0 N";
         if (w.length() > 5 && (w.endsWith("ant") || w.endsWith("ent") || w.endsWith("int") || w.endsWith("unt"))) return guessedOnsetPhones(w.substring(0, w.length() - 3)) + " IH0 N";
+        if ("finna".equals(w)) return "F IH1 N AH0";
+        if ("tryna".equals(w)) return "T R AY1 N AH0";
+        if ("gonna".equals(w)) return "G AH1 N AH0";
+        if ("wanna".equals(w)) return "W AA1 N AH0";
+        if ("gotta".equals(w)) return "G AA1 T AH0";
+        if ("imma".equals(w)) return "IH1 M AH0";
+        if ("ima".equals(w)) return "AY1 M AH0";
+        if ("gimme".equals(w)) return "G IH1 M IY0";
+        if ("lemme".equals(w)) return "L EH1 M IY0";
+        if ("nah".equals(w)) return "N AO1";
+        if ("naw".equals(w)) return "N AO1";
+        if ("thang".equals(w)) return "TH AE1 NG";
+        if ("homie".equals(w)) return "HH OW1 M IY0";
+        if ("shorty".equals(w)) return "SH AO1 R T IY0";
+        if ("shawty".equals(w)) return "SH AO1 T IY0";
+        if ("litty".equals(w)) return "L IH1 T IY0";
         if ("coolant".equals(w)) return "K UW1 L IH0 N";
         if ("pullin".equals(w)) return "P UH1 L IH0 N";
         return "";
@@ -1063,7 +1079,14 @@ final class RhymeEngine {
             "heat", "beat", "street", "sweet", "fleet", "meet", "seat", "feat",
             "cover", "lover", "hover", "running", "runnin", "proving", "grooving",
             "pullin", "pulling", "coolant", "woolen", "bullet", "couldn't", "shouldn't", "wouldn't",
-            "movin", "moving", "proven", "losing", "choosing", "ruin", "fluid", "student"
+            "movin", "moving", "proven", "losing", "choosing", "ruin", "fluid", "student",
+            "finna", "tryna", "gonna", "wanna", "gotta", "imma", "ima", "gimme", "lemme",
+            "nah", "naw", "thang", "homie", "shorty", "shawty",
+            "hustle", "muscle", "struggle", "bubble", "double", "trouble",
+            "money", "funny", "sunny", "dummy", "honey",
+            "city", "pretty", "gritty", "litty", "really",
+            "chillin", "chilling", "spittin", "spitting", "rappin", "rapping",
+            "stackin", "stacking", "flexin", "flexing", "grindin", "grinding", "shinin", "shining"
     };
 
     private static final String[] COMMON_RHYME_PHRASES = {

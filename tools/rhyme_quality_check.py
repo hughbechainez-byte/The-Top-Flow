@@ -38,6 +38,13 @@ COMMON_RHYME_WORDS = [
     "cover", "lover", "hover", "running", "runnin", "proving", "grooving",
     "pullin", "pulling", "coolant", "woolen", "bullet", "couldn't", "shouldn't", "wouldn't",
     "movin", "moving", "proven", "losing", "choosing", "ruin", "fluid", "student",
+    "finna", "tryna", "gonna", "wanna", "gotta", "imma", "ima", "gimme", "lemme",
+    "nah", "naw", "thang", "homie", "shorty", "shawty",
+    "hustle", "muscle", "struggle", "bubble", "double", "trouble",
+    "money", "funny", "sunny", "dummy", "honey",
+    "city", "pretty", "gritty", "litty", "really",
+    "chillin", "chilling", "spittin", "spitting", "rappin", "rapping",
+    "stackin", "stacking", "flexin", "flexing", "grindin", "grinding", "shinin", "shining",
 ]
 
 COMMON_RHYME_PHRASES = [
@@ -165,6 +172,26 @@ def slang_phones(word, include_slang=True):
         return guessed_onset_phones(word[:-2]) + " IH0 N"
     if len(word) > 5 and word.endswith(("ant", "ent", "int", "unt")):
         return guessed_onset_phones(word[:-3]) + " IH0 N"
+    explicit = {
+        "finna": "F IH1 N AH0",
+        "tryna": "T R AY1 N AH0",
+        "gonna": "G AH1 N AH0",
+        "wanna": "W AA1 N AH0",
+        "gotta": "G AA1 T AH0",
+        "imma": "IH1 M AH0",
+        "ima": "AY1 M AH0",
+        "gimme": "G IH1 M IY0",
+        "lemme": "L EH1 M IY0",
+        "nah": "N AO1",
+        "naw": "N AO1",
+        "thang": "TH AE1 NG",
+        "homie": "HH OW1 M IY0",
+        "shorty": "SH AO1 R T IY0",
+        "shawty": "SH AO1 T IY0",
+        "litty": "L IH1 T IY0",
+    }
+    if word in explicit:
+        return explicit[word]
     if word == "coolant":
         return "K UW1 L IH0 N"
     if word == "pullin":

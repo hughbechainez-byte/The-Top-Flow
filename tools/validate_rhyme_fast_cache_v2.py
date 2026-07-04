@@ -5,7 +5,11 @@ import pathlib
 import struct
 import zlib
 
-REQUIRED = ["my", "try", "time", "out", "running", "moving", "runnin", "movin"]
+REQUIRED = [
+    "my", "try", "time", "out", "running", "moving", "runnin", "movin",
+    "finna", "tryna", "gonna", "wanna", "gotta", "chillin", "spittin",
+    "rappin", "stackin", "flexin", "grindin", "shinin", "shawty", "thang",
+]
 MAX_SUGGESTIONS = 6
 
 
