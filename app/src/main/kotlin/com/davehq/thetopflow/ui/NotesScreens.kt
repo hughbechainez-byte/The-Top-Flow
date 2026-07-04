@@ -7,6 +7,9 @@
 package com.davehq.thetopflow.ui
 
 import androidx.activity.compose.BackHandler
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -52,6 +55,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -83,6 +88,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -96,6 +102,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.metrics.performance.PerformanceMetricsState
+import com.davehq.thetopflow.BuildConfig
 import com.davehq.thetopflow.MediaUiState
 import com.davehq.thetopflow.NotesUiState
 import com.davehq.thetopflow.data.NoteUi
@@ -169,6 +176,8 @@ fun NotesRoute(
                 onTitleChange = onTitleChange,
                 onBodyChange = onBodyChange,
                 onDeleteNote = onDeleteNote,
+                onCreateNote = onCreateNote,
+                onOpenRecentNote = onOpenRecentNote,
                 onAttachSong = onAttachSong,
                 onToggleSong = onToggleSong,
                 onSeekSong = onSeekSong,
@@ -194,9 +203,18 @@ private fun NotesGridScreen(
     onOpenRecentNote: () -> Unit
 ) {
     val density = LocalDensity.current
+    val context = LocalContext.current
     val gesturePx = with(density) { 96.dp.toPx() }
     val menuColor = Color(state.styleDefaults.menuColor)
     val menuAccent = Color(state.styleDefaults.menuAccentColor)
+    var showMainMenu by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val runMainAction: (() -> Unit) -> Unit = { action ->
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        action()
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -207,18 +225,56 @@ private fun NotesGridScreen(
                     .background(menuColor.copy(alpha = 0.42f))
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = "The Top Flow",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = readableColor(menuColor, menuAccent, MaterialTheme.colorScheme.onBackground),
-                    maxLines = 1
-                )
-                Text(
-                    text = "${state.notes.size} notes",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "The Top Flow",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = readableColor(menuColor, menuAccent, MaterialTheme.colorScheme.onBackground),
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "v${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "${state.notes.size} notes",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                    Box {
+                        OutlinedButton(onClick = { showMainMenu = true }) {
+                            Text("Menu")
+                        }
+                        DropdownMenu(
+                            expanded = showMainMenu,
+                            onDismissRequest = { showMainMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("New note") },
+                                onClick = { showMainMenu = false; runMainAction(onCreateNote) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Open latest note") },
+                                onClick = { showMainMenu = false; runMainAction(onOpenRecentNote) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Check for app update") },
+                                onClick = {
+                                    showMainMenu = false
+                                    runMainAction { launchTopFlowUpdate(context) }
+                                }
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(16.dp))
                 SearchField(
                     value = state.query,
@@ -464,6 +520,8 @@ fun NoteEditorScreen(
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onDeleteNote: () -> Unit,
+    onCreateNote: () -> Unit,
+    onOpenRecentNote: () -> Unit,
     onAttachSong: () -> Unit,
     onToggleSong: () -> Unit,
     onSeekSong: (Int) -> Unit,
@@ -486,6 +544,8 @@ fun NoteEditorScreen(
         onTitleChange = onTitleChange,
         onBodyChange = onBodyChange,
         onDeleteNote = onDeleteNote,
+        onCreateNote = onCreateNote,
+        onOpenRecentNote = onOpenRecentNote,
         onAttachSong = onAttachSong,
         onToggleSong = onToggleSong,
         onSeekSong = onSeekSong,
@@ -511,6 +571,8 @@ fun NoteEditor(
     onTitleChange: (String) -> Unit = {},
     onBodyChange: (String) -> Unit = {},
     onDeleteNote: () -> Unit = {},
+    onCreateNote: () -> Unit = {},
+    onOpenRecentNote: () -> Unit = {},
     onAttachSong: () -> Unit = {},
     onToggleSong: () -> Unit = {},
     onSeekSong: (Int) -> Unit = {},
@@ -525,6 +587,8 @@ fun NoteEditor(
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     var showStyleSheet by remember { mutableStateOf(false) }
+    var showEditorMenu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     var renameRecordingPath by remember { mutableStateOf<String?>(null) }
     var renameValue by remember { mutableStateOf("") }
     var draftTitle by remember(note.id) { mutableStateOf(note.title) }
@@ -574,6 +638,13 @@ fun NoteEditor(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = "v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = readableMetadataColor(pageColor, bodyTextColor),
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(8.dp))
                     OutlinedButton(onClick = { runAction(onBack) }, modifier = Modifier.testTag("close_editor")) {
                         Text("Notes")
                     }
@@ -585,6 +656,32 @@ fun NoteEditor(
                         Spacer(Modifier.width(8.dp))
                         OutlinedButton(onClick = { runAction(onDeleteNote) }, modifier = Modifier.testTag("delete_note")) {
                             Text("Delete")
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Box {
+                        OutlinedButton(onClick = { showEditorMenu = true }) {
+                            Text("Menu")
+                        }
+                        DropdownMenu(
+                            expanded = showEditorMenu,
+                            onDismissRequest = { showEditorMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("New note") },
+                                onClick = { showEditorMenu = false; runAction(onCreateNote) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Open latest note") },
+                                onClick = { showEditorMenu = false; runAction(onOpenRecentNote) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Check for app update") },
+                                onClick = {
+                                    showEditorMenu = false
+                                    runAction { launchTopFlowUpdate(context) }
+                                }
+                            )
                         }
                     }
                 }
@@ -645,7 +742,7 @@ fun NoteEditor(
                     textStyle = editorBodyStyle(note, bodyTextColor),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 320.dp)
+                        .heightIn(min = 180.dp, max = 420.dp)
                         .testTag("editor_body")
                         .semantics { contentDescription = "Note body" },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -1456,6 +1553,15 @@ private fun shortDate(timestamp: Long): String {
 private fun colorToHex(color: Int): String {
     val noAlpha = color and 0x00FFFFFF
     return noAlpha.toString(16).uppercase().padStart(6, '0')
+}
+
+private fun launchTopFlowUpdate(context: Context) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.UPDATE_MANIFEST_URL)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
 }
 
 enum class SwipeDirection { Left, Right }

@@ -45,10 +45,40 @@ data class NoteUi(
     val updatedAt: Long
 ) {
     val preview: String
-        get() = body.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+        get() {
+            if (body.isBlank()) return ""
+            var index = 0
+            while (index < body.length) {
+                val nextNewline = body.indexOf('\n', index)
+                val line = if (nextNewline < 0) {
+                    body.substring(index)
+                } else {
+                    body.substring(index, nextNewline)
+                }
+                if (line.isNotBlank()) return line.trim()
+                index = if (nextNewline < 0) body.length else nextNewline + 1
+            }
+            return ""
+        }
 
     val wordCount: Int
-        get() = body.splitToSequence(Regex("\\s+")).count { it.isNotBlank() }
+        get() {
+            if (body.isBlank()) return 0
+            var count = 0
+            var inWord = false
+            for (char in body) {
+                if (char.isWhitespace()) {
+                    if (inWord) {
+                        count++
+                        inWord = false
+                    }
+                } else if (!inWord) {
+                    inWord = true
+                }
+            }
+            if (inWord) count++
+            return count
+        }
 
     companion object {
         fun blank(now: Long = System.currentTimeMillis(), defaults: StyleDefaults = StyleDefaults()): NoteUi = NoteUi(

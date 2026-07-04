@@ -16,6 +16,7 @@ object RhymeAssetStore {
     private const val TRACE_TAG = "rhyme_trace"
     private const val FALLBACK_DIR = "rhyme-assets"
 
+    @JvmStatic
     fun openMappedAsset(context: Context, name: String): ByteBuffer {
         val startMs = System.currentTimeMillis()
         return try {

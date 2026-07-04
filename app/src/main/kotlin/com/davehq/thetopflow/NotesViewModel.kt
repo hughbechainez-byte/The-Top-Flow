@@ -117,10 +117,21 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotesUiState())
 
     init {
-        rhymeEngine.loadAsync {
-            rhymeLoading.value = false
-            refreshRhymesForSelected()
-        }
+        rhymeEngine.loadAsync(object : RhymeEngine.LoadCallbacks {
+            override fun onFastReady() {
+                viewModelScope.launch {
+                    rhymeLoading.value = false
+                    refreshRhymesForSelected()
+                }
+            }
+
+            override fun onFullReady() {
+                viewModelScope.launch {
+                    rhymeLoading.value = false
+                    refreshRhymesForSelected()
+                }
+            }
+        })
         viewModelScope.launch {
             val loaded = repository.loadNotes()
             notes.value = loaded
@@ -182,7 +193,15 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateBody(value: String) {
+        val selected = activeSelectedNote() ?: return
+        if (selected.body == value) return
         updateSelected { it.copy(body = value, updatedAt = System.currentTimeMillis()) }
+        if (value.length > 16_000) {
+            rhymeJob?.cancel()
+            rhymeSuggestions.value = emptyList()
+            rhymeLoading.value = false
+            return
+        }
         scheduleRhymeUpdate(value)
     }
 
@@ -380,35 +399,62 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         scheduleRhymeUpdate(body, delayMs = 0)
     }
 
-    private fun scheduleRhymeUpdate(body: String, delayMs: Long = 140) {
+    private fun scheduleRhymeUpdate(body: String, delayMs: Long = defaultRhymeDelayMs()) {
         rhymeJob?.cancel()
         rhymeJob = viewModelScope.launch {
             kotlinx.coroutines.delay(delayMs)
+            val selectedId = selectedNoteId.value
+            if (selectedId == null) return@launch
+            val currentBody = notes.value.firstOrNull { it.id == selectedId }?.body ?: ""
+            if (body != currentBody) return@launch
             val word = withContext(Dispatchers.Default) { body.activeRhymeWord() }
-            if (word.isBlank()) {
+            if (word.length < 2) {
                 rhymeSuggestions.value = emptyList()
-                rhymeLoading.value = !rhymeEngine.isReady()
+                rhymeLoading.value = !rhymeEngine.isFastReady() && !rhymeEngine.isReady()
+                return@launch
+            }
+            if (!rhymeEngine.isFastReady() && !rhymeEngine.isReady()) {
+                rhymeLoading.value = true
                 return@launch
             }
             val suggestions = withContext(Dispatchers.Default) {
-                if (!rhymeEngine.isReady()) {
-                    emptyList()
-                } else {
+                runCatching {
                     rhymeEngine.suggest(
                         word,
                         8,
                         360,
                         RhymeEngine.Options("Balanced", false, true, emptySet(), body)
                     )
-                }
+                }.getOrDefault(emptyList())
             }
-            rhymeLoading.value = !rhymeEngine.isReady()
+            rhymeLoading.value = !rhymeEngine.isFastReady() && !rhymeEngine.isReady()
             rhymeSuggestions.value = suggestions
         }
     }
 
+    private fun defaultRhymeDelayMs(): Long {
+        return if (rhymeEngine.isFastReady()) 50L else 140L
+    }
+
     private fun String.activeRhymeWord(): String {
-        return trim().split(Regex("[^A-Za-z']+")).lastOrNull { it.isNotBlank() }.orEmpty()
+        val end = lastIndexOfLastWordChar()
+        if (end < 0) return ""
+        var start = end
+        while (start > 0 && isWordChar(this[start - 1])) {
+            start--
+        }
+        return substring(start, end + 1)
+    }
+
+    private fun String.lastIndexOfLastWordChar(): Int {
+        for (index in lastIndex downTo 0) {
+            if (isWordChar(this[index])) return index
+        }
+        return -1
+    }
+
+    private fun isWordChar(char: Char): Boolean {
+        return char.isLetter() || char == '\''
     }
 
     private fun appendRecordingMarker(body: String, tag: String): String {

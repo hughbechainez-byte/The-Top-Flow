@@ -2,10 +2,12 @@ package com.davehq.thetopflow;
 
 import android.content.Context;
 import android.util.Log;
+import android.os.Trace;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,7 @@ import java.util.Set;
 
 final class RhymeEngine {
     private static final String TAG = "TopFlow";
+    private static final String TRACE_TAG = "rhyme_trace";
     private static final int CACHE_LIMIT = 192;
     private static final String[] PREPARED_INDEX_ASSETS = {"rhyme_index_accel.tfindex", "rhyme_index.tsv"};
     private static final String FAST_HOT_CACHE_ASSET = "rhyme_hot_cache.tfcache";
@@ -82,10 +85,16 @@ final class RhymeEngine {
         }
     };
     private volatile boolean ready = false;
+    private volatile boolean fastReady = false;
     private volatile boolean loading = false;
     private volatile boolean fastHotCacheReady = false;
     private volatile boolean expandedHotCacheReady = false;
+    private volatile long fastCacheLoadMs = -1L;
+    private volatile long preparedIndexLoadMs = -1L;
+    private volatile long expandedCacheLoadMs = -1L;
+    private volatile long fullLoadMs = -1L;
     private volatile int generation = 0;
+    private final RhymeFastCacheStore fastCacheStore = new RhymeFastCacheStore();
 
     RhymeEngine(Context context) {
         this.context = context.getApplicationContext();
@@ -95,78 +104,145 @@ final class RhymeEngine {
         return ready;
     }
 
+    interface LoadCallbacks {
+        void onFastReady();
+
+        void onFullReady();
+    }
+
     int generation() {
         return generation;
     }
 
+    boolean isFastReady() {
+        return fastReady;
+    }
+
     void loadAsync(Runnable onReady) {
+        loadAsync(new LoadCallbacks() {
+            @Override
+            public void onFastReady() {
+            }
+
+            @Override
+            public void onFullReady() {
+                if (onReady != null) {
+                    onReady.run();
+                }
+            }
+        });
+    }
+
+    void loadAsync(LoadCallbacks callbacks) {
         if (ready || loading) return;
         loading = true;
         new Thread(() -> {
             long start = System.currentTimeMillis();
-            load();
+            loadFastCacheFirst();
+            if (fastReady && callbacks != null) {
+                callbacks.onFastReady();
+            }
+            loadFullEngineAfterFastCache();
             ready = true;
             loading = false;
+            fullLoadMs = System.currentTimeMillis() - start;
             clearCache();
-            Log.d(TAG, "rhyme engine ready words=" + phonesByWord.size()
+            Log.d(TAG, "rhyme_trace stage=full_ready words=" + phonesByWord.size()
                     + " exactKeys=" + exactIndex.size()
                     + " fastHotCache=" + fastHotCache.size()
                     + " expandedHotCache=" + expandedHotCache.size()
-                    + " ms=" + (System.currentTimeMillis() - start));
-            if (onReady != null) onReady.run();
+                    + " fastCacheMs=" + fastCacheLoadMs
+                    + " preparedIndexMs=" + preparedIndexLoadMs
+                    + " expandedCacheMs=" + expandedCacheLoadMs
+                    + " fullMs=" + fullLoadMs);
+            if (callbacks != null) {
+                callbacks.onFullReady();
+            }
         }, "TopFlowRhymeLoad").start();
     }
 
     ArrayList<String> suggest(String word, int limit, int maxCandidates, Options options) {
         ArrayList<String> out = new ArrayList<>();
+        String source = "empty";
+        long start = System.nanoTime();
+        Trace.beginSection("TopFlowRhymeSuggest");
         String base = normalizeWord(word);
-        if (base.isEmpty() || !ready) return out;
-        String cacheKey = cacheKey(base, limit, maxCandidates, options);
-        synchronized (cacheLock) {
-            ArrayList<String> cached = resultCache.get(cacheKey);
-            if (cached != null) return new ArrayList<>(cached);
-        }
-        ArrayList<String> hot = hotCacheSuggestion(base, limit, maxCandidates, options);
-        if (hot != null) {
+        try {
+            if (base.isEmpty()) return out;
+            if (!ready && !fastReady) return out;
+            String cacheKey = cacheKey(base, limit, maxCandidates, options);
             synchronized (cacheLock) {
-                resultCache.put(cacheKey, new ArrayList<>(hot));
+                ArrayList<String> cached = resultCache.get(cacheKey);
+                if (cached != null) {
+                    source = "cache";
+                    return new ArrayList<>(cached);
+                }
             }
-            return hot;
+            ArrayList<String> hot = hotCacheSuggestion(base, limit, maxCandidates, options);
+            if (hot != null) {
+                synchronized (cacheLock) {
+                    resultCache.put(cacheKey, new ArrayList<>(hot));
+                }
+                source = "fast_cache";
+                return hot;
+            }
+            if (!ready) {
+                source = "hot_cache_miss";
+                return out;
+            }
+            source = "full_scorer";
+            ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
+            Map<String, Integer> contextHits = maxCandidates > 0 ? Collections.emptyMap() : contextFamilyHits(base, options);
+            ArrayList<RhymeMatch> matches = new ArrayList<>();
+            ArrayList<RhymeCandidate> candidates = candidatePoolFor(base, options, baseInfos);
+            Collections.sort(candidates, (a, b) -> {
+                if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
+                int priority = Integer.compare(commonRhymeBias(b.word), commonRhymeBias(a.word));
+                if (priority != 0) return priority;
+                return a.word.compareTo(b.word);
+            });
+            int scored = 0;
+            for (RhymeCandidate candidate : candidates) {
+                if (Thread.currentThread().isInterrupted()) return out;
+                String rhymeWord = candidateRhymeWord(candidate.word);
+                if (rhymeWord.equals(base) || isRemoved(candidate.word, options)) continue;
+                if (maxCandidates > 0 && scored >= maxCandidates) break;
+                scored++;
+                int score = rhymeScore(base, candidate.word, candidate.bucket, options, baseInfos, contextHits);
+                if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
+            }
+            Collections.sort(matches, (a, b) -> {
+                if (b.score != a.score) return Integer.compare(b.score, a.score);
+                if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
+                if (b.priority != a.priority) return Integer.compare(b.priority, a.priority);
+                return a.word.compareTo(b.word);
+            });
+            for (RhymeMatch match : matches) {
+                if (!out.contains(match.word)) out.add(match.word);
+                if (out.size() >= limit) break;
+            }
+            synchronized (cacheLock) {
+                resultCache.put(cacheKey, new ArrayList<>(out));
+            }
+            return out;
+        } finally {
+            if (ready) {
+                if ("empty".equals(source)) source = "full_scorer";
+            } else if (fastReady) {
+                if ("empty".equals(source)) source = "fast_cache_miss";
+            } else {
+                if ("empty".equals(source)) source = "unready";
+            }
+            Log.d(TRACE_TAG, "rhyme_trace stage=suggest word=" + base
+                    + " source=" + source
+                    + " ready=" + ready
+                    + " fastReady=" + fastReady
+                    + " limit=" + limit
+                    + " maxCandidates=" + maxCandidates
+                    + " count=" + out.size()
+                    + " ms=" + ((System.nanoTime() - start) / 1_000_000.0));
+            Trace.endSection();
         }
-        ArrayList<PhoneRhymeInfo> baseInfos = rhymeInfos(base, options);
-        Map<String, Integer> contextHits = maxCandidates > 0 ? Collections.emptyMap() : contextFamilyHits(base, options);
-        ArrayList<RhymeMatch> matches = new ArrayList<>();
-        ArrayList<RhymeCandidate> candidates = candidatePoolFor(base, options, baseInfos);
-        Collections.sort(candidates, (a, b) -> {
-            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
-            int priority = Integer.compare(commonRhymeBias(b.word), commonRhymeBias(a.word));
-            if (priority != 0) return priority;
-            return a.word.compareTo(b.word);
-        });
-        int scored = 0;
-        for (RhymeCandidate candidate : candidates) {
-            if (Thread.currentThread().isInterrupted()) return out;
-            String rhymeWord = candidateRhymeWord(candidate.word);
-            if (rhymeWord.equals(base) || isRemoved(candidate.word, options)) continue;
-            if (maxCandidates > 0 && scored >= maxCandidates) break;
-            scored++;
-            int score = rhymeScore(base, candidate.word, candidate.bucket, options, baseInfos, contextHits);
-            if (score > 0) matches.add(new RhymeMatch(candidate.word, score, candidate.bucket, commonRhymeBias(candidate.word)));
-        }
-        Collections.sort(matches, (a, b) -> {
-            if (b.score != a.score) return Integer.compare(b.score, a.score);
-            if (a.bucket != b.bucket) return Integer.compare(a.bucket, b.bucket);
-            if (b.priority != a.priority) return Integer.compare(b.priority, a.priority);
-            return a.word.compareTo(b.word);
-        });
-        for (RhymeMatch match : matches) {
-            if (!out.contains(match.word)) out.add(match.word);
-            if (out.size() >= limit) break;
-        }
-        synchronized (cacheLock) {
-            resultCache.put(cacheKey, new ArrayList<>(out));
-        }
-        return out;
     }
 
     void clearCache() {
@@ -186,23 +262,80 @@ final class RhymeEngine {
     }
 
     private void load() {
-        phonesByWord.clear();
-        exactIndex.clear();
-        familyIndex.clear();
-        dictionaryWords.clear();
-        fastHotCache.clear();
-        expandedHotCache.clear();
-        fastHotCacheReady = false;
-        expandedHotCacheReady = false;
-        if (!loadPreparedIndex()) loadCmuDictionary();
-        addPronunciationOverrides();
-        for (String word : COMMON_RHYME_WORDS) {
-            String w = normalizeWord(word);
-            String phones = slangPhones(w, true);
-            if (!w.isEmpty() && !phones.isEmpty() && !dictionaryWords.contains(w)) addEntry(w, phones, true);
+        loadFastCacheFirst();
+        loadFullEngineAfterFastCache();
+    }
+
+    private void loadFastCacheFirst() {
+        Trace.beginSection("TopFlowRhymeFastCache");
+        try {
+            Log.d(TAG, "rhyme_trace stage=fast_cache_start");
+            long start = System.currentTimeMillis();
+            fastHotCache.clear();
+            fastHotCacheReady = false;
+            fastReady = false;
+            if (fastCacheStore.load(context)) {
+                fastHotCacheReady = true;
+            }
+            if (!fastHotCacheReady) {
+                Log.d(TAG, "rhyme_trace stage=fast_cache_binary_failed");
+                fastHotCacheReady = loadHotCache(FAST_HOT_CACHE_ASSET, FAST_HOT_CACHE_HEADER, FAST_HOT_CACHE_MAX_CANDIDATES, FAST_HOT_CACHE_LIMIT, fastHotCache);
+            }
+            fastReady = fastHotCacheReady;
+            fastCacheLoadMs = System.currentTimeMillis() - start;
+            Log.d(TAG, "rhyme_trace stage=fast_ready ready=" + fastReady
+                    + " rows=" + fastHotCache.size()
+                    + " ms=" + fastCacheLoadMs);
+        } finally {
+            Trace.endSection();
         }
-        fastHotCacheReady = loadHotCache(FAST_HOT_CACHE_ASSET, FAST_HOT_CACHE_HEADER, FAST_HOT_CACHE_MAX_CANDIDATES, FAST_HOT_CACHE_LIMIT, fastHotCache);
-        expandedHotCacheReady = loadHotCache(EXPANDED_HOT_CACHE_ASSET, EXPANDED_HOT_CACHE_HEADER, EXPANDED_HOT_CACHE_MAX_CANDIDATES, EXPANDED_HOT_CACHE_LIMIT, expandedHotCache);
+    }
+
+    private void loadFullEngineAfterFastCache() {
+        Log.d(TAG, "rhyme_trace stage=prepared_index_start");
+        long indexStart = System.currentTimeMillis();
+        Trace.beginSection("TopFlowRhymePreparedIndex");
+        try {
+            phonesByWord.clear();
+            exactIndex.clear();
+            familyIndex.clear();
+            dictionaryWords.clear();
+            if (!loadPreparedIndex()) {
+                loadCmuDictionary();
+            }
+            addPronunciationOverrides();
+            for (String word : COMMON_RHYME_WORDS) {
+                String w = normalizeWord(word);
+                String phones = slangPhones(w, true);
+                if (!w.isEmpty() && !phones.isEmpty() && !dictionaryWords.contains(w)) {
+                    addEntry(w, phones, true);
+                }
+            }
+        } finally {
+            Trace.endSection();
+        }
+        preparedIndexLoadMs = System.currentTimeMillis() - indexStart;
+        Log.d(TAG, "rhyme_trace stage=prepared_index_ready words=" + phonesByWord.size()
+                + " exactKeys=" + exactIndex.size()
+                + " ms=" + preparedIndexLoadMs);
+
+        Trace.beginSection("TopFlowRhymeExpandedCache");
+        try {
+            expandedHotCache.clear();
+            long start = System.currentTimeMillis();
+            expandedHotCacheReady = loadHotCache(
+                    EXPANDED_HOT_CACHE_ASSET,
+                    EXPANDED_HOT_CACHE_HEADER,
+                    EXPANDED_HOT_CACHE_MAX_CANDIDATES,
+                    EXPANDED_HOT_CACHE_LIMIT,
+                    expandedHotCache
+            );
+            expandedCacheLoadMs = System.currentTimeMillis() - start;
+            Log.d(TAG, "rhyme_trace stage=expanded_cache_ready rows=" + expandedHotCache.size()
+                    + " ms=" + expandedCacheLoadMs);
+        } finally {
+            Trace.endSection();
+        }
     }
 
     private boolean loadHotCache(String assetName, String expectedHeader, int expectedMaxCandidates, int expectedLimit, Map<String, String[]> target) {
@@ -251,24 +384,39 @@ final class RhymeEngine {
     }
 
     private ArrayList<String> hotCacheSuggestion(String base, int limit, int maxCandidates, Options options) {
-        Map<String, String[]> source = null;
-        if (fastHotCacheReady && isFastHotCacheEligible(limit, maxCandidates, options)) {
-            source = fastHotCache;
-        } else if (expandedHotCacheReady && !isRegressionGuardedWord(base) && isExpandedHotCacheEligible(limit, maxCandidates, options)) {
-            source = expandedHotCache;
+        if (fastCacheStore.isLoaded() && isFastHotCacheEligible(limit, maxCandidates, options)) {
+            String[] fast = fastCacheStore.lookup(base, limit);
+            if (fast != null && fast.length > 0) {
+                return new ArrayList<>(Arrays.asList(fast));
+            }
         }
-        if (source == null) return null;
-        String[] cached = source.get(base);
-        if (cached == null || cached.length < limit) return null;
-        ArrayList<String> out = new ArrayList<>();
-        for (int i = 0; i < limit; i++) out.add(cached[i]);
-        return out;
+        if (fastHotCacheReady && isFastHotCacheEligible(limit, maxCandidates, options)) {
+            String[] cached = fastHotCache.get(base);
+            if (cached != null) {
+                int effective = Math.min(limit, FAST_HOT_CACHE_LIMIT);
+                if (effective > 0 && cached.length >= 1) {
+                    ArrayList<String> out = new ArrayList<>();
+                    for (int i = 0; i < Math.min(effective, cached.length); i++) out.add(cached[i]);
+                    return out;
+                }
+            }
+            return null;
+        }
+        if (expandedHotCacheReady && !isRegressionGuardedWord(base) && isExpandedHotCacheEligible(limit, maxCandidates, options)) {
+            String[] cached = expandedHotCache.get(base);
+            if (cached == null) return null;
+            int effective = Math.min(limit, EXPANDED_HOT_CACHE_LIMIT);
+            ArrayList<String> out = new ArrayList<>();
+            for (int i = 0; i < Math.min(effective, cached.length); i++) out.add(cached[i]);
+            return out;
+        }
+        return null;
     }
 
     private boolean isFastHotCacheEligible(int limit, int maxCandidates, Options options) {
         if (options == null) return false;
         if (maxCandidates != FAST_HOT_CACHE_MAX_CANDIDATES) return false;
-        if (limit < 4 || limit > FAST_HOT_CACHE_LIMIT) return false;
+        if (limit < 1 || limit > FAST_HOT_CACHE_LIMIT) return false;
         if (!"Balanced".equals(options.strictness)) return false;
         if (options.exactOnly || !options.includeSlang) return false;
         return options.removed == null || options.removed.isEmpty();
