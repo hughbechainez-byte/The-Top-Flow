@@ -18,9 +18,19 @@ data class TopFlowUpdate(
     val apkUrl: String
 )
 
+data class TopFlowPreparedUpdate(
+    val update: TopFlowUpdate,
+    val apk: File
+)
+
 sealed class TopFlowUpdateCheckResult {
     data class UpdateAvailable(val update: TopFlowUpdate) : TopFlowUpdateCheckResult()
     data class NoUpdate(val currentVersionName: String) : TopFlowUpdateCheckResult()
+}
+
+sealed class TopFlowPreparedUpdateCheckResult {
+    data class Ready(val preparedUpdate: TopFlowPreparedUpdate) : TopFlowPreparedUpdateCheckResult()
+    data class NoUpdate(val currentVersionName: String) : TopFlowPreparedUpdateCheckResult()
 }
 
 class TopFlowUpdateManager(private val context: Context) {
@@ -34,9 +44,23 @@ class TopFlowUpdateManager(private val context: Context) {
         }
     }
 
+    suspend fun checkAndDownloadUpdate(): TopFlowPreparedUpdateCheckResult = withContext(Dispatchers.IO) {
+        val manifest = readText(effectiveManifestUrl())
+        val update = parseLatestUpdate(manifest)
+        if (update == null) {
+            TopFlowPreparedUpdateCheckResult.NoUpdate(BuildConfig.VERSION_NAME)
+        } else {
+            TopFlowPreparedUpdateCheckResult.Ready(TopFlowPreparedUpdate(update, downloadApk(update)))
+        }
+    }
+
     suspend fun downloadAndInstall(update: TopFlowUpdate) {
         val apk = withContext(Dispatchers.IO) { downloadApk(update) }
-        withContext(Dispatchers.Main.immediate) { installApk(apk) }
+        withContext(Dispatchers.Main.immediate) { installApk(TopFlowPreparedUpdate(update, apk)) }
+    }
+
+    fun installDownloadedUpdate(preparedUpdate: TopFlowPreparedUpdate) {
+        installApk(preparedUpdate)
     }
 
     private fun effectiveManifestUrl(): String {
@@ -116,16 +140,18 @@ class TopFlowUpdateManager(private val context: Context) {
         return target
     }
 
-    private fun installApk(apk: File) {
+    private fun installApk(preparedUpdate: TopFlowPreparedUpdate) {
         val uri = FileProvider.getUriForFile(
             context,
             "${BuildConfig.APPLICATION_ID}.files",
-            apk
+            preparedUpdate.apk
         )
-        val intent = Intent(Intent.ACTION_VIEW).apply {
+        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
             setDataAndType(uri, APK_MIME_TYPE)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+            putExtra(Intent.EXTRA_RETURN_RESULT, true)
         }
         context.startActivity(intent)
     }

@@ -104,8 +104,8 @@ import androidx.metrics.performance.PerformanceMetricsState
 import com.davehq.thetopflow.BuildConfig
 import com.davehq.thetopflow.MediaUiState
 import com.davehq.thetopflow.NotesUiState
-import com.davehq.thetopflow.TopFlowUpdate
-import com.davehq.thetopflow.TopFlowUpdateCheckResult
+import com.davehq.thetopflow.TopFlowPreparedUpdate
+import com.davehq.thetopflow.TopFlowPreparedUpdateCheckResult
 import com.davehq.thetopflow.TopFlowUpdateManager
 import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.StyleDefaults
@@ -149,13 +149,13 @@ fun NotesRoute(
         if (!updateState.isBusy()) {
             updateState = TopFlowUpdateUiState.Checking
             scope.launch {
-                updateState = runCatching { updateManager.checkForUpdate() }
+                updateState = runCatching { updateManager.checkAndDownloadUpdate() }
                     .fold(
                         onSuccess = { result ->
                             when (result) {
-                                is TopFlowUpdateCheckResult.UpdateAvailable ->
-                                    TopFlowUpdateUiState.Available(result.update)
-                                is TopFlowUpdateCheckResult.NoUpdate ->
+                                is TopFlowPreparedUpdateCheckResult.Ready ->
+                                    TopFlowUpdateUiState.Ready(result.preparedUpdate)
+                                is TopFlowPreparedUpdateCheckResult.NoUpdate ->
                                     TopFlowUpdateUiState.NoUpdate(result.currentVersionName)
                             }
                         },
@@ -166,16 +166,13 @@ fun NotesRoute(
             }
         }
     }
-    val installUpdate: (TopFlowUpdate) -> Unit = { update ->
+    val installUpdate: (TopFlowPreparedUpdate) -> Unit = { preparedUpdate ->
         if (!updateState.isBusy()) {
-            updateState = TopFlowUpdateUiState.Downloading(update)
-            scope.launch {
-                runCatching { updateManager.downloadAndInstall(update) }
-                    .onSuccess { updateState = TopFlowUpdateUiState.Idle }
-                    .onFailure { error ->
-                        updateState = TopFlowUpdateUiState.Error(error.message ?: "Could not install update.")
-                    }
-            }
+            runCatching { updateManager.installDownloadedUpdate(preparedUpdate) }
+                .onSuccess { updateState = TopFlowUpdateUiState.Idle }
+                .onFailure { error ->
+                    updateState = TopFlowUpdateUiState.Error(error.message ?: "Could not install update.")
+                }
         }
     }
     val gridState = rememberLazyStaggeredGridState()
@@ -1610,51 +1607,50 @@ enum class SwipeDirection { Left, Right }
 private sealed class TopFlowUpdateUiState {
     data object Idle : TopFlowUpdateUiState()
     data object Checking : TopFlowUpdateUiState()
-    data class Available(val update: TopFlowUpdate) : TopFlowUpdateUiState()
-    data class Downloading(val update: TopFlowUpdate) : TopFlowUpdateUiState()
+    data class Ready(val preparedUpdate: TopFlowPreparedUpdate) : TopFlowUpdateUiState()
     data class NoUpdate(val versionName: String) : TopFlowUpdateUiState()
     data class Error(val message: String) : TopFlowUpdateUiState()
 }
 
 private fun TopFlowUpdateUiState.isBusy(): Boolean {
-    return this is TopFlowUpdateUiState.Checking || this is TopFlowUpdateUiState.Downloading
+    return this is TopFlowUpdateUiState.Checking
 }
 
 @Composable
 private fun TopFlowUpdateDialog(
     state: TopFlowUpdateUiState,
     onDismiss: () -> Unit,
-    onInstall: (TopFlowUpdate) -> Unit
+    onInstall: (TopFlowPreparedUpdate) -> Unit
 ) {
     when (state) {
         TopFlowUpdateUiState.Idle -> Unit
         TopFlowUpdateUiState.Checking -> {
             AlertDialog(
                 onDismissRequest = {},
-                title = { Text("Checking for updates") },
+                title = { Text("Preparing update") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        Text("Looking for the newest build.")
+                        Text("Checking for the newest build and downloading it in the background.")
                     }
                 },
                 confirmButton = {}
             )
         }
-        is TopFlowUpdateUiState.Available -> {
+        is TopFlowUpdateUiState.Ready -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
-                title = { Text("Update found") },
+                title = { Text("Update ready") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Version ${state.update.versionName} is available.")
-                        if (state.update.notes.isNotBlank()) {
-                            Text(state.update.notes)
+                        Text("Version ${state.preparedUpdate.update.versionName} has been downloaded.")
+                        if (state.preparedUpdate.update.notes.isNotBlank()) {
+                            Text(state.preparedUpdate.update.notes)
                         }
                     }
                 },
                 confirmButton = {
-                    FilledTonalButton(onClick = { onInstall(state.update) }) {
+                    FilledTonalButton(onClick = { onInstall(state.preparedUpdate) }) {
                         Text("Install")
                     }
                 },
@@ -1663,19 +1659,6 @@ private fun TopFlowUpdateDialog(
                         Text("Not now")
                     }
                 }
-            )
-        }
-        is TopFlowUpdateUiState.Downloading -> {
-            AlertDialog(
-                onDismissRequest = {},
-                title = { Text("Downloading update") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        Text("Preparing version ${state.update.versionName}.")
-                    }
-                },
-                confirmButton = {}
             )
         }
         is TopFlowUpdateUiState.NoUpdate -> {

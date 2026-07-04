@@ -1,9 +1,15 @@
 {
-  "versionName": "25.3",
-  "notes": "Version 25.3 restores visible rhyme suggestions by allowing the fast rhyme cache to answer the editor's request size and moving the rhyme strip above the note body.",
-  "versionCode": 78,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.3/the-top-flow-25.3-rhyme-suggestions-fix.apk",
+  "versionName": "25.4",
+  "notes": "Version 25.4 keeps update checking inside the app: it checks the appcast, downloads the APK in the background, then asks the user to install the prepared update.",
+  "versionCode": 79,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.4/the-top-flow-25.4-background-update-install.apk",
   "versions": [
+    {
+      "versionName": "25.4",
+      "notes": "Version 25.4 keeps update checking inside the app: it checks the appcast, downloads the APK in the background, then asks the user to install the prepared update.",
+      "versionCode": 79,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.4/the-top-flow-25.4-background-update-install.apk"
+    },
     {
       "versionName": "25.3",
       "notes": "Version 25.3 restores visible rhyme suggestions by allowing the fast rhyme cache to answer the editor's request size and moving the rhyme strip above the note body.",
