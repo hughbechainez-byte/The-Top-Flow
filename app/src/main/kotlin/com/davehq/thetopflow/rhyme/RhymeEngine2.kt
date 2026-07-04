@@ -34,7 +34,7 @@ class RhymeEngine2(context: Context) {
         }
         Log.d(
             TRACE_TAG,
-            "rhyme_trace stage=v2_suggest word=$normalized count=${result.size} ms=${(System.nanoTime() - start) / 1_000_000.0}"
+            "rhyme_trace stage=v2_suggest chars=${normalized.length} count=${result.size} ms=${(System.nanoTime() - start) / 1_000_000.0}"
         )
         return result
     }

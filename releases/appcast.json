@@ -1,9 +1,15 @@
 {
-  "versionName": "27.1",
-  "notes": "Version 27.1 makes the V2 rhyme candidate reader lazy: it binary-searches the sorted local row table directly instead of decoding and sorting all 32k words during load, reducing startup work while keeping fallback safety.",
-  "versionCode": 89,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.1/the-top-flow-27.1-v2-lazy-reader.apk",
+  "versionName": "27.2",
+  "notes": "Version 27.2 adds sanitized route telemetry for the V2-first rhyme path, logging source selection, V2/fallback result counts, elapsed time, and rolling route counters so the next updates can target real fallback and latency behavior.",
+  "versionCode": 90,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.2/the-top-flow-27.2-rhyme-route-telemetry.apk",
   "versions": [
+    {
+      "versionName": "27.2",
+      "notes": "Version 27.2 adds sanitized route telemetry for the V2-first rhyme path, logging source selection, V2/fallback result counts, elapsed time, and rolling route counters so the next updates can target real fallback and latency behavior.",
+      "versionCode": 90,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.2/the-top-flow-27.2-rhyme-route-telemetry.apk"
+    },
     {
       "versionName": "27.1",
       "notes": "Version 27.1 makes the V2 rhyme candidate reader lazy: it binary-searches the sorted local row table directly instead of decoding and sorting all 32k words during load, reducing startup work while keeping fallback safety.",

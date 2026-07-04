@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ContentValues
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +63,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private var rhymeJob: Job? = null
     private var notesLoaded = false
     @Volatile private var rhymeEngine2Ready = false
+    private val rhymeRouteMetrics = RhymeRouteMetrics()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<NotesUiState> = combine(
@@ -444,17 +446,27 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun suggestRhymes(word: String, body: String): List<String> {
+        val start = System.nanoTime()
+        var source = "empty"
+        var v2Count = 0
+        var fallbackCount = 0
+        var finalCount = 0
+        try {
         if (rhymeEngine2Ready) {
             val v2 = runCatching {
                 rhymeEngine2.suggest(word, 8)
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
+            v2Count = v2.size
             if (v2.size >= 4) {
+                source = "v2"
+                finalCount = v2.size
                 return v2
             }
+            source = if (v2.isEmpty()) "v2_miss" else "v2_short"
         }
-        return runCatching {
+        val fallback = runCatching {
             rhymeEngine.suggest(
                 word,
                 8,
@@ -462,6 +474,26 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 RhymeEngine.Options("Balanced", false, true, emptySet(), body)
             )
         }.getOrDefault(emptyList())
+        fallbackCount = fallback.size
+        finalCount = fallback.size
+        source = if (fallback.isNotEmpty()) {
+            if (source.startsWith("v2_")) "fallback_after_$source" else "fallback"
+        } else if (source == "empty") {
+            "empty"
+        } else {
+            "${source}_empty"
+        }
+        return fallback
+        } finally {
+            val elapsedMs = (System.nanoTime() - start) / 1_000_000.0
+            val snapshot = rhymeRouteMetrics.record(source, elapsedMs)
+            Log.d(
+                TRACE_TAG,
+                "rhyme_trace stage=route source=$source v2Ready=$rhymeEngine2Ready fastReady=${rhymeEngine.isFastReady()} fullReady=${rhymeEngine.isReady()} " +
+                    "chars=${word.length} v2Count=$v2Count fallbackCount=$fallbackCount count=$finalCount ms=$elapsedMs " +
+                    "routeTotal=${snapshot.total} routeV2=${snapshot.v2} routeFallback=${snapshot.fallback} routeEmpty=${snapshot.empty} avgMs=${snapshot.averageMs}"
+            )
+        }
     }
 
     private fun String.activeRhymeWord(): String {
@@ -506,4 +538,36 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val lastOpenedNoteId: String?,
         val styleDefaults: StyleDefaults
     )
+
+    private data class RhymeRouteSnapshot(
+        val total: Long,
+        val v2: Long,
+        val fallback: Long,
+        val empty: Long,
+        val averageMs: Double
+    )
+
+    private class RhymeRouteMetrics {
+        private var total = 0L
+        private var v2 = 0L
+        private var fallback = 0L
+        private var empty = 0L
+        private var averageMs = 0.0
+
+        @Synchronized
+        fun record(source: String, elapsedMs: Double): RhymeRouteSnapshot {
+            total++
+            when {
+                source == "v2" -> v2++
+                source.contains("fallback") -> fallback++
+                else -> empty++
+            }
+            averageMs += (elapsedMs - averageMs) / total
+            return RhymeRouteSnapshot(total, v2, fallback, empty, averageMs)
+        }
+    }
+
+    private companion object {
+        private const val TRACE_TAG = "rhyme_trace"
+    }
 }
