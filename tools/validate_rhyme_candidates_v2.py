@@ -12,6 +12,18 @@ ROW_SIZE = 56
 MAX_CANDIDATES = 12
 REQUIRED = ["time", "out", "running", "moving", "finna", "tryna", "spittin", "rappin", "thang"]
 REQUIRED_WIDE = ["time", "out", "moving", "running", "my", "try", "yours", "hover", "cover"]
+REQUIRED_HIP_HOP_ALIAS = {
+    "spitting": "spittin",
+    "rapping": "rappin",
+    "stacking": "stackin",
+    "flexing": "flexin",
+    "grinding": "grindin",
+    "shining": "shinin",
+    "cuz": "cause",
+    "luv": "love",
+    "shorty": "shawty",
+    "wanting": "wanna",
+}
 
 
 def read_string(data: bytes, offset: int) -> str:
@@ -83,6 +95,11 @@ def main() -> None:
             raise SystemExit(f"missing wide candidate row: {word}")
         if len(rows[word]) < 8:
             raise SystemExit(f"candidate row should provide at least 8 V2 suggestions for {word}: {rows[word]}")
+    for alias, canonical in REQUIRED_HIP_HOP_ALIAS.items():
+        if alias not in rows:
+            raise SystemExit(f"missing hip-hop alias row: {alias}")
+        if canonical not in rows[alias][:3]:
+            raise SystemExit(f"alias row {alias} should include {canonical} in top3: {rows[alias]}")
     print(f"rhyme_candidates_v2 valid with {len(rows)} rows")
 
 

@@ -1,9 +1,15 @@
 {
-  "versionName": "28.1",
-  "notes": "Version 28.1 keeps update installation in-app by staging the downloaded APK with Android PackageInstaller, then launching only Android's native install confirmation instead of handing GitHub or APK links to a browser.",
-  "versionCode": 94,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.1/the-top-flow-28.1-package-installer-update.apk",
+  "versionName": "28.2",
+  "notes": "Version 28.2 expands the local V2 rhyme candidate table with hip-hop spelling aliases so words like spitting, rapping, flexing, cuz, luv, and shorty stay on the instant local path with rap-focused suggestions instead of falling back to slower formal rows.",
+  "versionCode": 95,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.2/the-top-flow-28.2-hip-hop-alias-candidates.apk",
   "versions": [
+    {
+      "versionName": "28.2",
+      "notes": "Version 28.2 expands the local V2 rhyme candidate table with hip-hop spelling aliases so words like spitting, rapping, flexing, cuz, luv, and shorty stay on the instant local path with rap-focused suggestions instead of falling back to slower formal rows.",
+      "versionCode": 95,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.2/the-top-flow-28.2-hip-hop-alias-candidates.apk"
+    },
     {
       "versionName": "28.1",
       "notes": "Version 28.1 keeps update installation in-app by staging the downloaded APK with Android PackageInstaller, then launching only Android's native install confirmation instead of handing GitHub or APK links to a browser.",

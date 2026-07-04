@@ -12,6 +12,31 @@ HEADER_SIZE = 32
 ROW_SIZE = 56
 MAX_CANDIDATES = 12
 
+HIP_HOP_ALIAS_ROWS = {
+    "cuz": "cause",
+    "cos": "cause",
+    "coz": "cause",
+    "flexing": "flexin",
+    "grinding": "grindin",
+    "luv": "love",
+    "rapping": "rappin",
+    "shining": "shinin",
+    "shorty": "shawty",
+    "spitting": "spittin",
+    "stacking": "stackin",
+    "wanting": "wanna",
+}
+
+PREFERRED_HIP_HOP_ALIAS_ROWS = {
+    "flexing",
+    "grinding",
+    "rapping",
+    "shining",
+    "shorty",
+    "spitting",
+    "stacking",
+}
+
 
 def normalize_word(word: str) -> str:
     return re.sub(r"[^a-z']", "", (word or "").lower()).strip("'")
@@ -41,7 +66,31 @@ def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path):
         for word, candidates in expanded.items():
             if word in rows and len(candidates) > len(rows[word]):
                 rows[word] = candidates
+    apply_hip_hop_alias_rows(rows)
     return sorted(rows.items(), key=lambda item: item[0])
+
+
+def apply_hip_hop_alias_rows(rows: dict[str, list[str]]) -> None:
+    for alias, canonical in HIP_HOP_ALIAS_ROWS.items():
+        if canonical not in rows:
+            continue
+        if alias in rows and alias not in PREFERRED_HIP_HOP_ALIAS_ROWS:
+            continue
+        suggestions = []
+        seen = {alias}
+        if canonical not in seen:
+            suggestions.append(canonical)
+            seen.add(canonical)
+        for candidate in rows[canonical]:
+            candidate_key = normalize_word(candidate)
+            if not candidate_key or candidate_key in seen:
+                continue
+            suggestions.append(candidate)
+            seen.add(candidate_key)
+            if len(suggestions) >= MAX_CANDIDATES:
+                break
+        if len(suggestions) >= 4:
+            rows[alias] = suggestions
 
 
 def build_binary(rows, output: pathlib.Path, debug_tsv: pathlib.Path) -> int:
