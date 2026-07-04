@@ -114,9 +114,9 @@ class RhymeEngine2(context: Context) {
     private companion object {
         private const val ASSET_NAME = "rhyme_candidates_v2.tfcand"
         private const val HEADER_SIZE = 32
-        private const val ROW_SIZE = 32
+        private const val ROW_SIZE = 56
         private const val VERSION = 2
-        private const val MAX_CANDIDATES = 6
+        private const val MAX_CANDIDATES = 12
         private const val TRACE_TAG = "rhyme_trace"
         private val MAGIC = "TFCAND2".toByteArray(Charsets.US_ASCII)
 

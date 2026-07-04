@@ -8,9 +8,10 @@ import zlib
 MAGIC = b"TFCAND2\x00"
 VERSION = 2
 HEADER_SIZE = 32
-ROW_SIZE = 32
-MAX_CANDIDATES = 6
+ROW_SIZE = 56
+MAX_CANDIDATES = 12
 REQUIRED = ["time", "out", "running", "moving", "finna", "tryna", "spittin", "rappin", "thang"]
+REQUIRED_WIDE = ["time", "out", "moving", "running", "my", "try", "yours", "hover", "cover"]
 
 
 def read_string(data: bytes, offset: int) -> str:
@@ -77,6 +78,11 @@ def main() -> None:
             raise SystemExit(f"missing candidate row: {word}")
         if len(rows[word]) < 4:
             raise SystemExit(f"candidate row too short for {word}")
+    for word in REQUIRED_WIDE:
+        if word not in rows:
+            raise SystemExit(f"missing wide candidate row: {word}")
+        if len(rows[word]) < 8:
+            raise SystemExit(f"candidate row should provide at least 8 V2 suggestions for {word}: {rows[word]}")
     print(f"rhyme_candidates_v2 valid with {len(rows)} rows")
 
 

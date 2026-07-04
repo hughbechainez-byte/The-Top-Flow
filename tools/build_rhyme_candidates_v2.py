@@ -9,8 +9,8 @@ import zlib
 MAGIC = b"TFCAND2"
 VERSION = 2
 HEADER_SIZE = 32
-ROW_SIZE = 32
-MAX_CANDIDATES = 6
+ROW_SIZE = 56
+MAX_CANDIDATES = 12
 
 
 def normalize_word(word: str) -> str:
@@ -18,7 +18,7 @@ def normalize_word(word: str) -> str:
 
 
 def parse_hot_cache(path: pathlib.Path):
-    rows = []
+    rows = {}
     with path.open("r", encoding="utf-8") as handle:
         header = handle.readline()
         if "strictness=Balanced" not in header or "includeSlang=true" not in header:
@@ -30,9 +30,18 @@ def parse_hot_cache(path: pathlib.Path):
             word = normalize_word(parts[0])
             candidates = [item.strip() for item in parts[1:1 + MAX_CANDIDATES] if item.strip()]
             if word and len(candidates) >= 4:
-                rows.append((word, candidates))
-    rows.sort(key=lambda item: item[0])
+                rows[word] = candidates
     return rows
+
+
+def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path):
+    rows = parse_hot_cache(default_source)
+    if expanded_source.exists():
+        expanded = parse_hot_cache(expanded_source)
+        for word, candidates in expanded.items():
+            if word in rows and len(candidates) > len(rows[word]):
+                rows[word] = candidates
+    return sorted(rows.items(), key=lambda item: item[0])
 
 
 def build_binary(rows, output: pathlib.Path, debug_tsv: pathlib.Path) -> int:
@@ -88,10 +97,11 @@ def build_binary(rows, output: pathlib.Path, debug_tsv: pathlib.Path) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build V2 binary rhyme candidate table.")
     parser.add_argument("--source", default="app/src/main/assets/rhyme_hot_cache.tfcache")
+    parser.add_argument("--expanded-source", default="app/src/main/assets/rhyme_expanded_hot_cache.tfcache")
     parser.add_argument("--output", default="app/src/main/assets/rhyme_candidates_v2.tfcand")
     parser.add_argument("--debug-tsv", default="build/rhyme-v2-debug/candidates_v2_debug.tsv")
     args = parser.parse_args()
-    rows = parse_hot_cache(pathlib.Path(args.source))
+    rows = merged_rows(pathlib.Path(args.source), pathlib.Path(args.expanded_source))
     if len(rows) < 30_000:
         raise SystemExit(f"too few candidate rows: {len(rows)}")
     count = build_binary(rows, pathlib.Path(args.output), pathlib.Path(args.debug_tsv))
