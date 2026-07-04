@@ -487,13 +487,48 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         } finally {
             val elapsedMs = (System.nanoTime() - start) / 1_000_000.0
             val snapshot = rhymeRouteMetrics.record(source, elapsedMs)
+            val wordHash = word.privacyTelemetryHash()
+            val wordShape = word.rhymeTelemetryShape()
             Log.d(
                 TRACE_TAG,
                 "rhyme_trace stage=route source=$source v2Ready=$rhymeEngine2Ready fastReady=${rhymeEngine.isFastReady()} fullReady=${rhymeEngine.isReady()} " +
                     "chars=${word.length} v2Count=$v2Count fallbackCount=$fallbackCount count=$finalCount ms=$elapsedMs " +
-                    "routeTotal=${snapshot.total} routeV2=${snapshot.v2} routeFallback=${snapshot.fallback} routeEmpty=${snapshot.empty} avgMs=${snapshot.averageMs}"
+                    "wordHash=$wordHash wordShape=$wordShape " +
+                    "routeTotal=${snapshot.total} routeV2=${snapshot.v2} routeFallback=${snapshot.fallback} routeEmpty=${snapshot.empty} " +
+                    "v2Miss=${snapshot.v2Miss} v2Short=${snapshot.v2Short} fallbackAfterMiss=${snapshot.fallbackAfterMiss} fallbackAfterShort=${snapshot.fallbackAfterShort} avgMs=${snapshot.averageMs}"
             )
         }
+    }
+
+    private fun String.privacyTelemetryHash(): String {
+        var hash = 0x811c9dc5.toInt()
+        for (char in this) {
+            val normalized = char.lowercaseChar()
+            if (!isWordChar(normalized)) continue
+            hash = hash xor normalized.code
+            hash *= 0x01000193
+        }
+        return hash.toUInt().toString(16).padStart(8, '0')
+    }
+
+    private fun String.rhymeTelemetryShape(): String {
+        val normalized = filter(::isWordChar).lowercase()
+        val lengthBucket = when {
+            normalized.length <= 2 -> "l2"
+            normalized.length <= 4 -> "l4"
+            normalized.length <= 7 -> "l7"
+            else -> "l8p"
+        }
+        val suffixBucket = when {
+            normalized.contains('\'') -> "apostrophe"
+            normalized.endsWith("ing") -> "ing"
+            normalized.endsWith("in") -> "in"
+            normalized.endsWith("a") -> "a"
+            normalized.endsWith("y") -> "y"
+            normalized.endsWith("s") -> "s"
+            else -> "other"
+        }
+        return "${lengthBucket}_${suffixBucket}"
     }
 
     private fun String.activeRhymeWord(): String {
@@ -544,6 +579,10 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val v2: Long,
         val fallback: Long,
         val empty: Long,
+        val v2Miss: Long,
+        val v2Short: Long,
+        val fallbackAfterMiss: Long,
+        val fallbackAfterShort: Long,
         val averageMs: Double
     )
 
@@ -552,6 +591,10 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         private var v2 = 0L
         private var fallback = 0L
         private var empty = 0L
+        private var v2Miss = 0L
+        private var v2Short = 0L
+        private var fallbackAfterMiss = 0L
+        private var fallbackAfterShort = 0L
         private var averageMs = 0.0
 
         @Synchronized
@@ -562,8 +605,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 source.contains("fallback") -> fallback++
                 else -> empty++
             }
+            if (source.contains("v2_miss")) v2Miss++
+            if (source.contains("v2_short")) v2Short++
+            if (source == "fallback_after_v2_miss") fallbackAfterMiss++
+            if (source == "fallback_after_v2_short") fallbackAfterShort++
             averageMs += (elapsedMs - averageMs) / total
-            return RhymeRouteSnapshot(total, v2, fallback, empty, averageMs)
+            return RhymeRouteSnapshot(total, v2, fallback, empty, v2Miss, v2Short, fallbackAfterMiss, fallbackAfterShort, averageMs)
         }
     }
 
