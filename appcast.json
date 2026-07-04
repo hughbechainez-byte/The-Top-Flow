@@ -1,9 +1,15 @@
 {
-  "versionName": "27.0",
-  "notes": "Version 27.0 routes default editor rhyme suggestions through the local V2 candidate table first, lowers the V2-ready editor debounce, and keeps the existing rhyme engine as fallback when V2 cannot answer enough suggestions.",
-  "versionCode": 88,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.0/the-top-flow-27.0-v2-production-route.apk",
+  "versionName": "27.1",
+  "notes": "Version 27.1 makes the V2 rhyme candidate reader lazy: it binary-searches the sorted local row table directly instead of decoding and sorting all 32k words during load, reducing startup work while keeping fallback safety.",
+  "versionCode": 89,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.1/the-top-flow-27.1-v2-lazy-reader.apk",
   "versions": [
+    {
+      "versionName": "27.1",
+      "notes": "Version 27.1 makes the V2 rhyme candidate reader lazy: it binary-searches the sorted local row table directly instead of decoding and sorting all 32k words during load, reducing startup work while keeping fallback safety.",
+      "versionCode": 89,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.1/the-top-flow-27.1-v2-lazy-reader.apk"
+    },
     {
       "versionName": "27.0",
       "notes": "Version 27.0 routes default editor rhyme suggestions through the local V2 candidate table first, lowers the V2-ready editor debounce, and keeps the existing rhyme engine as fallback when V2 cannot answer enough suggestions.",

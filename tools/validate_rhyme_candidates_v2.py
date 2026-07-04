@@ -43,6 +43,7 @@ def parse(path: pathlib.Path):
     if row_table_offset + (row_count * ROW_SIZE) > string_table_offset:
         raise RuntimeError("row table exceeds string table")
     rows = {}
+    previous_word = ""
     for index in range(row_count):
         offset = row_table_offset + (index * ROW_SIZE)
         word_offset = struct.unpack_from("<I", data, offset)[0]
@@ -50,6 +51,11 @@ def parse(path: pathlib.Path):
         if count < 4 or count > MAX_CANDIDATES:
             raise RuntimeError(f"invalid candidate count {count} at row {index}")
         word = read_string(data, word_offset)
+        if not word:
+            raise RuntimeError(f"empty word at row {index}")
+        if previous_word and word <= previous_word:
+            raise RuntimeError(f"candidate rows are not strictly sorted at row {index}: {previous_word} >= {word}")
+        previous_word = word
         candidates = []
         for candidate_index in range(count):
             candidate_offset = struct.unpack_from("<I", data, offset + 8 + (candidate_index * 4))[0]

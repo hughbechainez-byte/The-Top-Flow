@@ -43,8 +43,6 @@ class RhymeEngine2(context: Context) {
         val rowCount: Int
         private val rowTableOffset: Int
         private val stringTableOffset: Int
-        private val words: Array<String>
-        private val rowOffsets: IntArray
 
         init {
             require(data.limit() >= HEADER_SIZE) { "candidate table too small" }
@@ -59,24 +57,30 @@ class RhymeEngine2(context: Context) {
             require(rowTableOffset == HEADER_SIZE) { "bad candidate row offset" }
             require(rowTableOffset + (rowCount * ROW_SIZE) <= stringTableOffset) { "bad candidate string offset" }
             require(data.getInt(22) == checksum()) { "candidate checksum mismatch" }
-            val rows = ArrayList<Pair<String, Int>>(rowCount)
-            repeat(rowCount) { index ->
-                val rowOffset = rowTableOffset + (index * ROW_SIZE)
-                val wordOffset = data.getInt(rowOffset)
-                val count = data.getShort(rowOffset + 4).toInt() and 0xFFFF
-                require(count in 4..MAX_CANDIDATES) { "bad candidate count" }
-                rows.add(readString(wordOffset) to rowOffset)
-            }
-            rows.sortBy { it.first }
-            words = Array(rowCount) { rows[it].first }
-            rowOffsets = IntArray(rowCount) { rows[it].second }
         }
 
         fun lookup(word: String, limit: Int): List<RhymeCandidate> {
-            val index = words.binarySearch(word)
-            if (index < 0) return emptyList()
-            val rowOffset = rowOffsets[index]
+            var low = 0
+            var high = rowCount - 1
+            while (low <= high) {
+                val mid = (low + high).ushr(1)
+                val rowOffset = rowTableOffset + (mid * ROW_SIZE)
+                val candidateWord = readString(data.getInt(rowOffset))
+                val comparison = candidateWord.compareTo(word)
+                if (comparison < 0) {
+                    low = mid + 1
+                } else if (comparison > 0) {
+                    high = mid - 1
+                } else {
+                    return candidatesFromRow(rowOffset, limit)
+                }
+            }
+            return emptyList()
+        }
+
+        private fun candidatesFromRow(rowOffset: Int, limit: Int): List<RhymeCandidate> {
             val count = data.getShort(rowOffset + 4).toInt() and 0xFFFF
+            require(count in 4..MAX_CANDIDATES) { "bad candidate count" }
             val out = ArrayList<RhymeCandidate>(minOf(limit, count))
             repeat(minOf(limit, count, MAX_CANDIDATES)) { candidateIndex ->
                 val offset = data.getInt(rowOffset + 8 + (candidateIndex * 4))
