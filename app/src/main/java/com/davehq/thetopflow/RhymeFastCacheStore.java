@@ -77,6 +77,10 @@ final class RhymeFastCacheStore {
         return mapped != null && rowOffsets != null && words != null && rowCount > 0;
     }
 
+    int rowCount() {
+        return isLoaded() ? rowCount : 0;
+    }
+
     String[] lookup(String normalizedWord, int limit) {
         if (!isLoaded() || normalizedWord == null || normalizedWord.isEmpty()) return null;
         int idx = Arrays.binarySearch(words, normalizedWord);

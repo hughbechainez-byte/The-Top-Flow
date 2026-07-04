@@ -175,7 +175,8 @@ final class RhymeEngine {
                 ArrayList<String> cached = resultCache.get(cacheKey);
                 if (cached != null) {
                     source = "cache";
-                    return new ArrayList<>(cached);
+                    out.addAll(cached);
+                    return new ArrayList<>(out);
                 }
             }
             ArrayList<String> hot = hotCacheSuggestion(base, limit, maxCandidates, options);
@@ -184,7 +185,8 @@ final class RhymeEngine {
                     resultCache.put(cacheKey, new ArrayList<>(hot));
                 }
                 source = "fast_cache";
-                return hot;
+                out.addAll(hot);
+                return new ArrayList<>(out);
             }
             if (!ready) {
                 source = "hot_cache_miss";
@@ -284,7 +286,8 @@ final class RhymeEngine {
             fastReady = fastHotCacheReady;
             fastCacheLoadMs = System.currentTimeMillis() - start;
             Log.d(TAG, "rhyme_trace stage=fast_ready ready=" + fastReady
-                    + " rows=" + fastHotCache.size()
+                    + " binaryRows=" + fastCacheStore.rowCount()
+                    + " textRows=" + fastHotCache.size()
                     + " ms=" + fastCacheLoadMs);
         } finally {
             Trace.endSection();
