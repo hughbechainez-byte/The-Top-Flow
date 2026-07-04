@@ -1,9 +1,15 @@
 {
-  "versionName": "26.0",
-  "notes": "Version 26.0 adds the first V2 binary candidate-table foundation: a validated local tfcand asset plus an Android reader/facade kept behind the existing production rhyme path.",
-  "versionCode": 85,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.0/the-top-flow-26.0-rhyme-candidates-v2.apk",
+  "versionName": "26.1",
+  "notes": "Version 26.1 adds V2 golden rhyme quality gates for exact, slang, near, and bad-pair exclusions before the V2 candidate path becomes production.",
+  "versionCode": 86,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.1/the-top-flow-26.1-v2-quality-gates.apk",
   "versions": [
+    {
+      "versionName": "26.1",
+      "notes": "Version 26.1 adds V2 golden rhyme quality gates for exact, slang, near, and bad-pair exclusions before the V2 candidate path becomes production.",
+      "versionCode": 86,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.1/the-top-flow-26.1-v2-quality-gates.apk"
+    },
     {
       "versionName": "26.0",
       "notes": "Version 26.0 adds the first V2 binary candidate-table foundation: a validated local tfcand asset plus an Android reader/facade kept behind the existing production rhyme path.",

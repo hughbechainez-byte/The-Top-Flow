@@ -1,0 +1,17 @@
+# query	include_any	top_any	exclude_all
+my	try,fly,sky,high	try,fly,sky	day,way,play
+try	my,fly,sky,high	my,fly,sky	day,way,play
+time	rhyme,dime,climb,lime	rhyme,dime,climb	tomorrow,orange
+out	bout,clout,shout,doubt,about	bout,clout,shout	near,clear
+yours	soars,pores,doors,floors	soars,pores,doors	horse,house
+hover	cover,lover	cover,lover	near,clear
+cover	hover,lover	hover,lover	near,clear
+moving	proving,grooving,movin	proving,movin	fluid
+running	runnin,cunning,gunning	runnin	city,pretty
+finna	minna,corinna,kyna	bryna,kyna,mina	time,out
+tryna	china,dinah,fina	china,dinah	out,near
+gonna	wanna,donna,juana	wanna,donna	time
+wanna	gonna,donna,juana	gonna,donna	time
+spittin	rappin,stackin,flexin,grindin	rappin,stackin	city,pretty
+rappin	spittin,stackin,flexin,grindin	spittin,stackin	city,pretty
+thang	bang,chang,clang	bang,chang	time,flow
