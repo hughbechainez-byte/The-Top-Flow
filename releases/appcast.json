@@ -1,9 +1,15 @@
 {
-  "versionName": "27.3",
-  "notes": "Version 27.3 widens the local V2 rhyme candidate table from 6 to 12 stored suggestions by overlaying the expanded rhyme cache onto the 32k-row default cache, letting common editor queries fill the 8-chip rhyme strip directly from V2 with less fallback work.",
-  "versionCode": 91,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.3/the-top-flow-27.3-v2-wide-candidates.apk",
+  "versionName": "27.4",
+  "notes": "Version 27.4 defers the heavier legacy full-rhyme warmup for a short window after fast/V2-ready suggestions are available, reducing startup CPU contention while preserving the existing full scorer and fallback path.",
+  "versionCode": 92,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.4/the-top-flow-27.4-deferred-legacy-rhyme-warmup.apk",
   "versions": [
+    {
+      "versionName": "27.4",
+      "notes": "Version 27.4 defers the heavier legacy full-rhyme warmup for a short window after fast/V2-ready suggestions are available, reducing startup CPU contention while preserving the existing full scorer and fallback path.",
+      "versionCode": 92,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v27.4/the-top-flow-27.4-deferred-legacy-rhyme-warmup.apk"
+    },
     {
       "versionName": "27.3",
       "notes": "Version 27.3 widens the local V2 rhyme candidate table from 6 to 12 stored suggestions by overlaying the expanded rhyme cache onto the 32k-row default cache, letting common editor queries fill the 8-chip rhyme strip directly from V2 with less fallback work.",

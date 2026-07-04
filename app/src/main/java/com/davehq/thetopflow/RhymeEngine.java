@@ -31,6 +31,7 @@ final class RhymeEngine {
     private static final String EXPANDED_HOT_CACHE_HEADER = "# topflow-rhyme-expanded-hot-cache-v1";
     private static final int EXPANDED_HOT_CACHE_MAX_CANDIDATES = 720;
     private static final int EXPANDED_HOT_CACHE_LIMIT = 12;
+    private static final long LEGACY_FULL_ENGINE_DEFER_MS = 1800L;
     private static final int BUCKET_EXACT = 0;
     private static final int BUCKET_NEAR = 1;
     private static final int BUCKET_SLANT = 2;
@@ -142,6 +143,7 @@ final class RhymeEngine {
             if (fastReady && callbacks != null) {
                 callbacks.onFastReady();
             }
+            deferLegacyFullEngineAfterFastReady();
             loadFullEngineAfterFastCache();
             ready = true;
             loading = false;
@@ -265,7 +267,19 @@ final class RhymeEngine {
 
     private void load() {
         loadFastCacheFirst();
+        deferLegacyFullEngineAfterFastReady();
         loadFullEngineAfterFastCache();
+    }
+
+    private void deferLegacyFullEngineAfterFastReady() {
+        if (!fastReady || LEGACY_FULL_ENGINE_DEFER_MS <= 0L) return;
+        Log.d(TAG, "rhyme_trace stage=legacy_full_defer ms=" + LEGACY_FULL_ENGINE_DEFER_MS);
+        try {
+            Thread.sleep(LEGACY_FULL_ENGINE_DEFER_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Log.d(TAG, "rhyme_trace stage=legacy_full_defer_interrupted");
+        }
     }
 
     private void loadFastCacheFirst() {
