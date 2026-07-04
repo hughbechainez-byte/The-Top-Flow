@@ -25,9 +25,18 @@ class RhymeEngine2(context: Context) {
     }
 
     fun suggest(word: String, limit: Int = 8): List<RhymeCandidate> {
+        val start = System.nanoTime()
         val normalized = normalize(word)
-        if (normalized.isEmpty()) return emptyList()
-        return table?.lookup(normalized, limit).orEmpty()
+        val result = if (normalized.isEmpty()) {
+            emptyList()
+        } else {
+            table?.lookup(normalized, limit).orEmpty()
+        }
+        Log.d(
+            TRACE_TAG,
+            "rhyme_trace stage=v2_suggest word=$normalized count=${result.size} ms=${(System.nanoTime() - start) / 1_000_000.0}"
+        )
+        return result
     }
 
     private class CandidateTable(private val data: ByteBuffer) {

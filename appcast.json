@@ -1,9 +1,15 @@
 {
-  "versionName": "26.1",
-  "notes": "Version 26.1 adds V2 golden rhyme quality gates for exact, slang, near, and bad-pair exclusions before the V2 candidate path becomes production.",
-  "versionCode": 86,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.1/the-top-flow-26.1-v2-quality-gates.apk",
+  "versionName": "26.2",
+  "notes": "Version 26.2 adds a V2 candidate lookup performance harness and runtime timing traces so the candidate-table path has measurable p50/p95 before production routing.",
+  "versionCode": 87,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.2/the-top-flow-26.2-v2-performance-harness.apk",
   "versions": [
+    {
+      "versionName": "26.2",
+      "notes": "Version 26.2 adds a V2 candidate lookup performance harness and runtime timing traces so the candidate-table path has measurable p50/p95 before production routing.",
+      "versionCode": 87,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v26.2/the-top-flow-26.2-v2-performance-harness.apk"
+    },
     {
       "versionName": "26.1",
       "notes": "Version 26.1 adds V2 golden rhyme quality gates for exact, slang, near, and bad-pair exclusions before the V2 candidate path becomes production.",
