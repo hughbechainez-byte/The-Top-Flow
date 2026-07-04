@@ -5,7 +5,7 @@ plugins {
     id "androidx.baselineprofile"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "72").toInteger()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "74").toInteger()
 def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "24.5").toString()
 def topFlowDebuggable = (findProperty("TOP_FLOW_DEBUGGABLE") ?: "false").toString().toBoolean()
 
@@ -19,7 +19,7 @@ android {
     }
 
     androidResources {
-        noCompress += ["tfcache", "tfindex"]
+        noCompress += ["tfcache", "tfindex", "tflex", "tfrhy", "tfcand", "tfscore", "tfphrase", "tfg2p", "tflite", "ort"]
     }
 
     compileOptions {
