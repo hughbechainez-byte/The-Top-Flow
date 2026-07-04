@@ -1557,7 +1557,12 @@ private fun colorToHex(color: Int): String {
 
 private fun launchTopFlowUpdate(context: Context) {
     runCatching {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.UPDATE_MANIFEST_URL)).apply {
+        val updateUri = if (BuildConfig.UPDATE_MANIFEST_URL.isNotBlank()) {
+            BuildConfig.UPDATE_MANIFEST_URL
+        } else {
+            "https://github.com/hughbechainez-byte/The-Top-Flow/releases/latest"
+        }
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUri)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)

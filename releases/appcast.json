@@ -1,9 +1,15 @@
 {
-  "versionName": "25.1",
-  "notes": "Version 25.1 starts fast-rhyme readiness so cached rhyme suggestions can appear before full engine loading completes.",
-  "versionCode": 76,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.1/the-top-flow-25.1-rhyme-fast-readiness.apk",
+  "versionName": "25.2",
+  "notes": "Version 25.2 fixes update-check behavior so the app opens GitHub Releases instead of the raw appcast JSON page.",
+  "versionCode": 77,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.2/the-top-flow-25.2-check-for-update-fix.apk",
   "versions": [
+    {
+      "versionName": "25.2",
+      "notes": "Version 25.2 fixes update-check behavior so the app opens GitHub Releases instead of the raw appcast JSON page.",
+      "versionCode": 77,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.2/the-top-flow-25.2-check-for-update-fix.apk"
+    },
     {
       "versionName": "25.1",
       "notes": "Version 25.1 starts fast-rhyme readiness so cached rhyme suggestions can appear before full engine loading completes.",
