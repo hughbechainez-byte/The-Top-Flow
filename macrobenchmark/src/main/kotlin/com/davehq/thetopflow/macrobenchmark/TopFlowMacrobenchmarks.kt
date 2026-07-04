@@ -106,6 +106,35 @@ class TopFlowInteractionBenchmark {
         device.waitForEditor()
         device.tapEditorBody()
         device.executeShellCommand("input text fast%20material%20flow")
+        device.waitForRhymeSuggestions()
+        device.executeShellCommand("input text %20time")
+        device.waitForRhymeSuggestions()
+        device.waitForIdle()
+    }
+
+    @Test
+    fun typeRhymeSuggestions() = benchmarkRule.measureRepeated(
+        packageName = PACKAGE_NAME,
+        metrics = listOf(FrameTimingMetric()),
+        compilationMode = CompilationMode.Partial(BaselineProfileMode.UseIfAvailable),
+        startupMode = StartupMode.WARM,
+        iterations = 5,
+        setupBlock = {
+            pressHome()
+            startActivityAndWait()
+            device.ensureBenchmarkNotes()
+        }
+    ) {
+        device.waitForNotesGrid()
+        device.wait(Until.findObject(By.descContains("Note card")), WAIT_MS)?.click()
+        device.waitForEditor()
+        device.tapEditorBody()
+        device.executeShellCommand("input text rhyme%20time")
+        device.waitForRhymeSuggestions()
+        device.executeShellCommand("input text %20running")
+        device.waitForRhymeSuggestions()
+        device.executeShellCommand("input text %20spittin")
+        device.waitForRhymeSuggestions()
         device.waitForIdle()
     }
 
@@ -149,7 +178,10 @@ class TopFlowBaselineProfileGenerator {
         device.wait(Until.findObject(By.descContains("Note card")), WAIT_MS)?.click()
         device.waitForEditor()
         device.tapEditorBody()
-        device.executeShellCommand("input text profile%20flow")
+        device.executeShellCommand("input text profile%20flow%20time")
+        device.waitForRhymeSuggestions()
+        device.executeShellCommand("input text %20running%20spittin")
+        device.waitForRhymeSuggestions()
         device.wait(Until.findObject(By.text("Notes")), WAIT_MS)?.click()
         device.waitForNotesGrid()
         device.wait(Until.findObject(By.desc("Search notes")), WAIT_MS)?.click()
@@ -181,6 +213,10 @@ private fun UiDevice.ensureBenchmarkNotes() {
 
 private fun UiDevice.waitForEditor() {
     wait(Until.findObject(By.text("Notes")), WAIT_MS)
+}
+
+private fun UiDevice.waitForRhymeSuggestions() {
+    wait(Until.findObject(By.res(PACKAGE_NAME, "rhyme_suggestions")), WAIT_MS)
 }
 
 private fun UiDevice.tapEditorTitle() {

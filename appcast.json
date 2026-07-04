@@ -1,9 +1,15 @@
 {
-  "versionName": "25.8",
-  "notes": "Version 25.8 expands instant hip-hop rhyme coverage with more slang/common writing seeds, regenerated 32k-row fast cache, regenerated 22k-row expanded cache, and stricter cache validation.",
-  "versionCode": 83,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.8/the-top-flow-25.8-hot-cache-expansion.apk",
+  "versionName": "25.9",
+  "notes": "Version 25.9 adds explicit macrobenchmark and baseline-profile coverage for typing into the editor and waiting for the rhyme suggestion strip.",
+  "versionCode": 84,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.9/the-top-flow-25.9-rhyme-baseline-profile.apk",
   "versions": [
+    {
+      "versionName": "25.9",
+      "notes": "Version 25.9 adds explicit macrobenchmark and baseline-profile coverage for typing into the editor and waiting for the rhyme suggestion strip.",
+      "versionCode": 84,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.9/the-top-flow-25.9-rhyme-baseline-profile.apk"
+    },
     {
       "versionName": "25.8",
       "notes": "Version 25.8 expands instant hip-hop rhyme coverage with more slang/common writing seeds, regenerated 32k-row fast cache, regenerated 22k-row expanded cache, and stricter cache validation.",
