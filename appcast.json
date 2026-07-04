@@ -1,9 +1,15 @@
 {
-  "versionName": "25.4",
-  "notes": "Version 25.4 keeps update checking inside the app: it checks the appcast, downloads the APK in the background, then asks the user to install the prepared update.",
-  "versionCode": 79,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.4/the-top-flow-25.4-background-update-install.apk",
+  "versionName": "25.5",
+  "notes": "Version 25.5 starts the active-line rhyme dock: the editor tracks the body cursor line, places rhyme chips near the active writing line, and inserts selected rhyme words at the cursor.",
+  "versionCode": 80,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.5/the-top-flow-25.5-active-line-rhyme-dock.apk",
   "versions": [
+    {
+      "versionName": "25.5",
+      "notes": "Version 25.5 starts the active-line rhyme dock: the editor tracks the body cursor line, places rhyme chips near the active writing line, and inserts selected rhyme words at the cursor.",
+      "versionCode": 80,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v25.5/the-top-flow-25.5-active-line-rhyme-dock.apk"
+    },
     {
       "versionName": "25.4",
       "notes": "Version 25.4 keeps update checking inside the app: it checks the appcast, downloads the APK in the background, then asks the user to install the prepared update.",

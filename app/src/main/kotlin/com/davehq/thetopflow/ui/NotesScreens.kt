@@ -94,6 +94,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -639,13 +642,18 @@ fun NoteEditor(
     var renameRecordingPath by remember { mutableStateOf<String?>(null) }
     var renameValue by remember { mutableStateOf("") }
     var draftTitle by remember(note.id) { mutableStateOf(note.title) }
-    var draftBody by remember(note.id) { mutableStateOf(note.body) }
+    var draftBody by remember(note.id) {
+        mutableStateOf(TextFieldValue(note.body, selection = TextRange(note.body.length)))
+    }
+    var bodyLayout by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
 
     LaunchedEffect(note.id, note.title) {
         if (draftTitle != note.title) draftTitle = note.title
     }
     LaunchedEffect(note.id, note.body) {
-        if (draftBody != note.body) draftBody = note.body
+        if (draftBody.text != note.body) {
+            draftBody = TextFieldValue(note.body, selection = TextRange(note.body.length))
+        }
     }
 
     val runAction: (() -> Unit) -> Unit = { action ->
@@ -780,44 +788,48 @@ fun NoteEditor(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             item {
-                RhymeSuggestionRow(
-                    suggestions = rhymeSuggestions,
-                    loading = rhymeLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                    onInsertWord = { insertion ->
-                        val next = draftBody + insertion
-                        draftBody = next
-                        onBodyChange(next)
-                    }
-                )
-            }
-            item {
-                BasicTextField(
-                    value = draftBody,
-                    onValueChange = {
-                        draftBody = it
-                        onBodyChange(it)
-                    },
-                    textStyle = editorBodyStyle(note, bodyTextColor),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 180.dp, max = 420.dp)
-                        .testTag("editor_body")
-                        .semantics { contentDescription = "Note body" },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    decorationBox = { innerTextField ->
-                        Box(Modifier.fillMaxWidth()) {
-                            if (draftBody.isBlank()) {
-                                Text(
-                                    text = "Start writing...",
-                                    style = editorBodyStyle(note, bodyTextColor.copy(alpha = 0.45f)),
-                                    color = bodyTextColor.copy(alpha = 0.45f)
-                                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
+                        value = draftBody,
+                        onValueChange = {
+                            draftBody = it
+                            onBodyChange(it.text)
+                        },
+                        textStyle = editorBodyStyle(note, bodyTextColor),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 180.dp, max = 420.dp)
+                            .testTag("editor_body")
+                            .semantics { contentDescription = "Note body" },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        onTextLayout = { bodyLayout = it },
+                        decorationBox = { innerTextField ->
+                            Box(Modifier.fillMaxWidth()) {
+                                if (draftBody.text.isBlank()) {
+                                    Text(
+                                        text = "Start writing...",
+                                        style = editorBodyStyle(note, bodyTextColor.copy(alpha = 0.45f)),
+                                        color = bodyTextColor.copy(alpha = 0.45f)
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         }
+                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.height(activeLineRhymeOffset(bodyLayout, draftBody.selection)))
+                        RhymeSuggestionRow(
+                            suggestions = rhymeSuggestions,
+                            loading = rhymeLoading,
+                            modifier = Modifier.fillMaxWidth(),
+                            onInsertWord = { insertion ->
+                                val next = draftBody.insertAtSelection(insertion)
+                                draftBody = next
+                                onBodyChange(next.text)
+                            }
+                        )
                     }
-                )
+                }
             }
             item {
                 MediaPanel(
@@ -1600,6 +1612,26 @@ private fun shortDate(timestamp: Long): String {
 private fun colorToHex(color: Int): String {
     val noAlpha = color and 0x00FFFFFF
     return noAlpha.toString(16).uppercase().padStart(6, '0')
+}
+
+@Composable
+private fun activeLineRhymeOffset(layout: TextLayoutResult?, selection: TextRange) =
+    with(LocalDensity.current) {
+        val fallback = 188.dp
+        val result = layout ?: return@with fallback
+        val textLength = result.layoutInput.text.length
+        val cursor = selection.end.coerceIn(0, textLength)
+        val line = result.getLineForOffset(cursor)
+        val lineBottom = result.getLineBottom(line) + 8.dp.toPx()
+        lineBottom.coerceIn(0f, 420.dp.toPx()).toDp()
+    }
+
+private fun TextFieldValue.insertAtSelection(insertion: String): TextFieldValue {
+    val start = min(selection.start, selection.end).coerceIn(0, text.length)
+    val end = max(selection.start, selection.end).coerceIn(0, text.length)
+    val nextText = text.replaceRange(start, end, insertion)
+    val nextCursor = (start + insertion.length).coerceIn(0, nextText.length)
+    return TextFieldValue(nextText, selection = TextRange(nextCursor))
 }
 
 enum class SwipeDirection { Left, Right }
