@@ -465,11 +465,14 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         var finalCount = 0
         try {
         if (rhymeEngine2Ready) {
-            v2 = runCatching {
+            val v2Raw = runCatching {
                 rhymeEngine2.suggest(word, 8)
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
+            // Phrases are useful for an intentional expansion, but the fast row must
+            // stay focused on instant single-word prompts while the user is typing.
+            v2 = if (includeLegacy) v2Raw else v2Raw.filterNot { ' ' in it }
             v2Count = v2.size
             if (v2.isNotEmpty() && !includeLegacy) {
                 source = "v2"
