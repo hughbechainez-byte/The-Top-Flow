@@ -142,6 +142,12 @@ class NotesRepository(
             .apply()
     }
 
+    fun loadRhymeModeEnabled(): Boolean = prefs.getBoolean("rhymeModeEnabled", false)
+
+    fun saveRhymeModeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("rhymeModeEnabled", enabled).apply()
+    }
+
     suspend fun loadNotes(): List<NoteUi> = withContext(ioDispatcher) {
         val sourceFile = when {
             notesFile.exists() && notesFile.length() > 2L -> notesFile

@@ -1,6 +1,9 @@
 .gradle/
 android-sdk/
 tools/
+!tools/
+tools/*
+!tools/fetch_rhyme_frequency_data.py
 local.properties
 keystore.properties
 *.jks

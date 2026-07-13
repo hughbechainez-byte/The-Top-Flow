@@ -55,6 +55,8 @@ class MainActivity : ComponentActivity() {
                     onSearch = notesViewModel::updateSearch,
                     onTitleChange = notesViewModel::updateTitle,
                     onBodyChange = notesViewModel::updateBody,
+                    onSetRhymeModeEnabled = notesViewModel::setRhymeModeEnabled,
+                    onRequestMoreRhymes = notesViewModel::requestMoreRhymes,
                     onDeleteNote = notesViewModel::deleteSelected,
                     onAttachSong = { attachSongLauncher.launch(arrayOf("audio/*")) },
                     onToggleSong = notesViewModel::toggleSong,

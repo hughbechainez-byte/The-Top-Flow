@@ -1,5 +1,9 @@
 # Changelog
 
+- Version 28.6 quality-ranks the local V2 rhyme table with offline word-frequency scores and filters weak connective words, reducing rare CMU name/variant suggestions while retaining curated rap slang and phrases. Runtime rhyme lookup remains local and constant-time.
+
+- Version 28.5 makes rhyme mode opt-in and saved: no rhyme assets or lookup work starts until enabled, fast local V2 suggestions appear without legacy fallback during typing, and full legacy expansion is available only from More rhymes.
+
 ## 2026-06-29
 
 - Released 24.4 with editor typing stabilization, collapsed song/voice panels moved below the note body, removed the old preview phrase from style UI, and rebuilt style editing around focused submenus, a wheel-style color picker, saved note defaults, and menu color controls.

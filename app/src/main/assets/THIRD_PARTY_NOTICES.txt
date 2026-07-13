@@ -1,9 +1,10 @@
-Font Assets (Open Font License)
+The Top Flow offline rhyme candidate ranking uses derived English word-frequency scores
+from wordfreq (https://github.com/rspeer/wordfreq), version 3.1.1, at build time only.
 
-This app includes bundled Google Fonts:
+wordfreq code is Apache-2.0. Its included frequency data is redistributable under
+CC BY-SA 4.0 and includes data derived from Google Books Ngrams, Leeds Internet Corpus,
+and SUBTLEX frequency lists. See https://pypi.org/project/wordfreq/ for attribution details.
 
-- Space Grotesk (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf
-- Share Tech Mono (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/sharetechmono/ShareTechMono-Regular.ttf
-- Silkscreen (OFL-1.1): https://raw.githubusercontent.com/google/fonts/main/ofl/silkscreen/Silkscreen-Regular.ttf
-
-License terms are Open Font License (OFL-1.1). Fonts are used as shipped with these resources.
+The app continues to include CMUdict pronunciation data. CMUdict is maintained by the
+Carnegie Mellon University Speech Group and is suitable for unrestricted research and
+commercial use; see https://github.com/cmusphinx/cmudict.
