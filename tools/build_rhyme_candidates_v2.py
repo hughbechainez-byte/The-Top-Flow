@@ -48,11 +48,15 @@ LOW_VALUE_FUNCTION_WORDS = {
 }
 
 HIP_HOP_PHRASE_ENDING_ROWS = {
+    "action": ["back in", "stackin", "captain", "traction", "fashion", "passion", "latin", "mashin", "reaction", "satisfaction", "distraction", "everlasting"],
     "bars": ["stars", "cars", "mars", "scars", "barz", "guitars", "jars", "ours", "powers", "flowers", "towers", "hours"],
+    "battery": ["battle me", "strategy", "actually", "casually", "happily", "tragedy", "faculty", "majesty", "blasphemy", "anatomy", "lavishly", "naturally"],
     "beat": ["heat", "street", "feet", "seat", "sweet", "meet", "feat", "repeat", "elite", "concrete", "heartbeat", "backbeat"],
+    "cigar": ["disregard", "boulevard", "guitar", "superstar", "avatar", "fallen star", "racing car", "shooting star", "work of art", "from the heart", "play your part", "raise the bar"],
     "cap": ["rap", "trap", "snap", "clap", "strap", "map", "lap", "gap", "no cap", "backpack", "black cap", "nightcap"],
     "inside": ["outside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],
     "me": ["free", "see", "be", "key", "three", "tree", "agree", "on me", "for me", "with me", "homie", "lowkey"],
+    "money": ["on me", "honey", "sunny", "funny", "run it", "from me", "come see", "one deep", "trust me", "love me", "nothing", "company"],
     "outside": ["inside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],
     "real": ["feel", "deal", "steel", "wheel", "appeal", "conceal", "reveal", "heal", "for real", "keep it real", "surreal", "peel"],
     "tonight": ["night", "light", "right", "fight", "write", "bright", "sight", "alright", "all night", "tonite", "spotlight", "moonlight"],

@@ -56,6 +56,8 @@ class MainActivity : ComponentActivity() {
                     onTitleChange = notesViewModel::updateTitle,
                     onBodyChange = notesViewModel::updateBody,
                     onSetRhymeModeEnabled = notesViewModel::setRhymeModeEnabled,
+                    onSetRhymeStrictness = notesViewModel::setRhymeStrictness,
+                    onSaveCustomRhymes = notesViewModel::saveCustomRhymes,
                     onRequestMoreRhymes = notesViewModel::requestMoreRhymes,
                     onDeleteNote = notesViewModel::deleteSelected,
                     onAttachSong = { attachSongLauncher.launch(arrayOf("audio/*")) },

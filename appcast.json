@@ -1,9 +1,15 @@
 {
-  "versionName": "28.6",
-  "notes": "Version 28.6 makes rhyme mode saved and opt-in, keeps typing on instant local V2 suggestions, moves full expansion behind More rhymes, and quality-ranks local candidates to filter rare name and variant noise.",
-  "versionCode": 99,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.6/the-top-flow-28.6-opt-in-quality-rhymes.apk",
+  "versionName": "28.7",
+  "notes": "Version 28.7 adds private on-device custom rhymes, Strict/Balanced/Loose controls, curated expanded-only multi/phrase prompts, and recent-line repetition avoidance while keeping Rhyme Mode opt-in and instant.",
+  "versionCode": 100,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.7/the-top-flow-28.7-local-rhyme-controls.apk",
   "versions": [
+    {
+      "versionName": "28.7",
+      "notes": "Version 28.7 adds private on-device custom rhymes, Strict/Balanced/Loose controls, curated expanded-only multi/phrase prompts, and recent-line repetition avoidance while keeping Rhyme Mode opt-in and instant.",
+      "versionCode": 100,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.7/the-top-flow-28.7-local-rhyme-controls.apk"
+    },
     {
       "versionName": "28.6",
       "notes": "Version 28.6 makes rhyme mode saved and opt-in, keeps typing on instant local V2 suggestions, moves full expansion behind More rhymes, and quality-ranks local candidates to filter rare name and variant noise.",

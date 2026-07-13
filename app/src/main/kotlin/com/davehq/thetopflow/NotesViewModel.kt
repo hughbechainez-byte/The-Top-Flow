@@ -36,6 +36,8 @@ data class NotesUiState(
     val visibleNotes: List<NoteUi> = emptyList(),
     val selectedNote: NoteUi? = null,
     val rhymeModeEnabled: Boolean = false,
+    val rhymeStrictness: String = "Balanced",
+    val customRhymeCount: Int = 0,
     val rhymeSuggestions: List<String> = emptyList(),
     val rhymeLoading: Boolean = true,
     val query: String = "",
@@ -57,6 +59,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val loading = MutableStateFlow(true)
     private val creating = MutableStateFlow(false)
     private val rhymeModeEnabled = MutableStateFlow(repository.loadRhymeModeEnabled())
+    private val rhymeStrictness = MutableStateFlow(repository.loadRhymeStrictness())
+    private val customRhymes = MutableStateFlow(repository.loadCustomRhymes())
     private val rhymeSuggestions = MutableStateFlow<List<String>>(emptyList())
     private val rhymeLoading = MutableStateFlow(true)
     private val lastOpenedNoteId = MutableStateFlow<String?>(null)
@@ -77,15 +81,17 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         loading,
         creating,
         rhymeModeEnabled,
+        rhymeStrictness,
+        customRhymes,
         rhymeSuggestions,
         rhymeLoading,
         mediaController.mediaState,
         lastOpenedNoteId,
         styleDefaults
     ) { values ->
-        val media = values[8] as MediaUiState
-        val lastOpened = values[9] as String?
-        val defaults = values[10] as StyleDefaults
+        val media = values[10] as MediaUiState
+        val lastOpened = values[11] as String?
+        val defaults = values[12] as StyleDefaults
         RawNotesState(
             notes = values[0] as List<NoteUi>,
             selectedNoteId = values[1] as String?,
@@ -93,8 +99,10 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             isLoading = values[3] as Boolean,
             isCreating = values[4] as Boolean,
             rhymeModeEnabled = values[5] as Boolean,
-            rhymeSuggestions = values[6] as List<String>,
-            rhymeLoading = values[7] as Boolean,
+            rhymeStrictness = values[6] as String,
+            customRhymeCount = (values[7] as Map<String, List<String>>).size,
+            rhymeSuggestions = values[8] as List<String>,
+            rhymeLoading = values[9] as Boolean,
             media = media,
             lastOpenedNoteId = lastOpened,
             styleDefaults = defaults
@@ -116,6 +124,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 visibleNotes = filtered,
                 selectedNote = sorted.firstOrNull { it.id == raw.selectedNoteId },
                 rhymeModeEnabled = raw.rhymeModeEnabled,
+                rhymeStrictness = raw.rhymeStrictness,
+                customRhymeCount = raw.customRhymeCount,
                 rhymeSuggestions = raw.rhymeSuggestions,
                 rhymeLoading = raw.rhymeLoading,
                 query = raw.query,
@@ -196,6 +206,29 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         if (!rhymeModeEnabled.value || selectedNoteId.value == null) return
         expandedRhymesRequested = true
         ensureLegacyRhymeEngineLoaded()
+        refreshRhymesForSelected()
+    }
+
+    fun setRhymeStrictness(strictness: String) {
+        val normalized = strictness.takeIf { it in RHYME_STRICTNESS } ?: return
+        if (rhymeStrictness.value == normalized) return
+        rhymeStrictness.value = normalized
+        repository.saveRhymeStrictness(normalized)
+        refreshRhymesForSelected()
+    }
+
+    fun saveCustomRhymes(word: String, rawSuggestions: String) {
+        val key = word.rhymeKey() ?: return
+        val suggestions = rawSuggestions.split(',', '\n')
+            .mapNotNull { it.rhymeDisplayValue() }
+            .distinct()
+            .take(12)
+        customRhymes.update { current ->
+            current.toMutableMap().apply {
+                if (suggestions.isEmpty()) remove(key) else put(key, suggestions)
+            }
+        }
+        repository.saveCustomRhymes(customRhymes.value)
         refreshRhymesForSelected()
     }
 
@@ -465,11 +498,17 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         var finalCount = 0
         try {
         if (rhymeEngine2Ready) {
-            v2 = runCatching {
+            val v2Raw = runCatching {
                 rhymeEngine2.suggest(word, 8)
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
+            // Phrases are useful for an intentional expansion, but the fast row must
+            // stay focused on instant single-word prompts while the user is typing.
+            val custom = customRhymes.value[word].orEmpty()
+            val local = (custom + v2Raw).distinct()
+            val phraseFiltered = if (includeLegacy) local else local.filterNot { ' ' in it }
+            v2 = rankForContext(word, body, phraseFiltered).take(rhymeResultLimit())
             v2Count = v2.size
             if (v2.isNotEmpty() && !includeLegacy) {
                 source = "v2"
@@ -496,7 +535,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             "${source}_empty"
         }
-        val combined = (v2 + fallback).distinct().take(8)
+        val combined = rankForContext(word, body, v2 + fallback).distinct().take(rhymeResultLimit())
         finalCount = combined.size
         return combined
         } finally {
@@ -609,12 +648,40 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val isLoading: Boolean,
         val isCreating: Boolean,
         val rhymeModeEnabled: Boolean,
+        val rhymeStrictness: String,
+        val customRhymeCount: Int,
         val rhymeSuggestions: List<String>,
         val rhymeLoading: Boolean,
         val media: MediaUiState,
         val lastOpenedNoteId: String?,
         val styleDefaults: StyleDefaults
     )
+
+    private fun rankForContext(word: String, body: String, candidates: List<String>): List<String> {
+        val priorEndings = body.lines().dropLast(1).takeLast(4)
+            .mapNotNull { it.activeRhymeWord().rhymeKey() }.toSet()
+        if (priorEndings.isEmpty()) return candidates.distinct()
+        return candidates.distinct().sortedWith(
+            compareByDescending<String> { candidate ->
+                val key = candidate.rhymeKey()
+                // Keep a deliberately repeated hook available, but avoid putting it first.
+                if (key != null && key in priorEndings && key != word) -1 else 0
+            }.thenBy { candidates.indexOf(it) }
+        )
+    }
+
+    private fun String.rhymeKey(): String? = lowercase()
+        .replace(Regex("[^a-z']"), "").trim('\'').takeIf { it.length >= 2 }
+
+    private fun String.rhymeDisplayValue(): String? = trim().lowercase()
+        .replace(Regex("[^a-z' ]"), "").replace(Regex("\\s+"), " ")
+        .trim().takeIf { it.length >= 2 }
+
+    private fun rhymeResultLimit(): Int = when (rhymeStrictness.value) {
+        "Strict" -> 4
+        "Loose" -> 12
+        else -> 8
+    }
 
     private data class RhymeRouteSnapshot(
         val total: Long,
@@ -657,6 +724,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private companion object {
+        val RHYME_STRICTNESS = setOf("Strict", "Balanced", "Loose")
         private const val TRACE_TAG = "rhyme_trace"
     }
 }

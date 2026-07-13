@@ -1,5 +1,7 @@
 # Changelog
 
+- Version 28.7 adds expanded-only curated multi/phrase prompts, saved Strict/Balanced/Loose rhyme strength, a private on-device custom-rhyme dictionary, and conservative recent-line repetition avoidance. Rhyme Mode remains off until chosen and the fast row remains single-word focused.
+
 - Version 28.6 quality-ranks the local V2 rhyme table with offline word-frequency scores and filters weak connective words, reducing rare CMU name/variant suggestions while retaining curated rap slang and phrases. Runtime rhyme lookup remains local and constant-time.
 
 - Version 28.5 makes rhyme mode opt-in and saved: no rhyme assets or lookup work starts until enabled, fast local V2 suggestions appear without legacy fallback during typing, and full legacy expansion is available only from More rhymes.
