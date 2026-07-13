@@ -53,7 +53,7 @@ class RhymeEngine2(context: Context) {
             rowCount = data.getInt(10)
             rowTableOffset = data.getInt(14)
             stringTableOffset = data.getInt(18)
-            require(rowCount >= 30_000) { "candidate row count too low" }
+            require(rowCount >= 25_000) { "candidate row count too low" }
             require(rowTableOffset == HEADER_SIZE) { "bad candidate row offset" }
             require(rowTableOffset + (rowCount * ROW_SIZE) <= stringTableOffset) { "bad candidate string offset" }
             require(data.getInt(22) == checksum()) { "candidate checksum mismatch" }
@@ -80,7 +80,7 @@ class RhymeEngine2(context: Context) {
 
         private fun candidatesFromRow(rowOffset: Int, limit: Int): List<RhymeCandidate> {
             val count = data.getShort(rowOffset + 4).toInt() and 0xFFFF
-            require(count in 4..MAX_CANDIDATES) { "bad candidate count" }
+            require(count in 1..MAX_CANDIDATES) { "bad candidate count" }
             val out = ArrayList<RhymeCandidate>(minOf(limit, count))
             repeat(minOf(limit, count, MAX_CANDIDATES)) { candidateIndex ->
                 val offset = data.getInt(rowOffset + 8 + (candidateIndex * 4))

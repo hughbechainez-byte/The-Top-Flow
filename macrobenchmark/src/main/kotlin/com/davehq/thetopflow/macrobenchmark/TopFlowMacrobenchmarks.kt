@@ -104,6 +104,7 @@ class TopFlowInteractionBenchmark {
         device.waitForNotesGrid()
         device.wait(Until.findObject(By.descContains("Note card")), WAIT_MS)?.click()
         device.waitForEditor()
+        device.enableRhymeMode()
         device.tapEditorBody()
         device.executeShellCommand("input text fast%20material%20flow")
         device.waitForRhymeSuggestions()
@@ -128,6 +129,7 @@ class TopFlowInteractionBenchmark {
         device.waitForNotesGrid()
         device.wait(Until.findObject(By.descContains("Note card")), WAIT_MS)?.click()
         device.waitForEditor()
+        device.enableRhymeMode()
         device.tapEditorBody()
         device.executeShellCommand("input text rhyme%20time")
         device.waitForRhymeSuggestions()
@@ -177,6 +179,7 @@ class TopFlowBaselineProfileGenerator {
         device.waitForIdle()
         device.wait(Until.findObject(By.descContains("Note card")), WAIT_MS)?.click()
         device.waitForEditor()
+        device.enableRhymeMode()
         device.tapEditorBody()
         device.executeShellCommand("input text profile%20flow%20time")
         device.waitForRhymeSuggestions()
@@ -216,7 +219,13 @@ private fun UiDevice.waitForEditor() {
 }
 
 private fun UiDevice.waitForRhymeSuggestions() {
-    wait(Until.findObject(By.res(PACKAGE_NAME, "rhyme_suggestions")), WAIT_MS)
+    check(wait(Until.findObject(By.res(PACKAGE_NAME, "rhyme_suggestion_chip")), WAIT_MS)) {
+        "Timed out waiting for a rhyme suggestion chip."
+    }
+}
+
+private fun UiDevice.enableRhymeMode() {
+    findObject(By.text("Rhyme mode: Off"))?.click()
 }
 
 private fun UiDevice.tapEditorTitle() {

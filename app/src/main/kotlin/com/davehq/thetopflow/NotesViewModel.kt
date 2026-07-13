@@ -35,6 +35,7 @@ data class NotesUiState(
     val notes: List<NoteUi> = emptyList(),
     val visibleNotes: List<NoteUi> = emptyList(),
     val selectedNote: NoteUi? = null,
+    val rhymeModeEnabled: Boolean = false,
     val rhymeSuggestions: List<String> = emptyList(),
     val rhymeLoading: Boolean = true,
     val query: String = "",
@@ -55,6 +56,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val query = MutableStateFlow("")
     private val loading = MutableStateFlow(true)
     private val creating = MutableStateFlow(false)
+    private val rhymeModeEnabled = MutableStateFlow(repository.loadRhymeModeEnabled())
     private val rhymeSuggestions = MutableStateFlow<List<String>>(emptyList())
     private val rhymeLoading = MutableStateFlow(true)
     private val lastOpenedNoteId = MutableStateFlow<String?>(null)
@@ -63,6 +65,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private var rhymeJob: Job? = null
     private var notesLoaded = false
     @Volatile private var rhymeEngine2Ready = false
+    @Volatile private var legacyRhymeLoadStarted = false
+    private var expandedRhymesRequested = false
     private val rhymeRouteMetrics = RhymeRouteMetrics()
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,23 +76,25 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         query,
         loading,
         creating,
+        rhymeModeEnabled,
         rhymeSuggestions,
         rhymeLoading,
         mediaController.mediaState,
         lastOpenedNoteId,
         styleDefaults
     ) { values ->
-        val media = values[7] as MediaUiState
-        val lastOpened = values[8] as String?
-        val defaults = values[9] as StyleDefaults
+        val media = values[8] as MediaUiState
+        val lastOpened = values[9] as String?
+        val defaults = values[10] as StyleDefaults
         RawNotesState(
             notes = values[0] as List<NoteUi>,
             selectedNoteId = values[1] as String?,
             query = values[2] as String,
             isLoading = values[3] as Boolean,
             isCreating = values[4] as Boolean,
-            rhymeSuggestions = values[5] as List<String>,
-            rhymeLoading = values[6] as Boolean,
+            rhymeModeEnabled = values[5] as Boolean,
+            rhymeSuggestions = values[6] as List<String>,
+            rhymeLoading = values[7] as Boolean,
             media = media,
             lastOpenedNoteId = lastOpened,
             styleDefaults = defaults
@@ -109,6 +115,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 notes = sorted,
                 visibleNotes = filtered,
                 selectedNote = sorted.firstOrNull { it.id == raw.selectedNoteId },
+                rhymeModeEnabled = raw.rhymeModeEnabled,
                 rhymeSuggestions = raw.rhymeSuggestions,
                 rhymeLoading = raw.rhymeLoading,
                 query = raw.query,
@@ -122,28 +129,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotesUiState())
 
     init {
-        viewModelScope.launch {
-            rhymeEngine2Ready = withContext(Dispatchers.IO) { rhymeEngine2.load() }
-            if (rhymeEngine2Ready) {
-                rhymeLoading.value = false
-                refreshRhymesForSelected()
-            }
-        }
-        rhymeEngine.loadAsync(object : RhymeEngine.LoadCallbacks {
-            override fun onFastReady() {
-                viewModelScope.launch {
-                    rhymeLoading.value = false
-                    refreshRhymesForSelected()
-                }
-            }
-
-            override fun onFullReady() {
-                viewModelScope.launch {
-                    rhymeLoading.value = false
-                    refreshRhymesForSelected()
-                }
-            }
-        })
+        if (rhymeModeEnabled.value) ensureFastRhymeEngineLoaded()
         viewModelScope.launch {
             val loaded = repository.loadNotes()
             notes.value = loaded
@@ -192,6 +178,27 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         mediaController.pauseAll()
     }
 
+    fun setRhymeModeEnabled(enabled: Boolean) {
+        if (rhymeModeEnabled.value == enabled) return
+        rhymeModeEnabled.value = enabled
+        repository.saveRhymeModeEnabled(enabled)
+        rhymeJob?.cancel()
+        expandedRhymesRequested = false
+        rhymeSuggestions.value = emptyList()
+        rhymeLoading.value = false
+        if (enabled) {
+            ensureFastRhymeEngineLoaded()
+            refreshRhymesForSelected()
+        }
+    }
+
+    fun requestMoreRhymes() {
+        if (!rhymeModeEnabled.value || selectedNoteId.value == null) return
+        expandedRhymesRequested = true
+        ensureLegacyRhymeEngineLoaded()
+        refreshRhymesForSelected()
+    }
+
     fun updateSearch(value: String) {
         query.value = value
         if (value.isNotBlank()) {
@@ -214,6 +221,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             rhymeLoading.value = false
             return
         }
+        expandedRhymesRequested = false
+        if (!rhymeModeEnabled.value) return
         scheduleRhymeUpdate(value)
     }
 
@@ -407,11 +416,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun refreshRhymesForSelected() {
+        if (!rhymeModeEnabled.value) return
         val body = notes.value.firstOrNull { it.id == selectedNoteId.value }?.body.orEmpty()
         scheduleRhymeUpdate(body, delayMs = 0)
     }
 
     private fun scheduleRhymeUpdate(body: String, delayMs: Long = defaultRhymeDelayMs()) {
+        if (!rhymeModeEnabled.value) return
         rhymeJob?.cancel()
         rhymeJob = viewModelScope.launch {
             kotlinx.coroutines.delay(delayMs)
@@ -422,50 +433,52 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             val word = withContext(Dispatchers.Default) { body.activeRhymeWord() }
             if (word.length < 2) {
                 rhymeSuggestions.value = emptyList()
-                rhymeLoading.value = !isAnyRhymeEngineReady()
+                rhymeLoading.value = !isRhymeEngineReadyForRequest()
                 return@launch
             }
-            if (!isAnyRhymeEngineReady()) {
+            if (!isRhymeEngineReadyForRequest()) {
                 rhymeLoading.value = true
                 return@launch
             }
             val suggestions = withContext(Dispatchers.Default) {
-                suggestRhymes(word, body)
+                suggestRhymes(word, body, expandedRhymesRequested)
             }
-            rhymeLoading.value = !isAnyRhymeEngineReady()
+            rhymeLoading.value = !isRhymeEngineReadyForRequest()
             rhymeSuggestions.value = suggestions
         }
     }
 
     private fun defaultRhymeDelayMs(): Long {
-        return if (rhymeEngine2Ready) 20L else if (rhymeEngine.isFastReady()) 50L else 140L
+        return if (rhymeEngine2Ready) 0L else 20L
     }
 
-    private fun isAnyRhymeEngineReady(): Boolean {
-        return rhymeEngine2Ready || rhymeEngine.isFastReady() || rhymeEngine.isReady()
+    private fun isRhymeEngineReadyForRequest(): Boolean {
+        return rhymeEngine2Ready || (expandedRhymesRequested && (rhymeEngine.isFastReady() || rhymeEngine.isReady()))
     }
 
-    private fun suggestRhymes(word: String, body: String): List<String> {
+    private fun suggestRhymes(word: String, body: String, includeLegacy: Boolean): List<String> {
         val start = System.nanoTime()
         var source = "empty"
+        var v2 = emptyList<String>()
         var v2Count = 0
         var fallbackCount = 0
         var finalCount = 0
         try {
         if (rhymeEngine2Ready) {
-            val v2 = runCatching {
+            v2 = runCatching {
                 rhymeEngine2.suggest(word, 8)
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
             v2Count = v2.size
-            if (v2.size >= 4) {
+            if (v2.isNotEmpty() && !includeLegacy) {
                 source = "v2"
                 finalCount = v2.size
                 return v2
             }
             source = if (v2.isEmpty()) "v2_miss" else "v2_short"
         }
+        if (!includeLegacy) return emptyList()
         val fallback = runCatching {
             rhymeEngine.suggest(
                 word,
@@ -483,7 +496,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             "${source}_empty"
         }
-        return fallback
+        val combined = (v2 + fallback).distinct().take(8)
+        finalCount = combined.size
+        return combined
         } finally {
             val elapsedMs = (System.nanoTime() - start) / 1_000_000.0
             val snapshot = rhymeRouteMetrics.record(source, elapsedMs)
@@ -497,6 +512,32 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                     "routeTotal=${snapshot.total} routeV2=${snapshot.v2} routeFallback=${snapshot.fallback} routeEmpty=${snapshot.empty} " +
                     "v2Miss=${snapshot.v2Miss} v2Short=${snapshot.v2Short} fallbackAfterMiss=${snapshot.fallbackAfterMiss} fallbackAfterShort=${snapshot.fallbackAfterShort} avgMs=${snapshot.averageMs}"
             )
+        }
+    }
+
+    private fun ensureFastRhymeEngineLoaded() {
+        if (rhymeEngine2Ready) return
+        viewModelScope.launch {
+            rhymeLoading.value = true
+            rhymeEngine2Ready = withContext(Dispatchers.IO) { rhymeEngine2.load() }
+            rhymeLoading.value = false
+            if (rhymeModeEnabled.value) refreshRhymesForSelected()
+        }
+    }
+
+    private fun ensureLegacyRhymeEngineLoaded() {
+        if (legacyRhymeLoadStarted) return
+        legacyRhymeLoadStarted = true
+        rhymeLoading.value = true
+        rhymeEngine.loadAsync(object : RhymeEngine.LoadCallbacks {
+            override fun onFastReady() = onLegacyRhymeEngineReady()
+            override fun onFullReady() = onLegacyRhymeEngineReady()
+        })
+    }
+
+    private fun onLegacyRhymeEngineReady() {
+        viewModelScope.launch {
+            if (rhymeModeEnabled.value && expandedRhymesRequested) refreshRhymesForSelected()
         }
     }
 
@@ -567,6 +608,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val query: String,
         val isLoading: Boolean,
         val isCreating: Boolean,
+        val rhymeModeEnabled: Boolean,
         val rhymeSuggestions: List<String>,
         val rhymeLoading: Boolean,
         val media: MediaUiState,

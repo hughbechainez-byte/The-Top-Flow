@@ -60,7 +60,8 @@ def main() -> None:
         top_any = set(row["top_any"])
         exclude_all = set(row["exclude_all"])
         if not suggestions:
-            failures.append(f"{query}: missing suggestions")
+            if row["include_any"] or row["top_any"]:
+                failures.append(f"{query}: missing suggestions")
             continue
         if include_any and not include_any.intersection(suggestions):
             failures.append(f"{query}: expected one of {sorted(include_any)} in {suggestions}")

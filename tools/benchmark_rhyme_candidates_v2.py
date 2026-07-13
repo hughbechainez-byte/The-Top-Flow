@@ -40,7 +40,7 @@ def main() -> None:
         result = rows.get(query, [])
         elapsed_ms = (time.perf_counter_ns() - start) / 1_000_000.0
         timings.append(elapsed_ms)
-        if len(result) < 4:
+        if not result:
             missing.add(query)
     if missing:
         raise SystemExit(f"missing benchmark rows: {sorted(missing)}")

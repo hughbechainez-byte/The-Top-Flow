@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import pathlib
 import re
 import struct
@@ -37,6 +38,15 @@ PREFERRED_HIP_HOP_ALIAS_ROWS = {
     "stacking",
 }
 
+# High-frequency function words can be phonetically valid while making poor
+# writing prompts (for example, love -> of). Keep useful pronouns and verbs
+# out of this set; block only weak connective words.
+LOW_VALUE_FUNCTION_WORDS = {
+    "a", "an", "and", "as", "at", "by", "for", "from", "in", "into",
+    "of", "on", "or", "the", "to", "with", "au", "aux", "beau", "beaux",
+    "ar", "are", "bleau", "gov",
+}
+
 HIP_HOP_PHRASE_ENDING_ROWS = {
     "bars": ["stars", "cars", "mars", "scars", "barz", "guitars", "jars", "ours", "powers", "flowers", "towers", "hours"],
     "beat": ["heat", "street", "feet", "seat", "sweet", "meet", "feat", "repeat", "elite", "concrete", "heartbeat", "backbeat"],
@@ -51,6 +61,65 @@ HIP_HOP_PHRASE_ENDING_ROWS = {
 
 def normalize_word(word: str) -> str:
     return re.sub(r"[^a-z']", "", (word or "").lower()).strip("'")
+
+
+def candidate_tail(candidate: str) -> str:
+    return normalize_word((candidate or "").rsplit(" ", 1)[-1])
+
+
+CURATED_CANDIDATES = {
+    candidate_tail(value)
+    for values in HIP_HOP_PHRASE_ENDING_ROWS.values()
+    for value in values
+}
+CURATED_CANDIDATES.update(HIP_HOP_ALIAS_ROWS)
+CURATED_CANDIDATES.update(HIP_HOP_ALIAS_ROWS.values())
+CURATED_CANDIDATES.update({
+    "runnin", "movin", "pullin", "tryna", "finna", "imma", "ima", "gimme",
+    "lemme", "nah", "naw", "thang", "homie", "shorty",
+})
+
+
+def load_frequency_ranks(path: pathlib.Path) -> dict[str, int]:
+    with path.open("r", encoding="utf-8") as handle:
+        rows = json.load(handle)
+    ranks = {}
+    for rank, row in enumerate(rows):
+        if not isinstance(row, list) or not row:
+            continue
+        word = normalize_word(str(row[0]))
+        if word and word not in ranks:
+            ranks[word] = rank
+    if len(ranks) < 20_000:
+        raise RuntimeError("frequency source contains too few English words")
+    return ranks
+
+
+def candidate_quality(candidate: str, frequency_ranks: dict[str, int]) -> float | None:
+    tail = candidate_tail(candidate)
+    if not tail or tail in LOW_VALUE_FUNCTION_WORDS:
+        return None
+    if tail in CURATED_CANDIDATES:
+        return float(len(frequency_ranks) + 1)
+    rank = frequency_ranks.get(tail)
+    return None if rank is None else float(len(frequency_ranks) - rank)
+
+
+def rank_candidates(base: str, candidates: list[str], frequency_ranks: dict[str, int]) -> list[str]:
+    ranked = []
+    seen = {normalize_word(base)}
+    for index, candidate in enumerate(candidates):
+        tail = candidate_tail(candidate)
+        quality = candidate_quality(candidate, frequency_ranks)
+        candidate_key = normalize_word(candidate)
+        if not tail or not candidate_key or candidate_key in seen or quality is None:
+            continue
+        seen.add(candidate_key)
+        ranked.append((candidate, quality, index))
+    # The fast-cache order already reflects the app's rhyme scorer. Frequency
+    # is a quality gate, not a replacement for phonetic/rap-specific ranking.
+    ranked.sort(key=lambda item: (item[2], item[0]))
+    return [candidate for candidate, _, _ in ranked[:MAX_CANDIDATES]]
 
 
 def parse_hot_cache(path: pathlib.Path):
@@ -70,7 +139,7 @@ def parse_hot_cache(path: pathlib.Path):
     return rows
 
 
-def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path):
+def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path, frequency_ranks: dict[str, int]):
     rows = parse_hot_cache(default_source)
     if expanded_source.exists():
         expanded = parse_hot_cache(expanded_source)
@@ -79,7 +148,12 @@ def merged_rows(default_source: pathlib.Path, expanded_source: pathlib.Path):
                 rows[word] = candidates
     apply_hip_hop_alias_rows(rows)
     apply_hip_hop_phrase_rows(rows)
-    return sorted(rows.items(), key=lambda item: item[0])
+    quality_rows = []
+    for word, candidates in rows.items():
+        ranked = rank_candidates(word, candidates, frequency_ranks)
+        if ranked:
+            quality_rows.append((word, ranked))
+    return sorted(quality_rows, key=lambda item: item[0])
 
 
 def apply_hip_hop_alias_rows(rows: dict[str, list[str]]) -> None:
@@ -177,9 +251,11 @@ def main() -> None:
     parser.add_argument("--expanded-source", default="app/src/main/assets/rhyme_expanded_hot_cache.tfcache")
     parser.add_argument("--output", default="app/src/main/assets/rhyme_candidates_v2.tfcand")
     parser.add_argument("--debug-tsv", default="build/rhyme-v2-debug/candidates_v2_debug.tsv")
+    parser.add_argument("--frequency-json", default="build/rhyme-v2-debug/wordfreq-en-25000-log.json")
     args = parser.parse_args()
-    rows = merged_rows(pathlib.Path(args.source), pathlib.Path(args.expanded_source))
-    if len(rows) < 30_000:
+    frequency_ranks = load_frequency_ranks(pathlib.Path(args.frequency_json))
+    rows = merged_rows(pathlib.Path(args.source), pathlib.Path(args.expanded_source), frequency_ranks)
+    if len(rows) < 25_000:
         raise SystemExit(f"too few candidate rows: {len(rows)}")
     count = build_binary(rows, pathlib.Path(args.output), pathlib.Path(args.debug_tsv))
     print(f"wrote {count} V2 candidate rows to {args.output}")

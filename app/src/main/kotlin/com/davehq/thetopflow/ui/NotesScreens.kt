@@ -132,6 +132,8 @@ fun NotesRoute(
     onSearch: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
+    onSetRhymeModeEnabled: (Boolean) -> Unit,
+    onRequestMoreRhymes: () -> Unit,
     onDeleteNote: () -> Unit,
     onOpenRecentNote: () -> Unit,
     onAttachSong: () -> Unit,
@@ -210,11 +212,14 @@ fun NotesRoute(
                 isCreating = state.isCreating,
                 media = state.media,
                 styleDefaults = state.styleDefaults,
+                rhymeModeEnabled = state.rhymeModeEnabled,
                 rhymeSuggestions = state.rhymeSuggestions,
                 rhymeLoading = state.rhymeLoading,
                 onBack = onCloseEditor,
                 onTitleChange = onTitleChange,
                 onBodyChange = onBodyChange,
+                onSetRhymeModeEnabled = onSetRhymeModeEnabled,
+                onRequestMoreRhymes = onRequestMoreRhymes,
                 onDeleteNote = onDeleteNote,
                 onCreateNote = onCreateNote,
                 onOpenRecentNote = onOpenRecentNote,
@@ -561,11 +566,14 @@ fun NoteEditorScreen(
     isCreating: Boolean,
     media: MediaUiState,
     styleDefaults: StyleDefaults,
+    rhymeModeEnabled: Boolean,
     rhymeSuggestions: List<String>,
     rhymeLoading: Boolean,
     onBack: () -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
+    onSetRhymeModeEnabled: (Boolean) -> Unit,
+    onRequestMoreRhymes: () -> Unit,
     onDeleteNote: () -> Unit,
     onCreateNote: () -> Unit,
     onOpenRecentNote: () -> Unit,
@@ -586,11 +594,14 @@ fun NoteEditorScreen(
         isCreating = isCreating,
         media = media,
         styleDefaults = styleDefaults,
+        rhymeModeEnabled = rhymeModeEnabled,
         rhymeSuggestions = rhymeSuggestions,
         rhymeLoading = rhymeLoading,
         onBack = onBack,
         onTitleChange = onTitleChange,
         onBodyChange = onBodyChange,
+        onSetRhymeModeEnabled = onSetRhymeModeEnabled,
+        onRequestMoreRhymes = onRequestMoreRhymes,
         onDeleteNote = onDeleteNote,
         onCreateNote = onCreateNote,
         onOpenRecentNote = onOpenRecentNote,
@@ -613,12 +624,15 @@ fun NoteEditor(
     isCreating: Boolean,
     media: MediaUiState,
     styleDefaults: StyleDefaults = StyleDefaults(),
+    rhymeModeEnabled: Boolean = false,
     rhymeSuggestions: List<String> = emptyList(),
     rhymeLoading: Boolean = false,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onTitleChange: (String) -> Unit = {},
     onBodyChange: (String) -> Unit = {},
+    onSetRhymeModeEnabled: (Boolean) -> Unit = {},
+    onRequestMoreRhymes: () -> Unit = {},
     onDeleteNote: () -> Unit = {},
     onCreateNote: () -> Unit = {},
     onOpenRecentNote: () -> Unit = {},
@@ -788,6 +802,14 @@ fun NoteEditor(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             item {
+                FilledTonalButton(
+                    onClick = { onSetRhymeModeEnabled(!rhymeModeEnabled) },
+                    modifier = Modifier.semantics { contentDescription = "Rhyme mode" }
+                ) {
+                    Text(if (rhymeModeEnabled) "Rhyme mode: On" else "Rhyme mode: Off")
+                }
+            }
+            item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     BasicTextField(
                         value = draftBody,
@@ -816,18 +838,21 @@ fun NoteEditor(
                             }
                         }
                     )
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Spacer(Modifier.height(activeLineRhymeOffset(bodyLayout, draftBody.selection)))
-                        RhymeSuggestionRow(
-                            suggestions = rhymeSuggestions,
-                            loading = rhymeLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                            onInsertWord = { insertion ->
-                                val next = draftBody.insertAtSelection(insertion)
-                                draftBody = next
-                                onBodyChange(next.text)
-                            }
-                        )
+                    if (rhymeModeEnabled) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Spacer(Modifier.height(activeLineRhymeOffset(bodyLayout, draftBody.selection)))
+                            RhymeSuggestionRow(
+                                suggestions = rhymeSuggestions,
+                                loading = rhymeLoading,
+                                onRequestMore = onRequestMoreRhymes,
+                                modifier = Modifier.fillMaxWidth(),
+                                onInsertWord = { insertion ->
+                                    val next = draftBody.insertAtSelection(insertion)
+                                    draftBody = next
+                                    onBodyChange(next.text)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -1447,6 +1472,7 @@ private fun ColorPickerInputs(
 private fun RhymeSuggestionRow(
     suggestions: List<String>,
     loading: Boolean,
+    onRequestMore: () -> Unit,
     modifier: Modifier = Modifier,
     onInsertWord: (String) -> Unit = {}
 ) {
@@ -1476,7 +1502,9 @@ private fun RhymeSuggestionRow(
                             shape = MaterialTheme.shapes.extraLarge,
                             color = MaterialTheme.colorScheme.surface,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.clickable { onInsertWord("$word ") }
+                            modifier = Modifier
+                                .testTag("rhyme_suggestion_chip")
+                                .clickable { onInsertWord("$word ") }
                         ) {
                             Text(
                                 text = word,
@@ -1485,6 +1513,12 @@ private fun RhymeSuggestionRow(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
+                    }
+                }
+                if (suggestions.size < 8) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = onRequestMore) {
+                        Text("More rhymes")
                     }
                 }
             }

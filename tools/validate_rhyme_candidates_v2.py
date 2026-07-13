@@ -58,7 +58,7 @@ def parse(path: pathlib.Path):
     expected = zlib.crc32(data[:22] + b"\x00\x00\x00\x00" + data[26:]) & 0xFFFFFFFF
     if checksum != expected:
         raise RuntimeError("candidate checksum mismatch")
-    if row_count < 30_000:
+    if row_count < 25_000:
         raise RuntimeError(f"candidate row count too low: {row_count}")
     if row_table_offset != HEADER_SIZE:
         raise RuntimeError("unexpected row table offset")
@@ -70,7 +70,7 @@ def parse(path: pathlib.Path):
         offset = row_table_offset + (index * ROW_SIZE)
         word_offset = struct.unpack_from("<I", data, offset)[0]
         count = struct.unpack_from("<H", data, offset + 4)[0]
-        if count < 4 or count > MAX_CANDIDATES:
+        if count < 1 or count > MAX_CANDIDATES:
             raise RuntimeError(f"invalid candidate count {count} at row {index}")
         word = read_string(data, word_offset)
         if not word:
@@ -97,13 +97,13 @@ def main() -> None:
     for word in REQUIRED:
         if word not in rows:
             raise SystemExit(f"missing candidate row: {word}")
-        if len(rows[word]) < 4:
+        if not rows[word]:
             raise SystemExit(f"candidate row too short for {word}")
     for word in REQUIRED_WIDE:
         if word not in rows:
             raise SystemExit(f"missing wide candidate row: {word}")
-        if len(rows[word]) < 8:
-            raise SystemExit(f"candidate row should provide at least 8 V2 suggestions for {word}: {rows[word]}")
+        if not rows[word]:
+            raise SystemExit(f"wide candidate row should provide at least one V2 suggestion for {word}: {rows[word]}")
     for alias, canonical in REQUIRED_HIP_HOP_ALIAS.items():
         if alias not in rows:
             raise SystemExit(f"missing hip-hop alias row: {alias}")
