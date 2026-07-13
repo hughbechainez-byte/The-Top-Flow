@@ -133,6 +133,8 @@ fun NotesRoute(
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onSetRhymeModeEnabled: (Boolean) -> Unit,
+    onSetRhymeStrictness: (String) -> Unit,
+    onSaveCustomRhymes: (String, String) -> Unit,
     onRequestMoreRhymes: () -> Unit,
     onDeleteNote: () -> Unit,
     onOpenRecentNote: () -> Unit,
@@ -213,12 +215,16 @@ fun NotesRoute(
                 media = state.media,
                 styleDefaults = state.styleDefaults,
                 rhymeModeEnabled = state.rhymeModeEnabled,
+                rhymeStrictness = state.rhymeStrictness,
+                customRhymeCount = state.customRhymeCount,
                 rhymeSuggestions = state.rhymeSuggestions,
                 rhymeLoading = state.rhymeLoading,
                 onBack = onCloseEditor,
                 onTitleChange = onTitleChange,
                 onBodyChange = onBodyChange,
                 onSetRhymeModeEnabled = onSetRhymeModeEnabled,
+                onSetRhymeStrictness = onSetRhymeStrictness,
+                onSaveCustomRhymes = onSaveCustomRhymes,
                 onRequestMoreRhymes = onRequestMoreRhymes,
                 onDeleteNote = onDeleteNote,
                 onCreateNote = onCreateNote,
@@ -567,12 +573,16 @@ fun NoteEditorScreen(
     media: MediaUiState,
     styleDefaults: StyleDefaults,
     rhymeModeEnabled: Boolean,
+    rhymeStrictness: String,
+    customRhymeCount: Int,
     rhymeSuggestions: List<String>,
     rhymeLoading: Boolean,
     onBack: () -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onSetRhymeModeEnabled: (Boolean) -> Unit,
+    onSetRhymeStrictness: (String) -> Unit,
+    onSaveCustomRhymes: (String, String) -> Unit,
     onRequestMoreRhymes: () -> Unit,
     onDeleteNote: () -> Unit,
     onCreateNote: () -> Unit,
@@ -595,12 +605,16 @@ fun NoteEditorScreen(
         media = media,
         styleDefaults = styleDefaults,
         rhymeModeEnabled = rhymeModeEnabled,
+        rhymeStrictness = rhymeStrictness,
+        customRhymeCount = customRhymeCount,
         rhymeSuggestions = rhymeSuggestions,
         rhymeLoading = rhymeLoading,
         onBack = onBack,
         onTitleChange = onTitleChange,
         onBodyChange = onBodyChange,
         onSetRhymeModeEnabled = onSetRhymeModeEnabled,
+        onSetRhymeStrictness = onSetRhymeStrictness,
+        onSaveCustomRhymes = onSaveCustomRhymes,
         onRequestMoreRhymes = onRequestMoreRhymes,
         onDeleteNote = onDeleteNote,
         onCreateNote = onCreateNote,
@@ -625,6 +639,8 @@ fun NoteEditor(
     media: MediaUiState,
     styleDefaults: StyleDefaults = StyleDefaults(),
     rhymeModeEnabled: Boolean = false,
+    rhymeStrictness: String = "Balanced",
+    customRhymeCount: Int = 0,
     rhymeSuggestions: List<String> = emptyList(),
     rhymeLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -632,6 +648,8 @@ fun NoteEditor(
     onTitleChange: (String) -> Unit = {},
     onBodyChange: (String) -> Unit = {},
     onSetRhymeModeEnabled: (Boolean) -> Unit = {},
+    onSetRhymeStrictness: (String) -> Unit = {},
+    onSaveCustomRhymes: (String, String) -> Unit = { _, _ -> },
     onRequestMoreRhymes: () -> Unit = {},
     onDeleteNote: () -> Unit = {},
     onCreateNote: () -> Unit = {},
@@ -660,6 +678,9 @@ fun NoteEditor(
         mutableStateOf(TextFieldValue(note.body, selection = TextRange(note.body.length)))
     }
     var bodyLayout by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
+    var showRhymeControls by remember { mutableStateOf(false) }
+    var customWord by remember { mutableStateOf("") }
+    var customSuggestions by remember { mutableStateOf("") }
 
     LaunchedEffect(note.id, note.title) {
         if (draftTitle != note.title) draftTitle = note.title
@@ -802,11 +823,14 @@ fun NoteEditor(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             item {
-                FilledTonalButton(
-                    onClick = { onSetRhymeModeEnabled(!rhymeModeEnabled) },
-                    modifier = Modifier.semantics { contentDescription = "Rhyme mode" }
-                ) {
-                    Text(if (rhymeModeEnabled) "Rhyme mode: On" else "Rhyme mode: Off")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(
+                        onClick = { onSetRhymeModeEnabled(!rhymeModeEnabled) },
+                        modifier = Modifier.semantics { contentDescription = "Rhyme mode" }
+                    ) { Text(if (rhymeModeEnabled) "Rhyme mode: On" else "Rhyme mode: Off") }
+                    if (rhymeModeEnabled) {
+                        OutlinedButton(onClick = { showRhymeControls = true }) { Text("Tune") }
+                    }
                 }
             }
             item {
@@ -912,6 +936,38 @@ fun NoteEditor(
                 renameValue = ""
             },
             onTagChange = { renameValue = it }
+        )
+    }
+    if (showRhymeControls) {
+        AlertDialog(
+            onDismissRequest = { showRhymeControls = false },
+            title = { Text("Rhyme controls") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Strength")
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Strict", "Balanced", "Loose").forEach { level ->
+                            OutlinedButton(
+                                onClick = { onSetRhymeStrictness(level) },
+                                colors = if (level == rhymeStrictness) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else ButtonDefaults.outlinedButtonColors()
+                            ) { Text(level) }
+                        }
+                    }
+                    Text("Custom local rhymes ($customRhymeCount saved)", style = MaterialTheme.typography.labelLarge)
+                    OutlinedTextField(value = customWord, onValueChange = { customWord = it }, label = { Text("Word") }, singleLine = true)
+                    OutlinedTextField(value = customSuggestions, onValueChange = { customSuggestions = it }, label = { Text("Rhymes, separated by commas") })
+                    Text("Custom entries stay on this device. Phrase prompts appear only under More rhymes.", style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                FilledTonalButton(onClick = {
+                    onSaveCustomRhymes(customWord, customSuggestions)
+                    customWord = ""
+                    customSuggestions = ""
+                    showRhymeControls = false
+                }) { Text("Save") }
+            },
+            dismissButton = { OutlinedButton(onClick = { showRhymeControls = false }) { Text("Close") } }
         )
     }
 }

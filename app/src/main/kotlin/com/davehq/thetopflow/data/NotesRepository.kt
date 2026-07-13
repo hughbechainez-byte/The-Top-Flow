@@ -148,6 +148,37 @@ class NotesRepository(
         prefs.edit().putBoolean("rhymeModeEnabled", enabled).apply()
     }
 
+    fun loadRhymeStrictness(): String = prefs.getString("rhymeStrictness", "Balanced")
+        .orEmpty().ifBlank { "Balanced" }
+
+    fun saveRhymeStrictness(strictness: String) {
+        prefs.edit().putString("rhymeStrictness", strictness).apply()
+    }
+
+    /** User-owned local additions; never uploaded or mixed into the bundled asset. */
+    fun loadCustomRhymes(): Map<String, List<String>> = runCatching {
+        val objectValue = JSONObject(prefs.getString("customRhymes", "{}") ?: "{}")
+        buildMap {
+            objectValue.keys().forEach { word ->
+                val values = objectValue.optJSONArray(word) ?: return@forEach
+                val suggestions = buildList {
+                    for (index in 0 until values.length()) {
+                        values.optString(index).trim().takeIf { it.isNotBlank() }?.let(::add)
+                    }
+                }
+                if (suggestions.isNotEmpty()) put(word, suggestions)
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    fun saveCustomRhymes(entries: Map<String, List<String>>) {
+        val objectValue = JSONObject()
+        entries.toSortedMap().forEach { (word, suggestions) ->
+            objectValue.put(word, JSONArray(suggestions))
+        }
+        prefs.edit().putString("customRhymes", objectValue.toString()).apply()
+    }
+
     suspend fun loadNotes(): List<NoteUi> = withContext(ioDispatcher) {
         val sourceFile = when {
             notesFile.exists() && notesFile.length() > 2L -> notesFile
