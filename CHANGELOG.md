@@ -1,5 +1,7 @@
 # Changelog
 
+- Version 29.9 finalizes the offline rhyme upgrade: opt-in V2 loading, instant bounded local caching, expanded-only grouped multi/phrase prompts, saved strength controls, private custom rhymes, conservative recent-line repetition handling, and local spoken-spelling fallback.
+
 - Version 28.7 adds expanded-only curated multi/phrase prompts, saved Strict/Balanced/Loose rhyme strength, a private on-device custom-rhyme dictionary, and conservative recent-line repetition avoidance. Rhyme Mode remains off until chosen and the fast row remains single-word focused.
 
 - Version 28.6 quality-ranks the local V2 rhyme table with offline word-frequency scores and filters weak connective words, reducing rare CMU name/variant suggestions while retaining curated rap slang and phrases. Runtime rhyme lookup remains local and constant-time.

@@ -1552,8 +1552,10 @@ private fun RhymeSuggestionRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
+                val wordSuggestions = suggestions.filterNot { ' ' in it }
+                val phraseSuggestions = suggestions.filter { ' ' in it }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(suggestions) { word ->
+                    items(wordSuggestions) { word ->
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
                             color = MaterialTheme.colorScheme.surface,
@@ -1568,6 +1570,22 @@ private fun RhymeSuggestionRow(
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                        }
+                    }
+                }
+                if (phraseSuggestions.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Multi & phrase prompts", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(phraseSuggestions) { phrase ->
+                            Surface(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                modifier = Modifier.clickable { onInsertWord("$phrase ") }
+                            ) {
+                                Text(phrase, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                            }
                         }
                     }
                 }

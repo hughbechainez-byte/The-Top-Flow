@@ -1,9 +1,15 @@
 {
-  "versionName": "28.7",
-  "notes": "Version 28.7 adds private on-device custom rhymes, Strict/Balanced/Loose controls, curated expanded-only multi/phrase prompts, and recent-line repetition avoidance while keeping Rhyme Mode opt-in and instant.",
-  "versionCode": 100,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v28.7/the-top-flow-28.7-local-rhyme-controls.apk",
+  "versionName": "29.9",
+  "notes": "Version 29.9 finalizes the offline rhyme upgrade with instant local caching, grouped expanded prompts, saved controls, private custom rhymes, context safeguards, and spoken-spelling fallback.",
+  "versionCode": 112,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v29.9/the-top-flow-29.9-offline-rhyme-final.apk",
   "versions": [
+    {
+      "versionName": "29.9",
+      "notes": "Version 29.9 finalizes the offline rhyme upgrade with instant local caching, grouped expanded prompts, saved controls, private custom rhymes, context safeguards, and spoken-spelling fallback.",
+      "versionCode": 112,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v29.9/the-top-flow-29.9-offline-rhyme-final.apk"
+    },
     {
       "versionName": "28.7",
       "notes": "Version 28.7 adds private on-device custom rhymes, Strict/Balanced/Loose controls, curated expanded-only multi/phrase prompts, and recent-line repetition avoidance while keeping Rhyme Mode opt-in and instant.",

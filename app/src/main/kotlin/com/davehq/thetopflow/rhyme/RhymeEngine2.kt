@@ -4,17 +4,23 @@ import android.content.Context
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.LinkedHashMap
 import java.util.zip.CRC32
 
 class RhymeEngine2(context: Context) {
     private val appContext = context.applicationContext
     private var table: CandidateTable? = null
+    private val resultCache = object : LinkedHashMap<String, List<RhymeCandidate>>(CACHE_CAPACITY, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<RhymeCandidate>>?): Boolean =
+            size > CACHE_CAPACITY
+    }
 
     fun load(): Boolean {
         return runCatching {
             val mapped = RhymeAssetStore.openMappedAsset(appContext, ASSET_NAME).order(ByteOrder.LITTLE_ENDIAN)
             val next = CandidateTable(mapped)
             table = next
+            synchronized(resultCache) { resultCache.clear() }
             Log.d(TRACE_TAG, "rhyme_trace stage=v2_candidates_ready rows=${next.rowCount}")
             true
         }.getOrElse { error ->
@@ -27,16 +33,35 @@ class RhymeEngine2(context: Context) {
     fun suggest(word: String, limit: Int = 8): List<RhymeCandidate> {
         val start = System.nanoTime()
         val normalized = normalize(word)
-        val result = if (normalized.isEmpty()) {
+        val cacheKey = "$normalized:$limit"
+        val cached = synchronized(resultCache) { resultCache[cacheKey] }
+        val result = if (cached != null) {
+            cached
+        } else if (normalized.isEmpty()) {
             emptyList()
         } else {
-            table?.lookup(normalized, limit).orEmpty()
+            lookupWithLocalFallback(normalized, limit).also { values ->
+                synchronized(resultCache) { resultCache[cacheKey] = values }
+            }
         }
         Log.d(
             TRACE_TAG,
             "rhyme_trace stage=v2_suggest chars=${normalized.length} count=${result.size} ms=${(System.nanoTime() - start) / 1_000_000.0}"
         )
         return result
+    }
+
+    /** Conservative local OOV bridge for common spoken/rap spellings. */
+    private fun lookupWithLocalFallback(normalized: String, limit: Int): List<RhymeCandidate> {
+        val current = table ?: return emptyList()
+        current.lookup(normalized, limit).takeIf { it.isNotEmpty() }?.let { return it }
+        val alternate = when {
+            normalized.endsWith("in") && normalized.length > 3 -> normalized.dropLast(2) + "ing"
+            normalized.endsWith("in'") && normalized.length > 4 -> normalized.dropLast(3) + "ing"
+            normalized == "ima" -> "imma"
+            else -> null
+        } ?: return emptyList()
+        return current.lookup(alternate, limit)
     }
 
     private class CandidateTable(private val data: ByteBuffer) {
@@ -117,6 +142,7 @@ class RhymeEngine2(context: Context) {
         private const val ROW_SIZE = 56
         private const val VERSION = 2
         private const val MAX_CANDIDATES = 12
+        private const val CACHE_CAPACITY = 192
         private const val TRACE_TAG = "rhyme_trace"
         private val MAGIC = "TFCAND2".toByteArray(Charsets.US_ASCII)
 
