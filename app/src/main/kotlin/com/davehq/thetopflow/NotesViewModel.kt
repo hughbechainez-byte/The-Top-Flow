@@ -402,6 +402,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setNeonThemeEnabled(enabled: Boolean) {
+        val updated = styleDefaults.value.copy(neonTheme = enabled)
+        styleDefaults.value = updated
+        repository.saveStyleDefaults(updated)
+    }
+
     fun pauseMediaPlayback() {
         mediaController.pauseAll()
     }

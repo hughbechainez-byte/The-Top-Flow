@@ -108,7 +108,8 @@ data class StyleDefaults(
     val textColor: Int = DEFAULT_NOTE_TEXT_COLOR,
     val accentColor: Int = DEFAULT_NOTE_ACCENT_COLOR,
     val menuColor: Int = DEFAULT_MENU_COLOR,
-    val menuAccentColor: Int = DEFAULT_MENU_ACCENT_COLOR
+    val menuAccentColor: Int = DEFAULT_MENU_ACCENT_COLOR,
+    val neonTheme: Boolean = true
 )
 
 class NotesRepository(
@@ -127,7 +128,8 @@ class NotesRepository(
         textColor = prefs.getInt("textColor", DEFAULT_NOTE_TEXT_COLOR),
         accentColor = prefs.getInt("accentColor", DEFAULT_NOTE_ACCENT_COLOR),
         menuColor = prefs.getInt("menuColor", DEFAULT_MENU_COLOR),
-        menuAccentColor = prefs.getInt("menuAccentColor", DEFAULT_MENU_ACCENT_COLOR)
+        menuAccentColor = prefs.getInt("menuAccentColor", DEFAULT_MENU_ACCENT_COLOR),
+        neonTheme = prefs.getBoolean("neonTheme", true)
     )
 
     fun saveStyleDefaults(defaults: StyleDefaults) {
@@ -139,6 +141,7 @@ class NotesRepository(
             .putInt("accentColor", defaults.accentColor)
             .putInt("menuColor", defaults.menuColor)
             .putInt("menuAccentColor", defaults.menuAccentColor)
+            .putBoolean("neonTheme", defaults.neonTheme)
             .apply()
     }
 

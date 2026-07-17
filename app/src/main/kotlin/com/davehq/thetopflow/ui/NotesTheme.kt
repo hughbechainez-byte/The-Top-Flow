@@ -161,10 +161,12 @@ private val NotesShapes = Shapes(
 fun NotesTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    neonTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
     val baseScheme = when {
+        neonTheme && darkTheme -> NotesDarkScheme
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme -> dynamicDarkColorScheme(context)
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
         darkTheme -> NotesDarkScheme

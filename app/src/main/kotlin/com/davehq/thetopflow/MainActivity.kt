@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
         installJankStats()
         setContent {
             val state = notesViewModel.uiState.collectAsStateWithLifecycle().value
-            NotesTheme {
+            NotesTheme(neonTheme = state.styleDefaults.neonTheme) {
                 NotesRoute(
                     state = state,
                     onCreateNote = notesViewModel::createNote,
@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
                     onRenameRecording = notesViewModel::renameRecording,
                     onExportRecording = notesViewModel::exportRecording,
                     onApplyStyle = notesViewModel::updateNoteStyle,
+                    onSetNeonThemeEnabled = notesViewModel::setNeonThemeEnabled,
                     onOpenRecentNote = notesViewModel::openMostRecentOrNewestNote
                 )
             }

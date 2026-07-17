@@ -4,9 +4,19 @@ import android.content.Context
 import android.util.Log
 import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.Canvas
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material3.Surface
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -71,8 +81,30 @@ object TopFlowUiBackdropBridge {
 
 @Composable
 fun PremiumStudioBackdrop() {
-    Surface(
-        color = Color.Black,
-        modifier = Modifier.fillMaxSize()
-    ) {}
+    NeonOledBackdrop()
+}
+
+/**
+ * Lightweight OLED treatment: only Canvas draw work changes each frame, so it
+ * does not remeasure note content or compete with typing/recording work.
+ */
+@Composable
+fun NeonOledBackdrop(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "neon_rail")
+    val sweep by transition.animateFloat(
+        initialValue = -0.15f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(tween(7_200, easing = LinearEasing), RepeatMode.Restart),
+        label = "neon_sweep"
+    )
+    Canvas(modifier = modifier.fillMaxSize()) {
+        drawRect(Color.Black)
+        val railY = size.height * 0.18f
+        val secondRailY = size.height * 0.78f
+        val head = size.width * sweep
+        drawLine(Color(0x2458FFE8), Offset(0f, railY), Offset(size.width, railY), strokeWidth = 1.5f)
+        drawLine(Color(0x1C739BFF), Offset(0f, secondRailY), Offset(size.width, secondRailY), strokeWidth = 1f)
+        drawLine(Color(0x8820F6D0), Offset((head - 96f).coerceAtLeast(0f), railY), Offset((head + 12f).coerceAtMost(size.width), railY), strokeWidth = 2.5f)
+        drawCircle(Color(0xCC84FFEE), radius = 3f, center = Offset(head.coerceIn(0f, size.width), railY), style = Stroke(width = 1.5f))
+    }
 }

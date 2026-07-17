@@ -1,9 +1,15 @@
 {
-  "versionName": "30.0",
-  "notes": "Version 30.0 makes initial local rhymes appear without More rhymes, expands the normal list to 12, and prioritizes common words over malformed spellings.",
-  "versionCode": 113,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v30.0/the-top-flow-30.0-first-row-quality.apk",
+  "versionName": "30.1",
+  "notes": "Version 30.1 adds a saved OLED Neon / Flat theme, draw-only ambient rails, and a smooth library-to-editor transition.",
+  "versionCode": 114,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v30.1/the-top-flow-30.1-oled-neon-motion.apk",
   "versions": [
+    {
+      "versionName": "30.1",
+      "notes": "Version 30.1 adds a saved OLED Neon / Flat theme, draw-only ambient rails, and a smooth library-to-editor transition.",
+      "versionCode": 114,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v30.1/the-top-flow-30.1-oled-neon-motion.apk"
+    },
     {
       "versionName": "30.0",
       "notes": "Version 30.0 makes initial local rhymes appear without More rhymes, expands the normal list to 12, and prioritizes common words over malformed spellings.",
