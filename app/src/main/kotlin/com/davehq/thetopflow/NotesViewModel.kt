@@ -198,6 +198,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         rhymeLoading.value = false
         if (enabled) {
             ensureFastRhymeEngineLoaded()
+            // The compact legacy cache is a quick local bridge while the V2
+            // asset maps; users should not need to tap More rhymes to see a row.
+            ensureLegacyRhymeEngineLoaded()
             refreshRhymesForSelected()
         }
     }
@@ -486,7 +489,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun isRhymeEngineReadyForRequest(): Boolean {
-        return rhymeEngine2Ready || (expandedRhymesRequested && (rhymeEngine.isFastReady() || rhymeEngine.isReady()))
+        return rhymeEngine2Ready || rhymeEngine.isFastReady() || rhymeEngine.isReady()
     }
 
     private fun suggestRhymes(word: String, body: String, includeLegacy: Boolean): List<String> {
@@ -499,7 +502,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         try {
         if (rhymeEngine2Ready) {
             val v2Raw = runCatching {
-                rhymeEngine2.suggest(word, 8)
+                rhymeEngine2.suggest(word, 12)
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
@@ -517,11 +520,11 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             }
             source = if (v2.isEmpty()) "v2_miss" else "v2_short"
         }
-        if (!includeLegacy) return emptyList()
+        if (!includeLegacy && !rhymeEngine.isFastReady() && !rhymeEngine.isReady()) return emptyList()
         val fallback = runCatching {
             rhymeEngine.suggest(
                 word,
-                8,
+                12,
                 360,
                 RhymeEngine.Options("Balanced", false, true, emptySet(), body)
             )
@@ -679,8 +682,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun rhymeResultLimit(): Int = when (rhymeStrictness.value) {
         "Strict" -> 4
-        "Loose" -> 12
-        else -> 8
+        else -> 12
     }
 
     private data class RhymeRouteSnapshot(

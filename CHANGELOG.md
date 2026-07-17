@@ -1,5 +1,7 @@
 # Changelog
 
+- Version 30.0 begins a separately installable update line with in-app updates enabled going forward. It fixes the initial rhyme row: the compact offline cache now warms with Rhyme Mode, so suggestions can appear before V2 finishes mapping. It also expands normal suggestions to 12 and prioritizes common `lit` rhymes while rejecting malformed spellings.
+
 - Version 29.9 finalizes the offline rhyme upgrade: opt-in V2 loading, instant bounded local caching, expanded-only grouped multi/phrase prompts, saved strength controls, private custom rhymes, conservative recent-line repetition handling, and local spoken-spelling fallback.
 
 - Version 28.7 adds expanded-only curated multi/phrase prompts, saved Strict/Balanced/Loose rhyme strength, a private on-device custom-rhyme dictionary, and conservative recent-line repetition avoidance. Rhyme Mode remains off until chosen and the fast row remains single-word focused.
