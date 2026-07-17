@@ -8,6 +8,8 @@ package com.davehq.thetopflow.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Canvas
@@ -146,7 +148,8 @@ fun NotesRoute(
     onPlayRecording: (String) -> Unit,
     onRenameRecording: (String, String) -> Unit,
     onExportRecording: (String) -> Boolean,
-    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit
+    onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit,
+    onSetNeonThemeEnabled: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val updateManager = remember(context) { TopFlowUpdateManager(context.applicationContext) }
@@ -191,14 +194,20 @@ fun NotesRoute(
         else -> "NotesGrid"
     }
     JankStateLabels(screenLabel = screenLabel, isScrolling = isScrolling)
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .semantics { testTagsAsResourceId = true },
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }
     ) {
-        if (state.selectedNote == null) {
+        if (state.styleDefaults.neonTheme) NeonOledBackdrop()
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent
+        ) {
+        val selectedNote = state.selectedNote
+        Crossfade(
+            targetState = selectedNote == null,
+            animationSpec = tween(durationMillis = 160),
+            label = "notes_screen_crossfade"
+        ) { showingGrid -> if (showingGrid) {
             NotesGridScreen(
                 state = state,
                 gridState = gridState,
@@ -209,8 +218,9 @@ fun NotesRoute(
                 onCheckForUpdate = checkForUpdate
             )
         } else {
+            val editorNote = selectedNote ?: return@Crossfade
             NoteEditorScreen(
-                note = state.selectedNote,
+                note = editorNote,
                 isCreating = state.isCreating,
                 media = state.media,
                 styleDefaults = state.styleDefaults,
@@ -238,14 +248,16 @@ fun NotesRoute(
                 onRenameRecording = onRenameRecording,
                 onExportRecording = onExportRecording,
                 onApplyStyle = onApplyStyle,
+                onSetNeonThemeEnabled = onSetNeonThemeEnabled,
                 onCheckForUpdate = checkForUpdate
             )
-        }
+        } }
         TopFlowUpdateDialog(
             state = updateState,
             onDismiss = { updateState = TopFlowUpdateUiState.Idle },
             onInstall = installUpdate
         )
+        }
     }
 }
 
@@ -596,6 +608,7 @@ fun NoteEditorScreen(
     onRenameRecording: (String, String) -> Unit,
     onExportRecording: (String) -> Boolean,
     onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit,
+    onSetNeonThemeEnabled: (Boolean) -> Unit,
     onCheckForUpdate: () -> Unit
 ) {
     BackHandler(onBack = onBack)
@@ -628,6 +641,7 @@ fun NoteEditorScreen(
         onRenameRecording = onRenameRecording,
         onExportRecording = onExportRecording,
         onApplyStyle = onApplyStyle,
+        onSetNeonThemeEnabled = onSetNeonThemeEnabled,
         onCheckForUpdate = onCheckForUpdate
     )
 }
@@ -663,6 +677,7 @@ fun NoteEditor(
     onRenameRecording: (String, String) -> Unit = { _, _ -> },
     onExportRecording: (String) -> Boolean = { false },
     onApplyStyle: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit = { _, _, _, _, _, _, _, _ -> },
+    onSetNeonThemeEnabled: (Boolean) -> Unit = {},
     onCheckForUpdate: () -> Unit = {}
 ) {
     val swipeThresholdPx = with(LocalDensity.current) { 96.dp.toPx() }
@@ -918,6 +933,8 @@ fun NoteEditor(
                     showStyleSheet = false
                 }
             },
+            neonTheme = styleDefaults.neonTheme,
+            onSetNeonThemeEnabled = onSetNeonThemeEnabled,
             onCancel = { runAction { showStyleSheet = false } }
         )
     }
@@ -1162,6 +1179,8 @@ private fun StyleEditorSheet(
     defaults: StyleDefaults,
     onDismiss: () -> Unit,
     onApply: (String, Int, Int, Int, Int, Int, Int, Boolean) -> Unit,
+    neonTheme: Boolean,
+    onSetNeonThemeEnabled: (Boolean) -> Unit,
     onCancel: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -1281,6 +1300,24 @@ private fun StyleEditorSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                "theme" -> {
+                    Text("App theme", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        if (neonTheme) "OLED Neon uses crisp mint rails and a low-cost ambient sweep." else "Flat uses the clean base surfaces without animated rails.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { onSetNeonThemeEnabled(true) },
+                            colors = if (neonTheme) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else ButtonDefaults.outlinedButtonColors()
+                        ) { Text("OLED Neon") }
+                        OutlinedButton(
+                            onClick = { onSetNeonThemeEnabled(false) },
+                            colors = if (!neonTheme) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else ButtonDefaults.outlinedButtonColors()
+                        ) { Text("Flat") }
+                    }
+                }
             }
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -1363,7 +1400,7 @@ private fun StyleSectionTabs(
     onSelect: (String) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        listOf("preview" to "Preview", "font" to "Font", "colors" to "Colors", "defaults" to "Defaults").forEach { (id, label) ->
+        listOf("preview" to "Preview", "font" to "Font", "colors" to "Colors", "theme" to "Theme", "defaults" to "Defaults").forEach { (id, label) ->
             val isSelected = selected == id
             OutlinedButton(
                 onClick = { onSelect(id) },
