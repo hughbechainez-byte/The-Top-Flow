@@ -55,6 +55,7 @@ HIP_HOP_PHRASE_ENDING_ROWS = {
     "cigar": ["disregard", "boulevard", "guitar", "superstar", "avatar", "fallen star", "racing car", "shooting star", "work of art", "from the heart", "play your part", "raise the bar"],
     "cap": ["rap", "trap", "snap", "clap", "strap", "map", "lap", "gap", "no cap", "backpack", "black cap", "nightcap"],
     "inside": ["outside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],
+    "lit": ["hit", "sit", "bit", "fit", "quit", "split", "legit", "slit", "kit", "wit", "grit", "shit"],
     "me": ["free", "see", "be", "key", "three", "tree", "agree", "on me", "for me", "with me", "homie", "lowkey"],
     "money": ["on me", "honey", "sunny", "funny", "run it", "from me", "come see", "one deep", "trust me", "love me", "nothing", "company"],
     "outside": ["inside", "ride", "slide", "wide", "side", "hide", "pride", "beside", "collide", "divide", "vibe", "alive"],

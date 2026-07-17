@@ -5,8 +5,8 @@ plugins {
     id "androidx.baselineprofile"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "112").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "29.9").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "113").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "30.0").toString()
 def topFlowDebuggable = (findProperty("TOP_FLOW_DEBUGGABLE") ?: "false").toString().toBoolean()
 
 android {
@@ -32,7 +32,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.davehq.thetopflow"
+        // v30 begins a new signed update line. It can coexist with the legacy
+        // install, then every later build can update it through the in-app manifest.
+        applicationId "com.davehq.thetopflow.next"
         minSdk 26
         targetSdk 35
         versionCode = topFlowVersionCode
@@ -47,10 +49,16 @@ android {
             def propsFile = rootProject.file("keystore.properties")
             if (propsFile.exists()) {
                 props.load(new FileInputStream(propsFile))
-                storeFile rootProject.file(props["storeFile"])
-                storePassword props["storePassword"]
-                keyAlias props["keyAlias"]
-                keyPassword props["keyPassword"]
+            }
+            def releaseStore = props["storeFile"] ?: System.getenv("TOP_FLOW_STORE_FILE")
+            def releaseStorePassword = props["storePassword"] ?: System.getenv("TOP_FLOW_STORE_PASSWORD")
+            def releaseKeyAlias = props["keyAlias"] ?: System.getenv("TOP_FLOW_KEY_ALIAS")
+            def releaseKeyPassword = props["keyPassword"] ?: System.getenv("TOP_FLOW_KEY_PASSWORD")
+            if (releaseStore && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+                storeFile rootProject.file(releaseStore)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
         }
     }

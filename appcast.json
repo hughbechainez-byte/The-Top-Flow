@@ -1,9 +1,15 @@
 {
-  "versionName": "29.9",
-  "notes": "Version 29.9 finalizes the offline rhyme upgrade with instant local caching, grouped expanded prompts, saved controls, private custom rhymes, context safeguards, and spoken-spelling fallback.",
-  "versionCode": 112,
-  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v29.9/the-top-flow-29.9-offline-rhyme-final.apk",
+  "versionName": "30.0",
+  "notes": "Version 30.0 makes initial local rhymes appear without More rhymes, expands the normal list to 12, and prioritizes common words over malformed spellings.",
+  "versionCode": 113,
+  "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v30.0/the-top-flow-30.0-first-row-quality.apk",
   "versions": [
+    {
+      "versionName": "30.0",
+      "notes": "Version 30.0 makes initial local rhymes appear without More rhymes, expands the normal list to 12, and prioritizes common words over malformed spellings.",
+      "versionCode": 113,
+      "apkUrl": "https://github.com/hughbechainez-byte/The-Top-Flow/releases/download/v30.0/the-top-flow-30.0-first-row-quality.apk"
+    },
     {
       "versionName": "29.9",
       "notes": "Version 29.9 finalizes the offline rhyme upgrade with instant local caching, grouped expanded prompts, saved controls, private custom rhymes, context safeguards, and spoken-spelling fallback.",
