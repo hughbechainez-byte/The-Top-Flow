@@ -2,18 +2,19 @@ package com.davehq.thetopflow
 
 import android.app.Application
 import android.content.ContentValues
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.davehq.thetopflow.data.NotePack
 import com.davehq.thetopflow.data.NoteUi
 import com.davehq.thetopflow.data.NotesRepository
 import com.davehq.thetopflow.data.RecordingUi
 import com.davehq.thetopflow.data.StyleDefaults
 import com.davehq.thetopflow.rhyme.RhymeEngine2
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
@@ -198,8 +200,6 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         rhymeLoading.value = false
         if (enabled) {
             ensureFastRhymeEngineLoaded()
-            // The compact legacy cache is a quick local bridge while the V2
-            // asset maps; users should not need to tap More rhymes to see a row.
             ensureLegacyRhymeEngineLoaded()
             refreshRhymesForSelected()
         }
@@ -360,6 +360,43 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Suggested filename for the system Create Document picker. */
+    fun selectedNotePackFileName(): String? {
+        val note = activeSelectedNote() ?: return null
+        return NotePack.suggestedFileName(note)
+    }
+
+    /**
+     * Writes the open note (body + per-note style + embedded recordings) to [uri].
+     * Call from the main thread after SAF CreateDocument returns.
+     */
+    fun exportSelectedNotePack(uri: Uri): NotePack.Result {
+        val note = activeSelectedNote()
+            ?: return NotePack.Result(false, "Open a note first.")
+        return runBlocking(Dispatchers.IO) {
+            NotePack.export(getApplication(), note, uri)
+        }
+    }
+
+    /**
+     * Loads a .topflow pack into the library, restores style + recordings, and opens it.
+     */
+    fun importNotePack(uri: Uri): NotePack.Result {
+        val result = runBlocking(Dispatchers.IO) {
+            NotePack.import(getApplication(), uri)
+        }
+        val imported = result.note ?: return result
+        notes.update { current -> listOf(imported) + current }
+        selectedNoteId.value = imported.id
+        lastOpenedNoteId.value = imported.id
+        creating.value = false
+        query.value = ""
+        mediaController.attachSong(imported.songUri)
+        scheduleSave(delayMs = 0)
+        refreshRhymesForSelected()
+        return result
+    }
+
     fun updateNoteStyle(
         font: String,
         fontSizeSp: Int,
@@ -512,8 +549,6 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                     .map { it.word }
                     .distinct()
             }.getOrDefault(emptyList())
-            // Phrases are useful for an intentional expansion, but the fast row must
-            // stay focused on instant single-word prompts while the user is typing.
             val custom = customRhymes.value[word].orEmpty()
             val local = (custom + v2Raw).distinct()
             val phraseFiltered = if (includeLegacy) local else local.filterNot { ' ' in it }
@@ -555,7 +590,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             Log.d(
                 TRACE_TAG,
                 "rhyme_trace stage=route source=$source v2Ready=$rhymeEngine2Ready fastReady=${rhymeEngine.isFastReady()} fullReady=${rhymeEngine.isReady()} " +
-                    "chars=${word.length} v2Count=$v2Count fallbackCount=$fallbackCount count=$finalCount ms=$elapsedMs " +
+                    "chars=${word.length} v2Count=$v2Count fallbackCount=${fallbackCount} count=$finalCount ms=$elapsedMs " +
                     "wordHash=$wordHash wordShape=$wordShape " +
                     "routeTotal=${snapshot.total} routeV2=${snapshot.v2} routeFallback=${snapshot.fallback} routeEmpty=${snapshot.empty} " +
                     "v2Miss=${snapshot.v2Miss} v2Short=${snapshot.v2Short} fallbackAfterMiss=${snapshot.fallbackAfterMiss} fallbackAfterShort=${snapshot.fallbackAfterShort} avgMs=${snapshot.averageMs}"
@@ -673,7 +708,6 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         return candidates.distinct().sortedWith(
             compareByDescending<String> { candidate ->
                 val key = candidate.rhymeKey()
-                // Keep a deliberately repeated hook available, but avoid putting it first.
                 if (key != null && key in priorEndings && key != word) -1 else 0
             }.thenBy { candidates.indexOf(it) }
         )
