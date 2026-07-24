@@ -31,6 +31,7 @@ data class MediaUiState(
     val recordingElapsedMs: Int = 0,
     val recordingPlaybackPath: String? = null,
     val recordingPlaybackActive: Boolean = false,
+    val rapReadyAmount: Float = RapReadyProcessor.DEFAULT_AMOUNT,
     val mediaErrorMessage: String? = null
 )
 
@@ -39,6 +40,7 @@ class TopFlowMediaController(
 ) {
     private val context = application.applicationContext
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val rapReady = RapReadyProcessor()
 
     private val _mediaState = MutableStateFlow(MediaUiState())
     val mediaState: StateFlow<MediaUiState> = _mediaState.asStateFlow()
@@ -52,9 +54,13 @@ class TopFlowMediaController(
     private var attachedSongUri: String = ""
     private var songSeekMs: Int = 0
 
-    init {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            // MediaRuntime remains explicit compatible across supported API levels.
+    fun setRapReadyAmount(amount: Float) {
+        val next = amount.coerceIn(0f, 100f)
+        _mediaState.update { it.copy(rapReadyAmount = next) }
+        recordingPlayer?.let { player ->
+            if (_mediaState.value.recordingPlaybackActive) {
+                rapReady.apply(player, next)
+            }
         }
     }
 
@@ -219,6 +225,7 @@ class TopFlowMediaController(
             val player = MediaPlayer().apply {
                 setDataSource(context, Uri.fromFile(File(path)))
                 setOnCompletionListener {
+                    rapReady.release()
                     _mediaState.update {
                         it.copy(recordingPlaybackActive = false, recordingPlaybackPath = null)
                     }
@@ -227,6 +234,8 @@ class TopFlowMediaController(
                 prepare()
             }
             recordingPlayer = player
+            // Apply Rap Ready chain before start so first samples are processed
+            rapReady.apply(player, _mediaState.value.rapReadyAmount)
             _mediaState.update {
                 it.copy(
                     recordingPlaybackActive = true,
@@ -243,6 +252,7 @@ class TopFlowMediaController(
     }
 
     fun stopRecordingPlayback() {
+        rapReady.release()
         releaseRecordingPlayer()
         _mediaState.update {
             it.copy(recordingPlaybackActive = false)
@@ -270,6 +280,7 @@ class TopFlowMediaController(
         pauseAll()
         stopRecording(save = false)
         stopSongPlayback(resetPosition = false)
+        rapReady.release()
         controllerScope.cancel()
     }
 
@@ -408,6 +419,7 @@ class TopFlowMediaController(
     }
 
     private fun releaseRecordingPlayer() {
+        rapReady.release()
         try {
             recordingPlayer?.stop()
         } catch (_: Exception) {
