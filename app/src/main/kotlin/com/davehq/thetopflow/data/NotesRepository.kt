@@ -12,8 +12,9 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.UUID
 
+// Note paper is a dark OLED tint of noteColor — default text must be light.
 private const val DEFAULT_NOTE_COLOR = 0xFF0ECDBE.toInt()
-private const val DEFAULT_NOTE_TEXT_COLOR = 0xFF080C0E.toInt()
+private const val DEFAULT_NOTE_TEXT_COLOR = 0xFFE8EAED.toInt()
 private const val DEFAULT_NOTE_ACCENT_COLOR = 0xFF84FFEE.toInt()
 private const val DEFAULT_MENU_COLOR = 0xFF05070D.toInt()
 private const val DEFAULT_MENU_ACCENT_COLOR = 0xFF5AD7A0.toInt()
