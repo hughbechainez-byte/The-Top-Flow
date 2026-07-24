@@ -55,13 +55,50 @@ class RhymeEngine2(context: Context) {
     private fun lookupWithLocalFallback(normalized: String, limit: Int): List<RhymeCandidate> {
         val current = table ?: return emptyList()
         current.lookup(normalized, limit).takeIf { it.isNotEmpty() }?.let { return it }
-        val alternate = when {
-            normalized.endsWith("in") && normalized.length > 3 -> normalized.dropLast(2) + "ing"
-            normalized.endsWith("in'") && normalized.length > 4 -> normalized.dropLast(3) + "ing"
-            normalized == "ima" -> "imma"
-            else -> null
-        } ?: return emptyList()
-        return current.lookup(alternate, limit)
+
+        val alternates = buildList {
+            when {
+                normalized.endsWith("in") && normalized.length > 3 ->
+                    add(normalized.dropLast(2) + "ing")
+                normalized.endsWith("in'") && normalized.length > 4 ->
+                    add(normalized.dropLast(3) + "ing")
+            }
+            when (normalized) {
+                "ima", "imma" -> add("imma")
+                "gon" -> add("gonna")
+                "wanna" -> add("want")
+                "gotta" -> add("got")
+                "kinda" -> add("kind")
+                "outta" -> add("out")
+                "lotta" -> add("lot")
+                "wit" -> add("with")
+                "tha", "da" -> add("the")
+                "cuz", "cos" -> add("because")
+                "em" -> add("them")
+                "ya" -> add("you")
+                "yo" -> add("your")
+                "finna" -> add("fix")
+                "tryna" -> add("trying")
+                "bout" -> add("about")
+                "lite" -> add("light")
+                "rite" -> add("right")
+                "nite" -> add("night")
+                "thru" -> add("through")
+                "tho" -> add("though")
+                "u" -> add("you")
+                "ur" -> add("your")
+            }
+            // Drop trailing 's / 'z for singular lookup
+            if (normalized.endsWith("s") && normalized.length > 3 && !normalized.endsWith("ss")) {
+                add(normalized.dropLast(1))
+            }
+        }.distinct().filter { it != normalized && it.isNotBlank() }
+
+        for (alt in alternates) {
+            val hit = current.lookup(alt, limit)
+            if (hit.isNotEmpty()) return hit
+        }
+        return emptyList()
     }
 
     private class CandidateTable(private val data: ByteBuffer) {
@@ -110,7 +147,7 @@ class RhymeEngine2(context: Context) {
             repeat(minOf(limit, count, MAX_CANDIDATES)) { candidateIndex ->
                 val offset = data.getInt(rowOffset + 8 + (candidateIndex * 4))
                 val candidate = readString(offset)
-                if (candidate.isNotBlank()) {
+                if (candidate.isNotBlank() && candidate !in WEAK_WORDS) {
                     out.add(RhymeCandidate(candidate, RhymeBucket.Perfect, 100 - candidateIndex))
                 }
             }
@@ -145,6 +182,10 @@ class RhymeEngine2(context: Context) {
         private const val CACHE_CAPACITY = 192
         private const val TRACE_TAG = "rhyme_trace"
         private val MAGIC = "TFCAND2".toByteArray(Charsets.US_ASCII)
+        private val WEAK_WORDS = setOf(
+            "a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "is", "it", "be", "as", "by",
+            "for", "from", "with", "that", "this", "these", "those", "was", "were", "are", "am"
+        )
 
         private fun normalize(word: String): String {
             return word.lowercase().replace(Regex("[^a-z']"), "").trim('\'')
