@@ -5,6 +5,7 @@ import android.util.Log
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.compose.setContent
@@ -14,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
+import com.davehq.thetopflow.data.NotePack
 import com.davehq.thetopflow.ui.NotesRoute
 import com.davehq.thetopflow.ui.NotesTheme
 import androidx.core.content.ContextCompat
@@ -23,6 +25,8 @@ class MainActivity : ComponentActivity() {
     private var jankStats: JankStats? = null
     private lateinit var attachSongLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var recordPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var exportNoteLauncher: ActivityResultLauncher<String>
+    private lateinit var importNoteLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +46,20 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.RequestPermission()
         ) { granted ->
             if (granted) notesViewModel.startRecording()
+        }
+        exportNoteLauncher = registerForActivityResult(
+            ActivityResultContracts.CreateDocument(NotePack.MIME_TYPE)
+        ) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val result = notesViewModel.exportSelectedNotePack(uri)
+            Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+        }
+        importNoteLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val result = notesViewModel.importNotePack(uri)
+            Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
         }
         installJankStats()
         setContent {
@@ -80,7 +98,24 @@ class MainActivity : ComponentActivity() {
                     onExportRecording = notesViewModel::exportRecording,
                     onApplyStyle = notesViewModel::updateNoteStyle,
                     onSetNeonThemeEnabled = notesViewModel::setNeonThemeEnabled,
-                    onOpenRecentNote = notesViewModel::openMostRecentOrNewestNote
+                    onOpenRecentNote = notesViewModel::openMostRecentOrNewestNote,
+                    onExportNotePack = {
+                        val name = notesViewModel.selectedNotePackFileName()
+                        if (name == null) {
+                            Toast.makeText(this, "Open a note first.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            exportNoteLauncher.launch(name)
+                        }
+                    },
+                    onImportNotePack = {
+                        importNoteLauncher.launch(
+                            arrayOf(
+                                NotePack.MIME_TYPE,
+                                "application/octet-stream",
+                                "*/*"
+                            )
+                        )
+                    }
                 )
             }
         }
