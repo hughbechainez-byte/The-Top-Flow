@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.material3.Surface
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.LifecycleOwner
@@ -87,24 +86,63 @@ fun PremiumStudioBackdrop() {
 /**
  * Lightweight OLED treatment: only Canvas draw work changes each frame, so it
  * does not remeasure note content or compete with typing/recording work.
+ * 30.2 strengthens the visual framework with a soft vertical accent + dual
+ * sweeping rails while remaining draw-only and low-cost.
  */
 @Composable
 fun NeonOledBackdrop(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "neon_rail")
     val sweep by transition.animateFloat(
-        initialValue = -0.15f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(tween(7_200, easing = LinearEasing), RepeatMode.Restart),
+        initialValue = -0.12f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(tween(8_400, easing = LinearEasing), RepeatMode.Restart),
         label = "neon_sweep"
+    )
+    val secondarySweep by transition.animateFloat(
+        initialValue = 1.08f,
+        targetValue = -0.08f,
+        animationSpec = infiniteRepeatable(tween(11_200, easing = LinearEasing), RepeatMode.Restart),
+        label = "neon_sweep_secondary"
     )
     Canvas(modifier = modifier.fillMaxSize()) {
         drawRect(Color.Black)
-        val railY = size.height * 0.18f
-        val secondRailY = size.height * 0.78f
+
+        // Soft vertical studio rail (left edge) — static, zero extra cost
+        val leftRailX = size.width * 0.035f
+        drawLine(
+            Color(0x1840FFD0),
+            Offset(leftRailX, size.height * 0.08f),
+            Offset(leftRailX, size.height * 0.92f),
+            strokeWidth = 1.25f
+        )
+
+        val railY = size.height * 0.16f
+        val secondRailY = size.height * 0.82f
         val head = size.width * sweep
-        drawLine(Color(0x2458FFE8), Offset(0f, railY), Offset(size.width, railY), strokeWidth = 1.5f)
-        drawLine(Color(0x1C739BFF), Offset(0f, secondRailY), Offset(size.width, secondRailY), strokeWidth = 1f)
-        drawLine(Color(0x8820F6D0), Offset((head - 96f).coerceAtLeast(0f), railY), Offset((head + 12f).coerceAtMost(size.width), railY), strokeWidth = 2.5f)
-        drawCircle(Color(0xCC84FFEE), radius = 3f, center = Offset(head.coerceIn(0f, size.width), railY), style = Stroke(width = 1.5f))
+        val head2 = size.width * secondarySweep
+
+        // Primary horizontal rail + traveling head
+        drawLine(Color(0x2258FFE8), Offset(0f, railY), Offset(size.width, railY), strokeWidth = 1.4f)
+        drawLine(
+            Color(0xAA20F6D0),
+            Offset((head - 110f).coerceAtLeast(0f), railY),
+            Offset((head + 18f).coerceAtMost(size.width), railY),
+            strokeWidth = 2.6f
+        )
+        drawCircle(
+            Color(0xCC84FFEE),
+            radius = 3.2f,
+            center = Offset(head.coerceIn(0f, size.width), railY),
+            style = Stroke(width = 1.6f)
+        )
+
+        // Secondary lower rail (opposite direction) for depth without noise
+        drawLine(Color(0x18739BFF), Offset(0f, secondRailY), Offset(size.width, secondRailY), strokeWidth = 1.1f)
+        drawLine(
+            Color(0x6680A8FF),
+            Offset((head2 - 72f).coerceAtLeast(0f), secondRailY),
+            Offset((head2 + 14f).coerceAtMost(size.width), secondRailY),
+            strokeWidth = 1.8f
+        )
     }
 }
