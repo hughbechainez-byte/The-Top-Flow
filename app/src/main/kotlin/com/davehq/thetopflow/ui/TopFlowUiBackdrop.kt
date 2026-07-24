@@ -5,18 +5,11 @@ import android.util.Log
 import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.getValue
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.LifecycleOwner
@@ -84,65 +77,63 @@ fun PremiumStudioBackdrop() {
 }
 
 /**
- * Lightweight OLED treatment: only Canvas draw work changes each frame, so it
- * does not remeasure note content or compete with typing/recording work.
- * 30.2 strengthens the visual framework with a soft vertical accent + dual
- * sweeping rails while remaining draw-only and low-cost.
+ * Premium OLED studio backdrop — static, no looping travel animations.
+ * Soft vignette + quiet corner bloom only. Zero per-frame motion so the
+ * surface feels intentional rather than gimmicky.
  */
 @Composable
 fun NeonOledBackdrop(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "neon_rail")
-    val sweep by transition.animateFloat(
-        initialValue = -0.12f,
-        targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(tween(8_400, easing = LinearEasing), RepeatMode.Restart),
-        label = "neon_sweep"
-    )
-    val secondarySweep by transition.animateFloat(
-        initialValue = 1.08f,
-        targetValue = -0.08f,
-        animationSpec = infiniteRepeatable(tween(11_200, easing = LinearEasing), RepeatMode.Restart),
-        label = "neon_sweep_secondary"
-    )
     Canvas(modifier = modifier.fillMaxSize()) {
+        // True OLED black base
         drawRect(Color.Black)
 
-        // Soft vertical studio rail (left edge) — static, zero extra cost
-        val leftRailX = size.width * 0.035f
-        drawLine(
-            Color(0x1840FFD0),
-            Offset(leftRailX, size.height * 0.08f),
-            Offset(leftRailX, size.height * 0.92f),
-            strokeWidth = 1.25f
+        // Soft vertical vignette (edges darker, center slightly lifted)
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFF05080C),
+                    Color(0xFF000000),
+                    Color(0xFF000000),
+                    Color(0xFF04060A)
+                )
+            )
         )
 
-        val railY = size.height * 0.16f
-        val secondRailY = size.height * 0.82f
-        val head = size.width * sweep
-        val head2 = size.width * secondarySweep
-
-        // Primary horizontal rail + traveling head
-        drawLine(Color(0x2258FFE8), Offset(0f, railY), Offset(size.width, railY), strokeWidth = 1.4f)
-        drawLine(
-            Color(0xAA20F6D0),
-            Offset((head - 110f).coerceAtLeast(0f), railY),
-            Offset((head + 18f).coerceAtMost(size.width), railY),
-            strokeWidth = 2.6f
-        )
+        // Quiet radial bloom top-left (mint) — static, low alpha
         drawCircle(
-            Color(0xCC84FFEE),
-            radius = 3.2f,
-            center = Offset(head.coerceIn(0f, size.width), railY),
-            style = Stroke(width = 1.6f)
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0x1420F6D0),
+                    Color(0x00000000)
+                ),
+                center = Offset(size.width * 0.12f, size.height * 0.08f),
+                radius = size.minDimension * 0.55f
+            ),
+            radius = size.minDimension * 0.55f,
+            center = Offset(size.width * 0.12f, size.height * 0.08f)
         )
 
-        // Secondary lower rail (opposite direction) for depth without noise
-        drawLine(Color(0x18739BFF), Offset(0f, secondRailY), Offset(size.width, secondRailY), strokeWidth = 1.1f)
+        // Quiet radial bloom bottom-right (cool blue) for depth balance
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0x106080FF),
+                    Color(0x00000000)
+                ),
+                center = Offset(size.width * 0.92f, size.height * 0.88f),
+                radius = size.minDimension * 0.48f
+            ),
+            radius = size.minDimension * 0.48f,
+            center = Offset(size.width * 0.92f, size.height * 0.88f)
+        )
+
+        // Hairline left studio rail — static accent, no travel head
+        val leftRailX = size.width * 0.028f
         drawLine(
-            Color(0x6680A8FF),
-            Offset((head2 - 72f).coerceAtLeast(0f), secondRailY),
-            Offset((head2 + 14f).coerceAtMost(size.width), secondRailY),
-            strokeWidth = 1.8f
+            Color(0x2240FFD0),
+            Offset(leftRailX, size.height * 0.12f),
+            Offset(leftRailX, size.height * 0.88f),
+            strokeWidth = 1.1f
         )
     }
 }
