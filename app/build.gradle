@@ -5,8 +5,8 @@ plugins {
     id "androidx.baselineprofile"
 }
 
-def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "115").toInteger()
-def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "30.2").toString()
+def topFlowVersionCode = (findProperty("TOP_FLOW_VERSION_CODE") ?: "116").toInteger()
+def topFlowVersionName = (findProperty("TOP_FLOW_VERSION_NAME") ?: "30.3").toString()
 def topFlowDebuggable = (findProperty("TOP_FLOW_DEBUGGABLE") ?: "false").toString().toBoolean()
 
 android {
@@ -32,8 +32,6 @@ android {
     }
 
     defaultConfig {
-        // v30 begins a new signed update line. It can coexist with the legacy
-        // install, then every later build can update it through the in-app manifest.
         applicationId "com.davehq.thetopflow.next"
         minSdk 26
         targetSdk 35
