@@ -1,5 +1,7 @@
 # Changelog
 
+- Version **30.2** strengthens the OLED neon visual framework (dual sweeping rails + soft vertical accent, pure draw-only), documents the design system in `docs/VISUAL_FRAMEWORK.md`, adds a GitHub Actions debug-APK workflow, and prepares the headphones-gated Rap Ready one-knob control for phone recordings (inspired by RapReady One). Rhyme path and core writing/recording features remain intact.
+
 - Version 30.1 adds a saved OLED Neon / Flat theme choice, a draw-only animated neon rail treatment, and a short crossfade between the library and editor so visual polish does not compete with writing or rhyme lookup.
 
 - Version 30.0 begins a separately installable update line with in-app updates enabled going forward. It fixes the initial rhyme row: the compact offline cache now warms with Rhyme Mode, so suggestions can appear before V2 finishes mapping. It also expands normal suggestions to 12 and prioritizes common `lit` rhymes while rejecting malformed spellings.
