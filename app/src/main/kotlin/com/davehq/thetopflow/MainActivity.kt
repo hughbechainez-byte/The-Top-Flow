@@ -12,6 +12,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
@@ -63,60 +77,87 @@ class MainActivity : ComponentActivity() {
         }
         installJankStats()
         setContent {
-            val state = notesViewModel.uiState.collectAsStateWithLifecycle().value
+            val state by notesViewModel.uiState.collectAsStateWithLifecycle()
             NotesTheme(neonTheme = state.styleDefaults.neonTheme) {
-                NotesRoute(
-                    state = state,
-                    onCreateNote = notesViewModel::createNote,
-                    onOpenNote = notesViewModel::openNote,
-                    onCloseEditor = notesViewModel::closeEditor,
-                    onSearch = notesViewModel::updateSearch,
-                    onTitleChange = notesViewModel::updateTitle,
-                    onBodyChange = notesViewModel::updateBody,
-                    onSetRhymeModeEnabled = notesViewModel::setRhymeModeEnabled,
-                    onSetRhymeStrictness = notesViewModel::setRhymeStrictness,
-                    onSaveCustomRhymes = notesViewModel::saveCustomRhymes,
-                    onRequestMoreRhymes = notesViewModel::requestMoreRhymes,
-                    onDeleteNote = notesViewModel::deleteSelected,
-                    onAttachSong = { attachSongLauncher.launch(arrayOf("audio/*")) },
-                    onToggleSong = notesViewModel::toggleSong,
-                    onSeekSong = notesViewModel::seekSong,
-                    onStartRecording = {
-                        if (ContextCompat.checkSelfPermission(
-                                this,
-                                Manifest.permission.RECORD_AUDIO
-                            ) == PackageManager.PERMISSION_GRANTED
+                Box(modifier = Modifier.fillMaxSize()) {
+                    NotesRoute(
+                        state = state,
+                        onCreateNote = notesViewModel::createNote,
+                        onOpenNote = notesViewModel::openNote,
+                        onCloseEditor = notesViewModel::closeEditor,
+                        onSearch = notesViewModel::updateSearch,
+                        onTitleChange = notesViewModel::updateTitle,
+                        onBodyChange = notesViewModel::updateBody,
+                        onSetRhymeModeEnabled = notesViewModel::setRhymeModeEnabled,
+                        onSetRhymeStrictness = notesViewModel::setRhymeStrictness,
+                        onSaveCustomRhymes = notesViewModel::saveCustomRhymes,
+                        onRequestMoreRhymes = notesViewModel::requestMoreRhymes,
+                        onDeleteNote = notesViewModel::deleteSelected,
+                        onAttachSong = { attachSongLauncher.launch(arrayOf("audio/*")) },
+                        onToggleSong = notesViewModel::toggleSong,
+                        onSeekSong = notesViewModel::seekSong,
+                        onStartRecording = {
+                            if (ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    Manifest.permission.RECORD_AUDIO
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notesViewModel.startRecording()
+                            } else {
+                                recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        },
+                        onStopRecording = notesViewModel::stopRecording,
+                        onPlayRecording = notesViewModel::playRecording,
+                        onRenameRecording = notesViewModel::renameRecording,
+                        onExportRecording = notesViewModel::exportRecording,
+                        onApplyStyle = notesViewModel::updateNoteStyle,
+                        onSetNeonThemeEnabled = notesViewModel::setNeonThemeEnabled,
+                        onOpenRecentNote = notesViewModel::openMostRecentOrNewestNote
+                    )
+                    // Portable note pack controls — save includes style + recordings.
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (state.selectedNote != null) {
+                            FilledTonalButton(
+                                onClick = {
+                                    val name = notesViewModel.selectedNotePackFileName()
+                                    if (name == null) {
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Open a note first.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        exportNoteLauncher.launch(name)
+                                    }
+                                }
+                            ) {
+                                Text("Save note")
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                importNoteLauncher.launch(
+                                    arrayOf(
+                                        NotePack.MIME_TYPE,
+                                        "application/octet-stream",
+                                        "*/*"
+                                    )
+                                )
+                            }
                         ) {
-                            notesViewModel.startRecording()
-                        } else {
-                            recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            Text("Load note")
                         }
-                    },
-                    onStopRecording = notesViewModel::stopRecording,
-                    onPlayRecording = notesViewModel::playRecording,
-                    onRenameRecording = notesViewModel::renameRecording,
-                    onExportRecording = notesViewModel::exportRecording,
-                    onApplyStyle = notesViewModel::updateNoteStyle,
-                    onSetNeonThemeEnabled = notesViewModel::setNeonThemeEnabled,
-                    onOpenRecentNote = notesViewModel::openMostRecentOrNewestNote,
-                    onExportNotePack = {
-                        val name = notesViewModel.selectedNotePackFileName()
-                        if (name == null) {
-                            Toast.makeText(this, "Open a note first.", Toast.LENGTH_SHORT).show()
-                        } else {
-                            exportNoteLauncher.launch(name)
-                        }
-                    },
-                    onImportNotePack = {
-                        importNoteLauncher.launch(
-                            arrayOf(
-                                NotePack.MIME_TYPE,
-                                "application/octet-stream",
-                                "*/*"
-                            )
-                        )
                     }
-                )
+                }
             }
         }
     }
